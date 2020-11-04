@@ -81,6 +81,10 @@ dependencies {
     compile ("org.apache.commons:commons-collections4:${commonsCollections4Version}")
 }
 
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 30, 'seconds'
+}
+
 javadoc {
     options.addStringOption('Xdoclint:none', '-quiet')
     options.addStringOption('encoding', 'UTF-8')
@@ -112,9 +116,7 @@ jar {
             into 'dist/lib'
         }
         copy {
-            from file('src/test/resources/config-example.toml')
-            from file('src/test/resources/applicationContext-sample.xml')
-            from file('src/test/resources/log4j.properties')
+            from file('src/test/resources/')
             into 'dist/conf'
         }
     }
