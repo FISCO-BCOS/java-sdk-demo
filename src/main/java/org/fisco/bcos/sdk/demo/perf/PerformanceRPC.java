@@ -21,7 +21,7 @@ public class PerformanceRPC {
     public static void Usage() {
         System.out.println(" Usage:");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceRPC groupID totalCount qps");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceRPC totalCount qps groupID");
         System.exit(0);
     }
 
