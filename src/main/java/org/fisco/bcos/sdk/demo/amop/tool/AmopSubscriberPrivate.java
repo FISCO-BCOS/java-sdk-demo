@@ -32,6 +32,7 @@ public class AmopSubscriberPrivate {
         System.out.println("Start test");
         amop.setCallback(cb);
 
+        // Read a private key file
         KeyTool km;
         if (privateKeyFile.endsWith("p12")) {
             String password = args[2];
@@ -39,6 +40,8 @@ public class AmopSubscriberPrivate {
         } else {
             km = new PEMKeyStore(privateKeyFile);
         }
+
+        // Subscriber a private topic.
         amop.subscribePrivateTopics(topic, km, cb);
     }
 }
