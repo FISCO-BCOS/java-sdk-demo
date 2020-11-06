@@ -69,6 +69,10 @@ configurations {
     integrationTestRuntime.extendsFrom testRuntime
 }
 
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 30, 'seconds'
+}
+
 task integrationTest(type: Test) {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
