@@ -23,6 +23,7 @@ public class DemoAmopCallback extends AmopCallback {
             byte[] byteflag = subbytes(content, 0, 4);
             int flag = byteArrayToInt(byteflag);
             if (flag == -128) {
+                // Received a file.
                 byte[] bytelength = subbytes(content, 4, 4);
                 int length = byteArrayToInt(bytelength);
                 byte[] bytefilename = subbytes(content, 8, length);
@@ -48,6 +49,7 @@ public class DemoAmopCallback extends AmopCallback {
         }
 
         byte[] responseData = "Yes, I received!".getBytes();
+        // Print receive amop message
         System.out.println(
                 "Step 2:Receive msg, topic:"
                         + msg.getTopic()
@@ -56,6 +58,7 @@ public class DemoAmopCallback extends AmopCallback {
         if (msg.getType() == (short) MsgType.AMOP_REQUEST.getType()) {
             System.out.println("|---response:" + new String(responseData));
         }
+        // Response to the message sender
         return responseData;
     }
 

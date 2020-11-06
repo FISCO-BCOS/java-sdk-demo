@@ -17,10 +17,18 @@ public class AmopSubscriber {
             return;
         }
         String topic = args[0];
+        // Construct a BcosSDK instance
         BcosSDK sdk = BcosSDK.build(configUrl.getPath());
+
+        // Get the amop module instance
         Amop amop = sdk.getAmop();
+
+        // Set callback
         AmopCallback cb = new DemoAmopCallback();
-        System.out.println("Start test");
+        // Set a default callback
+        amop.setCallback(cb);
+        // Subscriber a normal topic
         amop.subscribeTopic(topic, cb);
+        System.out.println("Start test");
     }
 }

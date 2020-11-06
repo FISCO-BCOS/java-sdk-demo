@@ -48,12 +48,15 @@ public class AmopPublisherPrivate {
         System.out.println("===================================================================");
         System.out.println("set up private topic");
         List<KeyTool> keyToolList = new ArrayList<>();
+
+        // Read public key files.
         KeyTool keyTool = new PEMKeyStore(pubkey1);
         keyToolList.add(keyTool);
         if (!pubkey2.equals("null")) {
             KeyTool keyTool1 = new PEMKeyStore(pubkey2);
             keyToolList.add(keyTool1);
         }
+        // Publish a private topic
         amop.publishPrivateTopic(topicName, keyToolList);
         System.out.println("wait until finish private topic verify");
         System.out.println("3s ...");
@@ -66,12 +69,14 @@ public class AmopPublisherPrivate {
         for (Integer i = 0; i < count; ++i) {
             Thread.sleep(2000);
             AmopMsgOut out = new AmopMsgOut();
+            // It is a private topic.
             out.setType(TopicType.PRIVATE_TOPIC);
             out.setContent(content.getBytes());
             out.setTimeout(6000);
             out.setTopic(topicName);
             DemoAmopResponseCallback cb = new DemoAmopResponseCallback();
             if (isBroadcast) {
+                // Send out message by broadcast
                 amop.broadcastAmopMsg(out);
                 System.out.println(
                         "Step 1: Send out msg by broadcast, topic:"
@@ -79,6 +84,7 @@ public class AmopPublisherPrivate {
                                 + " content:"
                                 + new String(out.getContent()));
             } else {
+                // Send out amop message
                 amop.sendAmopMsg(out, cb);
                 System.out.println(
                         "Step 1: Send out msg, topic:"
