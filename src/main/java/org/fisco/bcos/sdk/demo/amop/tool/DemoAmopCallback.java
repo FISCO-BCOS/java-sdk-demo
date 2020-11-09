@@ -6,6 +6,8 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import org.fisco.bcos.sdk.amop.AmopCallback;
 import org.fisco.bcos.sdk.amop.topic.AmopMsgIn;
@@ -18,6 +20,7 @@ public class DemoAmopCallback extends AmopCallback {
 
     @Override
     public byte[] receiveAmopMsg(AmopMsgIn msg) {
+        DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         if (msg.getContent().length > 8) {
             byte[] content = msg.getContent();
             byte[] byteflag = subbytes(content, 0, 4);
@@ -29,7 +32,9 @@ public class DemoAmopCallback extends AmopCallback {
                 byte[] bytefilename = subbytes(content, 8, length);
                 String filename = new String(bytefilename);
                 System.out.println(
-                        "Step 2:Receive file, filename length:"
+                        "Step 2:Receive file,  time: "
+                                + df.format(LocalDateTime.now())
+                                + " filename length:"
                                 + length
                                 + " filename binary:"
                                 + Arrays.toString(bytefilename)
@@ -42,7 +47,11 @@ public class DemoAmopCallback extends AmopCallback {
                 System.out.println("|---save file:" + filename + " success");
                 byte[] responseData = "Yes, I received!".getBytes();
                 if (msg.getType() == (short) MsgType.AMOP_REQUEST.getType()) {
-                    System.out.println("|---response:" + new String(responseData));
+                    System.out.println(
+                            "|---response, time: "
+                                    + df.format(LocalDateTime.now())
+                                    + " content: "
+                                    + new String(responseData));
                 }
                 return responseData;
             }
@@ -51,12 +60,18 @@ public class DemoAmopCallback extends AmopCallback {
         byte[] responseData = "Yes, I received!".getBytes();
         // Print receive amop message
         System.out.println(
-                "Step 2:Receive msg, topic:"
+                "Step 2:Receive msg, time: "
+                        + df.format(LocalDateTime.now())
+                        + "topic:"
                         + msg.getTopic()
                         + " content:"
                         + new String(msg.getContent()));
         if (msg.getType() == (short) MsgType.AMOP_REQUEST.getType()) {
-            System.out.println("|---response:" + new String(responseData));
+            System.out.println(
+                    "|---response, time: "
+                            + df.format(LocalDateTime.now())
+                            + " content: "
+                            + new String(responseData));
         }
         // Response to the message sender
         return responseData;

@@ -5,10 +5,14 @@ import static org.fisco.bcos.sdk.demo.amop.tool.FileToByteArrayHelper.getFileByt
 import static org.fisco.bcos.sdk.demo.amop.tool.FileToByteArrayHelper.intToByteArray;
 
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.fisco.bcos.sdk.BcosSDK;
 import org.fisco.bcos.sdk.amop.Amop;
 import org.fisco.bcos.sdk.amop.AmopMsgOut;
 import org.fisco.bcos.sdk.amop.topic.TopicType;
+import org.fisco.bcos.sdk.client.Client;
+import org.fisco.bcos.sdk.client.protocol.response.Peers;
 
 public class AmopPublisherFile {
     private static final int parameterNum = 4;
@@ -19,7 +23,8 @@ public class AmopPublisherFile {
                     .getPath();
 
     /**
-     * @param args topicName, isBroadcast: true/false, fileName, count
+     * @param args topicName, isBroadcast: true/false, fileName, count, ipAndPort(one of the node
+     *     you connected)
      * @throws Exception AMOP publish exceptioned
      */
     public static void main(String[] args) throws Exception {
@@ -43,6 +48,10 @@ public class AmopPublisherFile {
         Thread.sleep(1000);
         System.out.println("1s ...");
         Thread.sleep(1000);
+
+        if (!subscribed(sdk, topicName)) {
+            System.out.println("No subscriber, exist.");
+        }
 
         System.out.println("start test");
         System.out.println("===================================================================");
@@ -68,8 +77,34 @@ public class AmopPublisherFile {
             } else {
                 amop.sendAmopMsg(out, cb);
             }
+            DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             System.out.println(
-                    "Step 1: Send out msg, topic:" + out.getTopic() + " content: file " + fileName);
+                    "Step 1: Send out msg, time: "
+                            + df.format(LocalDateTime.now())
+                            + " topic:"
+                            + out.getTopic()
+                            + " content: file "
+                            + fileName);
         }
+    }
+
+    public static boolean subscribed(BcosSDK sdk, String topicName) throws InterruptedException {
+        Client client = sdk.getClient(Integer.valueOf(1));
+        Boolean hasSubscriber = false;
+        Peers peers = client.getPeers();
+        for (int i = 0; i < 10; i++) {
+            for (Peers.PeerInfo info : peers.getPeers()) {
+                for (String tp : info.getTopic()) {
+                    if (tp.equals(topicName)) {
+                        hasSubscriber = true;
+                        return hasSubscriber;
+                    }
+                }
+            }
+            if (!hasSubscriber) {
+                Thread.sleep(2000);
+            }
+        }
+        return false;
     }
 }
