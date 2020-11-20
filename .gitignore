@@ -1,0 +1,10 @@
+## workspace folders.
+.gradle
+build
+dist
+.idea
+conf
+build_chain.sh
+nodes
+initEnv.sh
+tassl
