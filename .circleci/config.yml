@@ -1,7 +1,7 @@
 version: 2.1
 jobs:
   build:
-    working_directory: /java-sdk
+    working_directory: /java-sdk-demo
     docker:
       - image: centos:7
         environment:
@@ -10,14 +10,10 @@ jobs:
       - run:
           name: Setup dependencies
           command: |
-            yum install -y epel-release centos-release-scl which
+            yum install -y epel-release centos-release-scl which python python-devel
             yum install -y git openssl-devel openssl java java-devel
       - checkout
       - run:
           name: Compile
           command: |
-            bash gradlew build -x test -x integrationTest
-      - run:
-          name: Integration Test
-          command: |
-            bash .ci/ci_check.sh
+            bash gradlew build
