@@ -12,7 +12,7 @@ println("Notice: current gradle version is " + gradle.gradleVersion)
 // Additional attribute definition
 ext {
     // jackson version
-    javaSDKVersion="2.7.2"
+    javaSDKVersion="2.8.0-SNAPSHOT"
     solcJVersion = "0.4.25.1"
     //solcJVersion = "0.5.2.0"
     //solcJVersion = "0.6.10.0"
