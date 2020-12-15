@@ -29,7 +29,7 @@ public class AmopPublisherPrivate {
     public static void main(String[] args) throws Exception {
         if (args.length < parameterNum) {
             System.out.println(
-                    "param: opicName, pubKey1, pubKey2, isBroadcast: true/false, content, count");
+                    "java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.amop.tool.AmopPublisherPrivate <topicName> <pubKey1> <pubKey2> <isBroadcast: true/false> <content> <count>");
             return;
         }
         String topicName = args[0];

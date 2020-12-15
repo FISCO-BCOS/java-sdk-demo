@@ -20,7 +20,8 @@ public class AmopSubscriberPrivate {
      */
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
-            System.out.println("Param: topic, privateKeyFile, password");
+            System.out.println(
+                    "java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.amop.tool.AmopSubscriberPrivate <topicName> <privateKeyFile> <password>");
             return;
         }
         String topic = args[0];
