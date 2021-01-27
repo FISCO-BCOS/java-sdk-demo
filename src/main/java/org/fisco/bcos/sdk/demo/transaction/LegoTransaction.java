@@ -111,7 +111,7 @@ public class LegoTransaction {
 				bcosClientWrapper.getClient().getGroupId());
 		// 请求签名服务，获取交易HASH的签名，这里用同步方式
 		byte[] rawTxHash = abiTx.calcRawTransactionHash(rawTransaction);
-		String signatureStr = signTxImpl.requestForSign(rawTxHash);
+		String signatureStr = signTxImpl.requestForSign(rawTxHash,bcosClientWrapper.getTxCryptoSuite().getCryptoTypeConfig());
 		SignatureResult signature = decodeSignatureString(signatureStr);
 	    // 产生带有签名的交易
 		byte[] signedTransaction = abiTx.encodeRawTransactionWithSignature(rawTransaction, signature);
@@ -142,7 +142,7 @@ public class LegoTransaction {
 				rawTransaction,txCallback);
 		// 请求签名服务，获取交易HASH的签名
 		byte[] rawTxHash = abiTx.calcRawTransactionHash(rawTransaction);
-		signTxImpl.requestForSignAsync(rawTxHash, afterSignedTxCallback);
+		signTxImpl.requestForSignAsync(rawTxHash,bcosClientWrapper.getTxCryptoSuite().getCryptoTypeConfig(), afterSignedTxCallback);
 	}
 	
 
