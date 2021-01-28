@@ -2,130 +2,174 @@ package org.fisco.bcos.sdk.demo.transaction;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import org.fisco.bcos.sdk.BcosSDK;
+import org.bouncycastle.util.encoders.Hex;
 import org.fisco.bcos.sdk.abi.ABICodecException;
-import org.fisco.bcos.sdk.abi.wrapper.ABIDefinition;
 import org.fisco.bcos.sdk.client.Client;
-import org.fisco.bcos.sdk.crypto.keypair.CryptoKeyPair;
-import org.fisco.bcos.sdk.transaction.manager.AssembleTransactionProcessor;
-import org.fisco.bcos.sdk.transaction.manager.TransactionProcessorFactory;
-import org.fisco.bcos.sdk.transaction.model.dto.CallResponse;
+import org.fisco.bcos.sdk.crypto.signature.ECDSASignatureResult;
+import org.fisco.bcos.sdk.crypto.signature.SM2SignatureResult;
+import org.fisco.bcos.sdk.crypto.signature.SignatureResult;
+import org.fisco.bcos.sdk.model.CryptoType;
+import org.fisco.bcos.sdk.model.TransactionReceipt;
+import org.fisco.bcos.sdk.model.callback.TransactionCallback;
+import org.fisco.bcos.sdk.transaction.codec.decode.TransactionDecoderInterface;
+import org.fisco.bcos.sdk.transaction.codec.decode.TransactionDecoderService;
 import org.fisco.bcos.sdk.transaction.model.dto.TransactionResponse;
-import org.fisco.bcos.sdk.transaction.model.exception.NoSuchTransactionFileException;
-import org.fisco.bcos.sdk.transaction.model.exception.TransactionBaseException;
 import org.fisco.bcos.sdk.transaction.model.exception.TransactionException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.fisco.bcos.sdk.transaction.model.po.RawTransaction;
+import org.fisco.bcos.sdk.transaction.pusher.TransactionPusherInterface;
+import org.fisco.bcos.sdk.transaction.pusher.TransactionPusherService;
 
 public class LegoTransaction {
-
-    BcosSDK bcosSDK;
-    String abipath = "src/main/resources/abi/";
-    String binpath = "src/main/resources/bin/";
-    Client client;
-    CryptoKeyPair keyPair;
-    int groupId = 1;
-    AssembleTransactionProcessor transactionProcessor;
+    BcosClientWrapper bcosClientWrapper;
+    TransactionPusherInterface txPusher;
 
     public void init() throws Exception {
-        // 初始化BcosSDK对象
-        ApplicationContext context =
-                new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
-        bcosSDK = context.getBean(BcosSDK.class);
-        client = bcosSDK.getClient(Integer.valueOf(groupId));
-        // 构造AssembleTransactionProcessor对象，需要传入client对象，CryptoKeyPair对象和abi、binary文件存放的路径。abi和binary文件需要在上一步复制到定义的文件夹中。
-        keyPair = client.getCryptoSuite().createKeyPair();
-        transactionProcessor =
-                TransactionProcessorFactory.createAssembleTransactionProcessor(
-                        client, keyPair, abipath, binpath);
+        bcosClientWrapper = new BcosClientWrapper();
+        bcosClientWrapper.init(1);
+        this.txPusher = new TransactionPusherService(bcosClientWrapper.getClient());
     }
 
-    public void finish() {
-        bcosSDK.stopAll();
-    }
+    public class SignedTxCallback implements ISignedTransactionCallback {
 
-    public void testDeploy() throws Exception {
+        Client client;
+        RawTransaction rawTransaction;
+        TransactionResponse response;
+        BasicAbiTransaction abiTx;
+        TransactionCallback txCallback;
+        /**
+         * 签名结果回调的实现
+         *
+         * @param client BcosSDK里的client
+         * @param RawTransaction 缓存交易数据，用于签名后发送交易
+         * @param TransactionCallback 当异步发送交易时，链上返回后给调用者的回调
+         * @return *
+         */
+        public SignedTxCallback(
+                Client client_,
+                BasicAbiTransaction abiTx_,
+                RawTransaction rawTransaction_,
+                TransactionCallback callback_) {
+            client = client_;
+            abiTx = abiTx_;
+            rawTransaction = rawTransaction_;
+            txCallback = callback_;
+        }
 
-        AssembleTransactionProcessor transactionProcessor =
-                TransactionProcessorFactory.createAssembleTransactionProcessor(
-                        client, keyPair, abipath, binpath);
-        // 部署HelloWorld合约。第一个参数为合约名称，第二个参数为合约构造函数的列表，是List<Object>类型。
-        TransactionResponse response =
-                transactionProcessor.deployByContractLoader("HelloWorld", new ArrayList<>());
-        System.out.println(response.getContractAddress());
-        // 0xc895b8786b6615b1438a5a371ee42c15ad0dfa67
-
-    }
-
-    public void testABIInfo() throws NoSuchTransactionFileException {
-        String contractName = "HelloWorld";
-        List<ABIDefinition> abilst =
-                transactionProcessor
-                        .getContractLoader()
-                        .getFunctionABIListByContractName(contractName);
-        for (ABIDefinition de : abilst) {
-            System.out.println(
-                    "name:"
-                            + de.getName()
-                            + ",type:"
-                            + de.getType()
-                            + ",mutability:"
-                            + de.getStateMutability());
+        /**
+         * 签名结果回调的实现
+         *
+         * @param signatureStr 签名服务回调返回的签名结果串
+         * @return *
+         */
+        @Override
+        public int handleSignedTransaction(String signatureStr) {
+            // 完成了交易签名后，将其发送出去
+            // 对签名结果进行反序列化
+            SignatureResult signature = decodeSignatureString(signatureStr);
+            System.out.println("2:SignatureResult: " + signature.convertToString());
+            // 产生带有签名的交易
+            byte[] signedTransaction =
+                    abiTx.encodeRawTransactionWithSignature(rawTransaction, signature);
+            System.out.println("3:signedTransaction: " + new String(Hex.encode(signedTransaction)));
+            // 发送交易，传入调用者的TransactionCallback
+            txPusher.pushAsync(Hex.toHexString(signedTransaction), txCallback);
+            return 0;
         }
     }
 
-    public void testCall() throws TransactionBaseException, ABICodecException {
-        // 查询HelloWorld合约的『name』函数，合约地址为helloWorldAddress，参数为空
-        String contractName = "HelloWorld";
-        String contractAddress = "0x31231c2abad03b071b3440268f28194029dad743";
-        CallResponse callResponse =
-                transactionProcessor.sendCallByContractLoader(
-                        contractName, contractAddress, "get", new ArrayList<>());
-        System.out.println(callResponse.getValues());
+    /*用ABI解析回执*/
+    public TransactionResponse decodeReceipt(TransactionReceipt receipt, BasicAbiTransaction abiTx)
+            throws JsonProcessingException, TransactionException, IOException, ABICodecException {
+
+        TransactionDecoderInterface transactionDecoder =
+                new TransactionDecoderService(bcosClientWrapper.getClient().getCryptoSuite());
+        TransactionResponse response;
+        if (abiTx.isDeployTransaction)
+            return transactionDecoder.decodeReceiptWithoutValues(abiTx.abiContent, receipt);
+        return transactionDecoder.decodeReceiptWithValues(
+                abiTx.abiContent, abiTx.methodName, receipt);
     }
 
-    public void testTx() throws ABICodecException, TransactionBaseException {
-        String contractName = "HelloWorld";
-        String contractAddress = "0x31231c2abad03b071b3440268f28194029dad743";
-        List<Object> params = new ArrayList<Object>();
-        params.add("my test");
-        TransactionResponse txResp =
-                transactionProcessor.sendTransactionAndGetResponseByContractLoader(
-                        contractName, contractAddress, "set", params);
-        System.out.println(txResp.getEvents());
-        System.out.println(txResp.getReturnMessage());
-        System.out.println(txResp.getReturnCode());
-
-        testCall();
+    /*根据密码学算法配置解析签名串到对象*/
+    public SignatureResult decodeSignatureString(String signatureStr) {
+        SignatureResult signature;
+        if (bcosClientWrapper.getClient().getCryptoType() == CryptoType.ECDSA_TYPE) {
+            signature = new ECDSASignatureResult(signatureStr);
+        } else {
+            signature =
+                    new SM2SignatureResult(
+                            bcosClientWrapper
+                                    .getTxCryptoSuite()
+                                    .getCryptoKeyPair()
+                                    .getHexPublicKey(),
+                            signatureStr);
+        }
+        return signature;
     }
 
-    public void testTxMaker()
-            throws NoSuchTransactionFileException, ABICodecException, JsonProcessingException,
-                    TransactionException, IOException {
-        TransactionMaker maker = new TransactionMaker();
-        maker.setClient(client);
-        maker.setSDK(bcosSDK);
-        String contractName = "HelloWorld";
-        String abiContent =
-                transactionProcessor.getContractLoader().getABIByContractName(contractName);
-        String methodName = "set";
-        String contractAddress = "0x31231c2abad03b071b3440268f28194029dad743";
-        List<Object> params = new ArrayList<Object>();
-        params.add("my test:" + System.currentTimeMillis() % 1000);
-        System.out.println("test input param:" + params.toString());
-        maker.makeAndSendSignedTransaction(abiContent, methodName, contractAddress, params);
+    /**
+     * 同步发送交易
+     *
+     * @param chainId 链id
+     * @param BasicAbiTransaction 交易数据封装对象
+     * @param ISignTransaction signTxImpl 外部签名服务的实现
+     * @return *
+     */
+    public TransactionResponse sendTransactionAndGetResponse(
+            int chainId, BasicAbiTransaction abiTx, ISignTransaction signTxImpl)
+            throws ABICodecException, JsonProcessingException, TransactionException, IOException {
+        RawTransaction rawTransaction =
+                abiTx.makeRawTransaction(
+                        bcosClientWrapper.getClient(),
+                        chainId,
+                        bcosClientWrapper.getClient().getGroupId());
+        // 请求签名服务，获取交易HASH的签名，这里用同步方式
+        byte[] rawTxHash = abiTx.calcRawTransactionHash(rawTransaction);
+        String signatureStr =
+                signTxImpl.requestForSign(
+                        rawTxHash, bcosClientWrapper.getTxCryptoSuite().getCryptoTypeConfig());
+        SignatureResult signature = decodeSignatureString(signatureStr);
+        // 产生带有签名的交易
+        byte[] signedTransaction =
+                abiTx.encodeRawTransactionWithSignature(rawTransaction, signature);
+        System.out.println("3:signedTransaction: " + new String(Hex.encode(signedTransaction)));
+        // 发送交易
+        TransactionReceipt receipt = txPusher.push(Hex.toHexString(signedTransaction));
+        TransactionResponse response = decodeReceipt(receipt, abiTx);
+        return response;
     }
 
-    public static void main(String[] args) throws Exception {
-        // TODO Auto-generated method stub
+    /**
+     * 异步发送Transaction，
+     *
+     * @param chainId 链id
+     * @param BasicAbiTransaction 交易数据封装对象
+     * @param ISignTransaction signTxImpl 外部签名服务的实现
+     * @param TransactionCallback 最终异步上链完成后的交易结果
+     * @return *
+     */
+    public void sendTransactionAsync(
+            int chainId,
+            BasicAbiTransaction abiTx,
+            ISignTransaction signTxImpl,
+            TransactionCallback txCallback)
+            throws ABICodecException, JsonProcessingException, TransactionException, IOException {
+        // 创建RawTransaction
 
-        LegoTransaction lt = new LegoTransaction();
-        lt.init();
-        // lt.testTx();
-        lt.testTxMaker();
-        lt.testCall();
-        lt.finish();
+        RawTransaction rawTransaction =
+                abiTx.makeMethodRawTransaction(
+                        bcosClientWrapper.getClient(),
+                        chainId,
+                        bcosClientWrapper.getClient().getGroupId());
+        System.out.println("1:getRawTransaction: " + rawTransaction.getData());
+        SignedTxCallback afterSignedTxCallback =
+                new SignedTxCallback(
+                        bcosClientWrapper.getClient(), abiTx, rawTransaction, txCallback);
+        // 请求签名服务，获取交易HASH的签名
+        byte[] rawTxHash = abiTx.calcRawTransactionHash(rawTransaction);
+        signTxImpl.requestForSignAsync(
+                rawTxHash,
+                bcosClientWrapper.getTxCryptoSuite().getCryptoTypeConfig(),
+                afterSignedTxCallback);
     }
 }
