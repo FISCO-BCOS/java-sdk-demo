@@ -26,11 +26,11 @@ public class KeyToolSignTransaction implements ISignTransaction {
 	
 	// ****纯外部实现，这里比如是个http,rpc接口什么的
     // 这里的实现是调用了java-sdk签名接口，可以一次对接成功
-    public String signData(byte[] msgforSign,int crytoType) {
+    public String signData(byte[] dataToSign,int crytoType) {
     
         CryptoKeyPair cryptoKeyPair = cryptoSuite.getCryptoKeyPair();
         //这里cryptoSuite的实现已经自动适配国密和ECDSA，不需要用crytoType了
-        SignatureResult signatureResult = cryptoSuite.sign(msgforSign, cryptoKeyPair);
+        SignatureResult signatureResult = cryptoSuite.sign(dataToSign, cryptoKeyPair);
         System.out.println("crypto type:"+crytoType+",signData -> signature:" + signatureResult.convertToString());
         return signatureResult.convertToString();
     }
@@ -42,9 +42,9 @@ public class KeyToolSignTransaction implements ISignTransaction {
 	}
 
 	/*模拟异步调用，demo代码比较简单，就本地直接同步回调了，可以改成启动一个签名线程*/
-	public void requestForSignAsync(byte[] rawTxHash,int crytotype, ISignedTransactionCallback callback) {
+	public void requestForSignAsync(byte[] dataToSign,int crytotype, ISignedTransactionCallback callback) {
 		
-		String signatureStr = requestForSign(rawTxHash,crytotype);
+		String signatureStr = requestForSign(dataToSign,crytotype);
 		if (callback != null) {
 			callback.handleSignedTransaction(signatureStr);
 		}

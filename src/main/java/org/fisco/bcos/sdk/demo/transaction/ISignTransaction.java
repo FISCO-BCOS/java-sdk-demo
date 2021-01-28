@@ -8,6 +8,6 @@ public interface ISignTransaction {
 	/*异步的签名接口，传入回调，当远程调用签名服务时，可以采用异步回调风格，避免堵塞
 	 *  cryptoType: ECDSA=0,SM=1等,也可以约定其他，可修改类型以扩展更多参数
 	 * */
-	public void requestForSignAsync(byte[] rawTxHash,int cryptoType,ISignedTransactionCallback callback);
+	public void requestForSignAsync(byte[] dateToSign,int cryptoType,ISignedTransactionCallback callback);
 
 }
