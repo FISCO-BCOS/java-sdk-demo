@@ -1,8 +1,9 @@
 package org.fisco.bcos.sdk.demo.perf.hsm;
 
 import com.webank.wedpr.crypto.hsm.sdf.AlgorithmType;
-import com.webank.wedpr.crypto.hsm.sdf.SDFCrypto;
+import com.webank.wedpr.crypto.hsm.sdf.SDF;
 import com.webank.wedpr.crypto.hsm.sdf.SDFCryptoResult;
+import org.fisco.bcos.sdk.crypto.keypair.CryptoKeyPair;
 import org.fisco.bcos.sdk.crypto.keypair.SDFSM2KeyPair;
 import org.fisco.bcos.sdk.crypto.keypair.SM2KeyPair;
 import org.fisco.bcos.sdk.crypto.signature.SDFSM2Signature;
@@ -55,10 +56,7 @@ public class SDFtest {
             0x32
         };
 
-
-        SDFCrypto crypto = new SDFCrypto();
-        SDFCryptoResult hashResult =
-                crypto.Hash(null, AlgorithmType.SM3, Hex.toHexString(bHashData), 64);
+        SDFCryptoResult hashResult = SDF.Hash(null, AlgorithmType.SM3, Hex.toHexString(bHashData));
         String stdResult = Hex.toHexString(bHashStdResult);
         System.out.println("*********Hash*********");
         if (hashResult.getSdfErrorMessage() != null) {
@@ -77,9 +75,8 @@ public class SDFtest {
         System.out.println(sdfkp.getHexPrivateKey());
         System.out.println(sdfkp.getHexPublicKey());
 
-
         System.out.println("*********Sign*********");
-        SignatureResult signResult = sdfSigner.sign(hashResult.getHash(),sdfkp);
+        SignatureResult signResult = sdfSigner.sign(hashResult.getHash(), sdfkp);
         System.out.println(signResult.convertToString());
         boolean result =
                 SM2Signature.verifyMessage(
@@ -97,20 +94,35 @@ public class SDFtest {
         SM2Signature signer = new SM2Signature();
         SignatureResult swSignResult = signer.sign(hashResult.getHash(), kp);
 
-        boolean sdfSwResult = sdfSigner.verify(sdfkp.getHexPublicKey(),hashResult.getHash(),signResult.convertToString());
+        boolean sdfSwResult =
+                sdfSigner.verify(
+                        sdfkp.getHexPublicKey(),
+                        hashResult.getHash(),
+                        signResult.convertToString());
         if (sdfSwResult) {
             System.out.println("Hsm can verify sw");
         } else {
             System.out.println("Hsm can not verify sw");
         }
 
-
         SignatureResult sdfSignResult = sdfSigner.sign(hashResult.getHash(), kp);
-        boolean sdfSdfResult = sdfSigner.verify(sdfkp.getHexPublicKey(),hashResult.getHash(),sdfSignResult.convertToString());
+        boolean sdfSdfResult =
+                sdfSigner.verify(
+                        sdfkp.getHexPublicKey(),
+                        hashResult.getHash(),
+                        sdfSignResult.convertToString());
         if (sdfSwResult) {
             System.out.println("Hsm can verify hsm");
         } else {
             System.out.println("Hsm can not verify hsm");
         }
+
+        System.out.println("*********Internal Sign*********");
+        CryptoKeyPair internalKey = new SDFSM2KeyPair().createKeyPair(1, "123456");
+        SignatureResult internalKeySignature = sdfSigner.sign(hashResult.getHash(), internalKey);
+        System.out.println(internalKeySignature.convertToString());
+
+        // System.out.println("*********Internal Verify*********");
+
     }
 }
