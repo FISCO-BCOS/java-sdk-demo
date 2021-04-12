@@ -71,58 +71,50 @@ public class SDFtest {
 
         System.out.println("*********KeyGen*********");
         SDFSM2Signature sdfSigner = new SDFSM2Signature();
-        SDFSM2KeyPair sdfkp = new SDFSM2KeyPair();
+        CryptoKeyPair sdfkp = new SDFSM2KeyPair().generateKeyPair();
+
         System.out.println(sdfkp.getHexPrivateKey());
         System.out.println(sdfkp.getHexPublicKey());
 
-        System.out.println("*********Sign*********");
-        SignatureResult signResult = sdfSigner.sign(hashResult.getHash(), sdfkp);
-        System.out.println(signResult.convertToString());
+        System.out.println("*********SDF Sign*********");
+        SignatureResult signSDFResult = sdfSigner.sign(hashResult.getHash(), sdfkp);
+        System.out.println(signSDFResult.convertToString());
+
+
+        System.out.println("*********SW Verify SDF Sign*********");
         boolean result =
                 SM2Signature.verifyMessage(
-                        sdfkp.getHexPrivateKey(),
+                        sdfkp.getHexPublicKey(),
                         hashResult.getHash(),
-                        signResult.convertToString());
+                        signSDFResult.convertToString());
         if (result) {
             System.out.println("Sw can verify hsm");
         } else {
             System.out.println("Sw can not verify hsm");
         }
 
-        System.out.println("*********Verify*********");
-        SM2KeyPair kp = new SM2KeyPair();
-        SM2Signature signer = new SM2Signature();
-        SignatureResult swSignResult = signer.sign(hashResult.getHash(), kp);
-
-        boolean sdfSwResult =
+        System.out.println("*********SDF Verify SDF Sign*********");
+        boolean sdfSDFResult =
                 sdfSigner.verify(
                         sdfkp.getHexPublicKey(),
                         hashResult.getHash(),
-                        signResult.convertToString());
-        if (sdfSwResult) {
-            System.out.println("Hsm can verify sw");
-        } else {
-            System.out.println("Hsm can not verify sw");
-        }
-
-        SignatureResult sdfSignResult = sdfSigner.sign(hashResult.getHash(), kp);
-        boolean sdfSdfResult =
-                sdfSigner.verify(
-                        sdfkp.getHexPublicKey(),
-                        hashResult.getHash(),
-                        sdfSignResult.convertToString());
-        if (sdfSwResult) {
+                        signSDFResult.convertToString());
+        if (sdfSDFResult) {
             System.out.println("Hsm can verify hsm");
         } else {
             System.out.println("Hsm can not verify hsm");
         }
 
-        System.out.println("*********Internal Sign*********");
-        CryptoKeyPair internalKey = new SDFSM2KeyPair().createKeyPair(1, "123456");
-        SignatureResult internalKeySignature = sdfSigner.sign(hashResult.getHash(), internalKey);
-        System.out.println(internalKeySignature.convertToString());
-
-        // System.out.println("*********Internal Verify*********");
+        System.out.println("*********SW sign and SDF Verify SW Sign*********");
+        CryptoKeyPair kp = new SM2KeyPair().generateKeyPair();
+        SignatureResult swSignature = new SM2Signature().sign(hashResult.getHash(),kp);
+        System.out.println("sw signature: " + swSignature.convertToString());
+        boolean sdfSwResult = sdfSigner.verify(kp.getHexPublicKey(),hashResult.getHash(),swSignature.convertToString());
+        if (sdfSwResult) {
+            System.out.println("Hsm can verify sw");
+        } else {
+            System.out.println("Hsm can not verify sw");
+        }
 
     }
 }
