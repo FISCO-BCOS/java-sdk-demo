@@ -1,8 +1,8 @@
-package org.fisco.bcos.sdk.demo.perf.hsm;
+package org.fisco.bcos.sdk.demo.hsm;
 
-import com.webank.wedpr.crypto.hsm.sdf.AlgorithmType;
-import com.webank.wedpr.crypto.hsm.sdf.SDF;
-import com.webank.wedpr.crypto.hsm.sdf.SDFCryptoResult;
+import com.webank.blockchain.hsm.crypto.sdf.AlgorithmType;
+import com.webank.blockchain.hsm.crypto.sdf.SDF;
+import com.webank.blockchain.hsm.crypto.sdf.SDFCryptoResult;
 import org.fisco.bcos.sdk.crypto.keypair.CryptoKeyPair;
 import org.fisco.bcos.sdk.crypto.keypair.SDFSM2KeyPair;
 import org.fisco.bcos.sdk.crypto.keypair.SM2KeyPair;
