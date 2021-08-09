@@ -34,14 +34,14 @@ public class ParallelOkPerf {
         System.out.println(" Usage:");
         System.out.println("===== ParallelOk test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupID] [add] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [add] [count] [tps] [file].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupID] [transfer] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [transfer] [count] [tps] [file].");
         System.out.println("===== DagTransafer test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupID] [add] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupId] [add] [count] [tps] [file].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupID] [transfer] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupId] [transfer] [count] [tps] [file].");
     }
 
     public static void main(String[] args)
@@ -58,7 +58,7 @@ public class ParallelOkPerf {
                 return;
             }
             String perfType = args[0];
-            Integer groupId = Integer.valueOf(args[1]);
+            String groupId = args[1];
             String command = args[2];
             Integer count = Integer.valueOf(args[3]);
             Integer qps = Integer.valueOf(args[4]);
@@ -66,7 +66,7 @@ public class ParallelOkPerf {
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
-            client = sdk.getClient(Integer.valueOf(groupId));
+            client = sdk.getClientByGroupID(groupId);
             dagUserInfo.setFile(userFile);
             ThreadPoolService threadPoolService =
                     new ThreadPoolService(
@@ -91,7 +91,7 @@ public class ParallelOkPerf {
     }
 
     public static void parallelOkPerf(
-            Integer groupId,
+            String groupId,
             String command,
             Integer count,
             Integer qps,
@@ -140,7 +140,7 @@ public class ParallelOkPerf {
     }
 
     public static void dagTransferPerf(
-            Integer groupId,
+            String groupId,
             String command,
             Integer count,
             Integer qps,

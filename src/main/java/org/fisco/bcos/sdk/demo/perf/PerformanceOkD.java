@@ -55,7 +55,7 @@ public class PerformanceOkD {
             }
             Integer count = Integer.valueOf(args[0]);
             Integer qps = Integer.valueOf(args[1]);
-            Integer groupId = Integer.valueOf(args[2]);
+            String groupId = args[2];
             System.out.println(
                     "====== PerformanceOkD trans, count: "
                             + count
@@ -68,7 +68,7 @@ public class PerformanceOkD {
             BcosSDK sdk = BcosSDK.build(configFile);
 
             // build the client
-            Client client = sdk.getClient(groupId);
+            Client client = sdk.getClientByGroupID(groupId);
 
             // deploy the HelloWorld
             System.out.println("====== Deploy OkD ====== ");
@@ -107,7 +107,7 @@ public class PerformanceOkD {
                                                     callback);
                                         } catch (Exception e) {
                                             TransactionReceipt receipt = new TransactionReceipt();
-                                            receipt.setStatus("-1");
+                                            receipt.setStatus(-1);
                                             callback.onResponse(receipt);
                                             logger.info(e.getMessage());
                                         }

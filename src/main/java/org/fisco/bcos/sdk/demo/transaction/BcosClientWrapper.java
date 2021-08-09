@@ -15,13 +15,13 @@ public class BcosClientWrapper {
     private String binpath = "bin/main/bin";
     private Client client;
     private CryptoSuite txCryptoSuite;
-    private int groupId;
+    private String groupId;
 
-    public int getGroupId() {
+    public String getGroupId() {
         return groupId;
     }
 
-    public void setGroupId(int groupId) {
+    public void setGroupId(String groupId) {
         this.groupId = groupId;
     }
 
@@ -76,14 +76,14 @@ public class BcosClientWrapper {
         this.transactionProcessor = transactionProcessor;
     }
 
-    public void init(int groupId) throws Exception {
+    public void init(String groupId) throws Exception {
         // 初始化BcosSDK对象
         // String realPath =BcosClientWrapper.class.getClassLoader().getResource("").getFile();
         // System.out.println("运行目录: " + realPath);
         ApplicationContext context =
                 new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
         bcosSDK = context.getBean(BcosSDK.class);
-        client = bcosSDK.getClient(Integer.valueOf(groupId));
+        client = bcosSDK.getClientByGroupID(groupId);
 
         String eccPrivateKeySample =
                 "28018238ac7eec853401dfc3f31133330e78ac27a2f53481270083abb1a126f9";

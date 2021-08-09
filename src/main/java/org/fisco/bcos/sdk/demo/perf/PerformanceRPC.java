@@ -1,7 +1,6 @@
 package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
-import java.math.BigInteger;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,10 +40,10 @@ public class PerformanceRPC {
 
             Integer count = Integer.parseInt(args[0]);
             Integer qps = Integer.parseInt(args[1]);
-            int groupId = Integer.valueOf(args[2]);
+            String groupId = args[2];
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
-            Client client = sdk.getClient(groupId);
+            Client client = sdk.getClientByGroupID(groupId);
 
             System.out.println("Start test...");
             System.out.println(
@@ -89,12 +88,6 @@ public class PerformanceRPC {
                                                 case 2:
                                                     response = client.getSyncStatus();
                                                     break;
-                                                    // 4. call getConsensusStatus
-                                                    // case 3:
-                                                    //    response =
-                                                    // web3j.getConsensusStatus().send();
-                                                    //    break;
-                                                    // 5. call getSealerList
                                                 case 4:
                                                     response = client.getSealerList();
                                                     break;
@@ -102,27 +95,18 @@ public class PerformanceRPC {
                                                 case 5:
                                                     response = client.getTotalTransactionCount();
                                                     break;
-                                                    // 7. call getObserverList
+                                                    // . call getObserverList
                                                 case 6:
                                                     response = client.getObserverList();
                                                     break;
-                                                    // 8. call getBlockHashByNumber
-                                                case 7:
-                                                    BigInteger blockNumber =
-                                                            client.getBlockNumber()
-                                                                    .getBlockNumber();
-                                                    response =
-                                                            client.getBlockHashByNumber(
-                                                                    blockNumber);
-                                                    break;
                                                     // 9. call getSystemConfigByKey
-                                                case 8:
+                                                case 7:
                                                     response =
                                                             client.getSystemConfigByKey(
                                                                     "tx_count_limit");
                                                     break;
                                                     // 10. call getPbftView
-                                                case 9:
+                                                case 8:
                                                     response = client.getPbftView();
                                                     break;
                                                 default:

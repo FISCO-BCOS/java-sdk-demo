@@ -161,7 +161,7 @@ public class ParallelOkDemo {
                                                 "addUser failed, error info: {}", e.getMessage());
                                         sendFailed.incrementAndGet();
                                         TransactionReceipt receipt = new TransactionReceipt();
-                                        receipt.setStatus("-1");
+                                        receipt.setStatus(-1);
                                         receipt.setMessage(
                                                 "userAdd failed, error info: " + e.getMessage());
                                         callback.onResponse(receipt);
@@ -278,7 +278,7 @@ public class ParallelOkDemo {
                                                 "call transfer failed, error info: {}",
                                                 e.getMessage());
                                         TransactionReceipt receipt = new TransactionReceipt();
-                                        receipt.setStatus("-1");
+                                        receipt.setStatus(-1);
                                         receipt.setMessage(
                                                 "call transfer failed, error info: "
                                                         + e.getMessage());
