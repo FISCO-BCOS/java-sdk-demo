@@ -26,17 +26,19 @@ import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
 public class DagTransfer extends Contract {
     public static final String[] BINARY_ARRAY = {};
 
-    public static final String BINARY = String.join("", BINARY_ARRAY);
+    public static final String BINARY =
+            org.fisco.bcos.sdk.utils.StringUtils.joinAll("", BINARY_ARRAY);
 
     public static final String[] SM_BINARY_ARRAY = {};
 
-    public static final String SM_BINARY = String.join("", SM_BINARY_ARRAY);
+    public static final String SM_BINARY =
+            org.fisco.bcos.sdk.utils.StringUtils.joinAll("", SM_BINARY_ARRAY);
 
     public static final String[] ABI_ARRAY = {
         "[{\"constant\":false,\"inputs\":[{\"name\":\"user_a\",\"type\":\"string\"},{\"name\":\"user_b\",\"type\":\"string\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"userTransfer\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"user\",\"type\":\"string\"}],\"name\":\"userBalance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"},{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"user\",\"type\":\"string\"},{\"name\":\"balance\",\"type\":\"uint256\"}],\"name\":\"userAdd\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"user\",\"type\":\"string\"},{\"name\":\"balance\",\"type\":\"uint256\"}],\"name\":\"userSave\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"user\",\"type\":\"string\"},{\"name\":\"balance\",\"type\":\"uint256\"}],\"name\":\"userDraw\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
     };
 
-    public static final String ABI = String.join("", ABI_ARRAY);
+    public static final String ABI = org.fisco.bcos.sdk.utils.StringUtils.joinAll("", ABI_ARRAY);
 
     public static final String FUNC_USERTRANSFER = "userTransfer";
 
@@ -317,6 +319,6 @@ public class DagTransfer extends Contract {
     public static DagTransfer deploy(Client client, CryptoKeyPair credential)
             throws ContractException {
         return deploy(
-                DagTransfer.class, client, credential, getBinary(client.getCryptoSuite()), "");
+                DagTransfer.class, client, credential, getBinary(client.getCryptoSuite()), null);
     }
 }
