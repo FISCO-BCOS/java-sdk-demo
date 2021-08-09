@@ -14,6 +14,7 @@ import org.fisco.bcos.sdk.demo.contract.Curve25519VRFVerifyTest;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
 import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.fisco.bcos.sdk.model.JsonRpcResponse;
+import org.fisco.bcos.sdk.model.TransactionReceipt;
 import org.fisco.bcos.sdk.utils.ThreadPoolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,11 +89,14 @@ public class PerformanceVRFVerify {
                                                     vrfInterface.generateVRFProof(
                                                             vrfKeyPair.getVrfPrivateKey(), input);
                                             startTime = System.nanoTime();
-                                            Tuple2<Boolean, BigInteger> result =
+                                            TransactionReceipt receipt =
                                                     curve25519VRFVerifyTest.curve25519VRFVerify(
                                                             input,
                                                             vrfKeyPair.getVrfPublicKey(),
                                                             vrfProof);
+                                            Tuple2<Boolean, BigInteger> result =
+                                                    curve25519VRFVerifyTest
+                                                            .getCurve25519VRFVerifyOutput(receipt);
                                             Long cost = System.nanoTime() - startTime;
                                             if (result.getValue1() == true) {
                                                 collector.onRpcMessage(response, cost / 1000000);
