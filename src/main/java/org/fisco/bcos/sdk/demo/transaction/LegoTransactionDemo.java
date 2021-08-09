@@ -63,7 +63,8 @@ public class LegoTransactionDemo {
         BasicAbiTransaction abiTx = makeHelloWorldDeployTest();
         ISignTransaction signTxImpl =
                 new KeyToolSignTransaction(lt.bcosClientWrapper.getTxCryptoSuite());
-        TransactionResponse response = lt.sendTransactionAndGetResponse(1, abiTx, signTxImpl);
+        TransactionResponse response =
+                lt.sendTransactionAndGetResponse("test_chain", abiTx, signTxImpl);
         System.out.println("deploy result : " + response.getContractAddress());
         sampleContractAddress = response.getContractAddress();
     }
@@ -78,7 +79,8 @@ public class LegoTransactionDemo {
         ISignTransaction signTxImpl =
                 new KeyToolSignTransaction(lt.bcosClientWrapper.getTxCryptoSuite());
         // 发送后同步得到结果
-        TransactionResponse response = lt.sendTransactionAndGetResponse(1, abiTx, signTxImpl);
+        TransactionResponse response =
+                lt.sendTransactionAndGetResponse("test_chain", abiTx, signTxImpl);
         return response;
     }
 
@@ -92,7 +94,7 @@ public class LegoTransactionDemo {
         ISignTransaction signTxImpl =
                 new KeyToolSignTransaction(lt.bcosClientWrapper.getTxCryptoSuite());
         // 用异步方式发送
-        lt.sendTransactionAsync(1, abiTx, signTxImpl, new TestCallback(abiTx));
+        lt.sendTransactionAsync("test_chain", abiTx, signTxImpl, new TestCallback(abiTx));
     }
 
     // 异步交易回调

@@ -14,7 +14,7 @@ public class AssembleTransactionDemo {
 
     public void init() throws Exception {
         bcosClientWrapper = new BcosClientWrapper();
-        bcosClientWrapper.init(1);
+        bcosClientWrapper.init("test_group");
     }
 
     String contractAddress = "0x31231c2abad03b071b3440268f28194029dad743";

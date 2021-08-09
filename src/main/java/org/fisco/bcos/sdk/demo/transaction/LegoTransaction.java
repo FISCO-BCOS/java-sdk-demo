@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.util.encoders.Hex;
 import org.fisco.bcos.sdk.abi.ABICodecException;
 import org.fisco.bcos.sdk.client.Client;
+import org.fisco.bcos.sdk.client.protocol.model.TransactionData;
 import org.fisco.bcos.sdk.crypto.signature.ECDSASignatureResult;
 import org.fisco.bcos.sdk.crypto.signature.SM2SignatureResult;
 import org.fisco.bcos.sdk.crypto.signature.SignatureResult;
@@ -15,7 +16,6 @@ import org.fisco.bcos.sdk.transaction.codec.decode.TransactionDecoderInterface;
 import org.fisco.bcos.sdk.transaction.codec.decode.TransactionDecoderService;
 import org.fisco.bcos.sdk.transaction.model.dto.TransactionResponse;
 import org.fisco.bcos.sdk.transaction.model.exception.TransactionException;
-import org.fisco.bcos.sdk.transaction.model.po.RawTransaction;
 import org.fisco.bcos.sdk.transaction.pusher.TransactionPusherInterface;
 import org.fisco.bcos.sdk.transaction.pusher.TransactionPusherService;
 
@@ -25,29 +25,29 @@ public class LegoTransaction {
 
     public void init() throws Exception {
         bcosClientWrapper = new BcosClientWrapper();
-        bcosClientWrapper.init(1);
+        bcosClientWrapper.init("test_group");
         this.txPusher = new TransactionPusherService(bcosClientWrapper.getClient());
     }
 
     public class SignedTxCallback implements ISignedTransactionCallback {
 
         Client client;
-        RawTransaction rawTransaction;
+        TransactionData rawTransaction;
         TransactionResponse response;
         BasicAbiTransaction abiTx;
         TransactionCallback txCallback;
         /**
          * 签名结果回调的实现
          *
-         * @param client BcosSDK里的client
-         * @param RawTransaction 缓存交易数据，用于签名后发送交易
-         * @param TransactionCallback 当异步发送交易时，链上返回后给调用者的回调
+         * @param client_ BcosSDK里的client
+         * @param rawTransaction_ 缓存交易数据，用于签名后发送交易
+         * @param callback_ 当异步发送交易时，链上返回后给调用者的回调
          * @return *
          */
         public SignedTxCallback(
                 Client client_,
                 BasicAbiTransaction abiTx_,
-                RawTransaction rawTransaction_,
+                TransactionData rawTransaction_,
                 TransactionCallback callback_) {
             client = client_;
             abiTx = abiTx_;
@@ -111,14 +111,14 @@ public class LegoTransaction {
      * 同步发送交易
      *
      * @param chainId 链id
-     * @param BasicAbiTransaction 交易数据封装对象
-     * @param ISignTransaction signTxImpl 外部签名服务的实现
+     * @param abiTx 交易数据封装对象
+     * @param signTxImpl signTxImpl 外部签名服务的实现
      * @return *
      */
     public TransactionResponse sendTransactionAndGetResponse(
-            int chainId, BasicAbiTransaction abiTx, ISignTransaction signTxImpl)
+            String chainId, BasicAbiTransaction abiTx, ISignTransaction signTxImpl)
             throws ABICodecException, JsonProcessingException, TransactionException, IOException {
-        RawTransaction rawTransaction =
+        TransactionData rawTransaction =
                 abiTx.makeRawTransaction(
                         bcosClientWrapper.getClient(),
                         chainId,
@@ -143,25 +143,24 @@ public class LegoTransaction {
      * 异步发送Transaction，
      *
      * @param chainId 链id
-     * @param BasicAbiTransaction 交易数据封装对象
-     * @param ISignTransaction signTxImpl 外部签名服务的实现
-     * @param TransactionCallback 最终异步上链完成后的交易结果
+     * @param abiTx 交易数据封装对象
+     * @param signTxImpl signTxImpl 外部签名服务的实现
+     * @param txCallback 最终异步上链完成后的交易结果
      * @return *
      */
     public void sendTransactionAsync(
-            int chainId,
+            String chainId,
             BasicAbiTransaction abiTx,
             ISignTransaction signTxImpl,
             TransactionCallback txCallback)
             throws ABICodecException, JsonProcessingException, TransactionException, IOException {
         // 创建RawTransaction
 
-        RawTransaction rawTransaction =
+        TransactionData rawTransaction =
                 abiTx.makeMethodRawTransaction(
                         bcosClientWrapper.getClient(),
                         chainId,
                         bcosClientWrapper.getClient().getGroupId());
-        System.out.println("1:getRawTransaction: " + rawTransaction.getData());
         SignedTxCallback afterSignedTxCallback =
                 new SignedTxCallback(
                         bcosClientWrapper.getClient(), abiTx, rawTransaction, txCallback);

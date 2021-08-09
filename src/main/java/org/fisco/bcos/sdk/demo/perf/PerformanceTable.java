@@ -66,7 +66,7 @@ public class PerformanceTable {
             String command = args[0];
             Integer count = Integer.valueOf(args[1]);
             Integer qps = Integer.valueOf(args[2]);
-            Integer groupId = Integer.valueOf(args[3]);
+            String groupId = args[3];
             System.out.println(
                     "====== PerformanceTable "
                             + command
@@ -81,7 +81,7 @@ public class PerformanceTable {
             BcosSDK sdk = BcosSDK.build(configFile);
 
             // build the client
-            Client client = sdk.getClient(groupId);
+            Client client = sdk.getClientByGroupID(groupId);
 
             // deploy the HelloWorld
             System.out.println("====== Deploy TableTest ====== ");
@@ -175,7 +175,7 @@ public class PerformanceTable {
     private static void sendTransactionException(
             Exception e, String command, PerformanceCallback callback) {
         TransactionReceipt receipt = new TransactionReceipt();
-        receipt.setStatus("-1");
+        receipt.setStatus(-1);
         callback.onResponse(receipt);
         logger.info("call command {} failed, error info: {}", command, e.getMessage());
     }
@@ -225,11 +225,11 @@ public class PerformanceTable {
             tableTest.select("fruit" + l1 % 100);
             Long time_after = System.currentTimeMillis();
             TransactionReceipt receipt = new TransactionReceipt();
-            receipt.setStatus("0x0");
+            receipt.setStatus(0x0);
             collector.onMessage(receipt, time_after - time_before);
         } catch (Exception e) {
             TransactionReceipt receipt = new TransactionReceipt();
-            receipt.setStatus("-1");
+            receipt.setStatus(-1);
             collector.onMessage(receipt, (long) (0));
             logger.error("query error: {}", e);
         }

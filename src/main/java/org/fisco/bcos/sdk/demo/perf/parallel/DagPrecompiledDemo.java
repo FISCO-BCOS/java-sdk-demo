@@ -40,7 +40,7 @@ public class DagPrecompiledDemo {
     private final PerformanceCollector collector;
     private final ThreadPoolService threadPoolService;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private static final String DAG_TRANSFER_ADDR = "0x0000000000000000000000000000000000005002";
+    private static final String DAG_TRANSFER_ADDR = "0x100c";
 
     public DagPrecompiledDemo(
             Client client, DagUserInfo dagUserInfo, ThreadPoolService threadPoolService) {
@@ -102,7 +102,7 @@ public class DagPrecompiledDemo {
                                         }
                                     } catch (Exception e) {
                                         TransactionReceipt receipt = new TransactionReceipt();
-                                        receipt.setStatus("-1");
+                                        receipt.setStatus(-1);
                                         callback.onResponse(receipt);
                                         logger.error(
                                                 "dagTransfer add failed, error info: "
@@ -231,7 +231,7 @@ public class DagPrecompiledDemo {
                                                 "userTransfer failed, error info: {}",
                                                 e.getMessage());
                                         TransactionReceipt receipt = new TransactionReceipt();
-                                        receipt.setStatus("-1");
+                                        receipt.setStatus(-1);
                                         receipt.setMessage(
                                                 "userTransfer failed, error info: "
                                                         + e.getMessage());
