@@ -40,7 +40,7 @@ public class DagPrecompiledDemo {
     private final PerformanceCollector collector;
     private final ThreadPoolService threadPoolService;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private static final String DAG_TRANSFER_ADDR = "0x100c";
+    private static final String DAG_TRANSFER_ADDR = "0x000000000000000000000000000000000000100c";
 
     public DagPrecompiledDemo(
             Client client, DagUserInfo dagUserInfo, ThreadPoolService threadPoolService) {
