@@ -82,6 +82,9 @@ public class PerformanceTable {
 
             // build the client
             Client client = sdk.getClientByGroupID(groupId);
+            if (client == null) {
+                System.out.println("client is null");
+            }
 
             // deploy the HelloWorld
             System.out.println("====== Deploy TableTest ====== ");
@@ -207,10 +210,9 @@ public class PerformanceTable {
     private static void remove(TableTest tableTest, PerformanceCollector collector) {
         PerformanceCallback callback = createCallback(collector);
         try {
-            long _id = getNextID();
             Random r = new Random();
             long l1 = r.nextLong();
-            tableTest.remove("fruit" + l1 % 100, BigInteger.valueOf(_id), callback);
+            tableTest.remove("fruit" + l1 % 100, callback);
 
         } catch (Exception e) {
             sendTransactionException(e, "remove", callback);

@@ -26,8 +26,8 @@ contract TableTest {
         Table table = tableFactory.openTable(TABLE_NAME);
 
         Condition condition = table.newCondition();
-
-        Entries entries = table.select(name, condition);
+        condition.EQ("name", name);
+        Entries entries = table.select(condition);
         string[] memory user_name_bytes_list = new string[](
             uint256(entries.size())
         );
@@ -58,7 +58,7 @@ contract TableTest {
         entry.set("item_id", item_id);
         entry.set("item_name", item_name);
 
-        int256 count = table.insert(name, entry);
+        int256 count = table.insert(entry);
         emit InsertResult(count);
 
         return count;
@@ -71,26 +71,25 @@ contract TableTest {
         Table table = tableFactory.openTable(TABLE_NAME);
 
         Entry entry = table.newEntry();
+        entry.set("item_id", item_id);
         entry.set("item_name", item_name);
 
         Condition condition = table.newCondition();
         condition.EQ("name", name);
-        condition.EQ("item_id", item_id);
 
-        int256 count = table.update(name, entry, condition);
+        int256 count = table.update(entry, condition);
         emit UpdateResult(count);
 
         return count;
     }
     //remove records
-    function remove(string memory name, int256 item_id) public returns (int256) {
+    function remove(string memory name) public returns (int256) {
         Table table = tableFactory.openTable(TABLE_NAME);
 
         Condition condition = table.newCondition();
         condition.EQ("name", name);
-        condition.EQ("item_id", item_id);
 
-        int256 count = table.remove(name, condition);
+        int256 count = table.remove(condition);
         emit RemoveResult(count);
 
         return count;
