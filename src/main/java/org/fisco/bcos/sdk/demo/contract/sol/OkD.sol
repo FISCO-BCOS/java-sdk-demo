@@ -1,3 +1,4 @@
+pragma solidity ^0.4.25;
 import "./Table.sol";
 
 contract OkD{
@@ -7,12 +8,12 @@ contract OkD{
         address account;
         int balance;
     }
-    
+
     Account from;
     Account to;
 
-    function OkD(){
-        
+    constructor(){
+
         from.account=0x1;
         from.balance=10000000000;
         to.account=0x2;
@@ -27,7 +28,7 @@ contract OkD{
         entry.set("from_balance", "10000000000");
         entry.set("to_accout", "0x2");
         entry.set("to_balance", "0");
-
+        table.insert(entry);
     }
     function get()constant returns(int){
         return to.balance;
@@ -37,8 +38,8 @@ contract OkD{
         if (from.balance < num || to.balance + num < to.balance)
             return; // Deny overflow
 
-    	from.balance = from.balance - num;
-    	to.balance += num;
+        from.balance = from.balance - num;
+        to.balance += num;
 
         TableFactory tf = TableFactory(0x1001);
         Table table = tf.openTable("t_ok");
@@ -47,11 +48,7 @@ contract OkD{
         entry.set("from_balance", from.balance);
         entry.set("to_accout", "0x2");
         entry.set("to_balance", to.balance);
-        int count = table.insert(from_accout, entry);
+        int count = table.insert(entry);
         insertResult(count);
-        
-    	// log.push(Translog("20170413",from.account,to.account,num));
-
     }
-
 }

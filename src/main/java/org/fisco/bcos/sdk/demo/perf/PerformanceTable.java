@@ -28,6 +28,7 @@ import org.fisco.bcos.sdk.demo.perf.callback.PerformanceCallback;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
 import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
+import org.fisco.bcos.sdk.network.NetworkException;
 import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.utils.ThreadPoolService;
 import org.slf4j.Logger;
@@ -81,7 +82,7 @@ public class PerformanceTable {
             BcosSDK sdk = BcosSDK.build(configFile);
 
             // build the client
-            Client client = sdk.getClientByGroupID(groupId);
+            Client client = sdk.getClient(groupId);
             if (client == null) {
                 System.out.println("client is null");
             }
@@ -135,7 +136,7 @@ public class PerformanceTable {
             }
             threadPoolService.stop();
             System.exit(0);
-        } catch (BcosSDKException | ContractException | InterruptedException e) {
+        } catch (BcosSDKException | ContractException | InterruptedException | NetworkException e) {
             System.out.println(
                     "====== PerformanceTable test failed, error message: " + e.getMessage());
             System.exit(0);

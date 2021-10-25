@@ -4,16 +4,15 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.fisco.bcos.sdk.abi.FunctionReturnDecoder;
-import org.fisco.bcos.sdk.abi.TypeReference;
-import org.fisco.bcos.sdk.abi.datatypes.Function;
-import org.fisco.bcos.sdk.abi.datatypes.Type;
-import org.fisco.bcos.sdk.abi.datatypes.Utf8String;
-import org.fisco.bcos.sdk.abi.datatypes.generated.Uint256;
-import org.fisco.bcos.sdk.abi.datatypes.generated.tuples.generated.Tuple1;
-import org.fisco.bcos.sdk.abi.datatypes.generated.tuples.generated.Tuple2;
-import org.fisco.bcos.sdk.abi.datatypes.generated.tuples.generated.Tuple3;
 import org.fisco.bcos.sdk.client.Client;
+import org.fisco.bcos.sdk.codec.datatypes.Function;
+import org.fisco.bcos.sdk.codec.datatypes.Type;
+import org.fisco.bcos.sdk.codec.datatypes.TypeReference;
+import org.fisco.bcos.sdk.codec.datatypes.Utf8String;
+import org.fisco.bcos.sdk.codec.datatypes.generated.Uint256;
+import org.fisco.bcos.sdk.codec.datatypes.generated.tuples.generated.Tuple1;
+import org.fisco.bcos.sdk.codec.datatypes.generated.tuples.generated.Tuple2;
+import org.fisco.bcos.sdk.codec.datatypes.generated.tuples.generated.Tuple3;
 import org.fisco.bcos.sdk.contract.Contract;
 import org.fisco.bcos.sdk.crypto.CryptoSuite;
 import org.fisco.bcos.sdk.crypto.keypair.CryptoKeyPair;
@@ -58,14 +57,18 @@ public class DagTransfer extends Contract {
         return (cryptoSuite.getCryptoTypeConfig() == CryptoType.ECDSA_TYPE ? BINARY : SM_BINARY);
     }
 
+    public static String getABI() {
+        return ABI;
+    }
+
     public TransactionReceipt userTransfer(String user_a, String user_b, BigInteger amount) {
         final Function function =
                 new Function(
                         FUNC_USERTRANSFER,
                         Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user_a),
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user_b),
-                                new org.fisco.bcos.sdk.abi.datatypes.generated.Uint256(amount)),
+                                new Utf8String(user_a),
+                                new Utf8String(user_b),
+                                new Uint256(amount)),
                         Collections.<TypeReference<?>>emptyList());
         return executeTransaction(function);
     }
@@ -76,9 +79,9 @@ public class DagTransfer extends Contract {
                 new Function(
                         FUNC_USERTRANSFER,
                         Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user_a),
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user_b),
-                                new org.fisco.bcos.sdk.abi.datatypes.generated.Uint256(amount)),
+                                new Utf8String(user_a),
+                                new Utf8String(user_b),
+                                new Uint256(amount)),
                         Collections.<TypeReference<?>>emptyList());
         asyncExecuteTransaction(function, callback);
     }
@@ -89,9 +92,9 @@ public class DagTransfer extends Contract {
                 new Function(
                         FUNC_USERTRANSFER,
                         Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user_a),
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user_b),
-                                new org.fisco.bcos.sdk.abi.datatypes.generated.Uint256(amount)),
+                                new Utf8String(user_a),
+                                new Utf8String(user_b),
+                                new Uint256(amount)),
                         Collections.<TypeReference<?>>emptyList());
         return createSignedTransaction(function);
     }
@@ -107,7 +110,8 @@ public class DagTransfer extends Contract {
                                 new TypeReference<Utf8String>() {},
                                 new TypeReference<Utf8String>() {},
                                 new TypeReference<Uint256>() {}));
-        List<Type> results = FunctionReturnDecoder.decode(data, function.getOutputParameters());
+        List<Type> results =
+                this.functionReturnDecoder.decode(data, function.getOutputParameters());
         return new Tuple3<String, String, BigInteger>(
                 (String) results.get(0).getValue(),
                 (String) results.get(1).getValue(),
@@ -121,7 +125,8 @@ public class DagTransfer extends Contract {
                         FUNC_USERTRANSFER,
                         Arrays.<Type>asList(),
                         Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
-        List<Type> results = FunctionReturnDecoder.decode(data, function.getOutputParameters());
+        List<Type> results =
+                this.functionReturnDecoder.decode(data, function.getOutputParameters());
         return new Tuple1<BigInteger>((BigInteger) results.get(0).getValue());
     }
 
@@ -129,7 +134,7 @@ public class DagTransfer extends Contract {
         final Function function =
                 new Function(
                         FUNC_USERBALANCE,
-                        Arrays.<Type>asList(new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user)),
+                        Arrays.<Type>asList(new Utf8String(user)),
                         Arrays.<TypeReference<?>>asList(
                                 new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}));
         List<Type> results = executeCallWithMultipleValueReturn(function);
@@ -141,9 +146,7 @@ public class DagTransfer extends Contract {
         final Function function =
                 new Function(
                         FUNC_USERADD,
-                        Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user),
-                                new org.fisco.bcos.sdk.abi.datatypes.generated.Uint256(balance)),
+                        Arrays.<Type>asList(new Utf8String(user), new Uint256(balance)),
                         Collections.<TypeReference<?>>emptyList());
         return executeTransaction(function);
     }
@@ -152,9 +155,7 @@ public class DagTransfer extends Contract {
         final Function function =
                 new Function(
                         FUNC_USERADD,
-                        Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user),
-                                new org.fisco.bcos.sdk.abi.datatypes.generated.Uint256(balance)),
+                        Arrays.<Type>asList(new Utf8String(user), new Uint256(balance)),
                         Collections.<TypeReference<?>>emptyList());
         asyncExecuteTransaction(function, callback);
     }
@@ -163,9 +164,7 @@ public class DagTransfer extends Contract {
         final Function function =
                 new Function(
                         FUNC_USERADD,
-                        Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user),
-                                new org.fisco.bcos.sdk.abi.datatypes.generated.Uint256(balance)),
+                        Arrays.<Type>asList(new Utf8String(user), new Uint256(balance)),
                         Collections.<TypeReference<?>>emptyList());
         return createSignedTransaction(function);
     }
@@ -179,7 +178,8 @@ public class DagTransfer extends Contract {
                         Arrays.<TypeReference<?>>asList(
                                 new TypeReference<Utf8String>() {},
                                 new TypeReference<Uint256>() {}));
-        List<Type> results = FunctionReturnDecoder.decode(data, function.getOutputParameters());
+        List<Type> results =
+                this.functionReturnDecoder.decode(data, function.getOutputParameters());
         return new Tuple2<String, BigInteger>(
                 (String) results.get(0).getValue(), (BigInteger) results.get(1).getValue());
     }
@@ -191,7 +191,8 @@ public class DagTransfer extends Contract {
                         FUNC_USERADD,
                         Arrays.<Type>asList(),
                         Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
-        List<Type> results = FunctionReturnDecoder.decode(data, function.getOutputParameters());
+        List<Type> results =
+                this.functionReturnDecoder.decode(data, function.getOutputParameters());
         return new Tuple1<BigInteger>((BigInteger) results.get(0).getValue());
     }
 
@@ -199,9 +200,7 @@ public class DagTransfer extends Contract {
         final Function function =
                 new Function(
                         FUNC_USERSAVE,
-                        Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user),
-                                new org.fisco.bcos.sdk.abi.datatypes.generated.Uint256(balance)),
+                        Arrays.<Type>asList(new Utf8String(user), new Uint256(balance)),
                         Collections.<TypeReference<?>>emptyList());
         return executeTransaction(function);
     }
@@ -210,9 +209,7 @@ public class DagTransfer extends Contract {
         final Function function =
                 new Function(
                         FUNC_USERSAVE,
-                        Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user),
-                                new org.fisco.bcos.sdk.abi.datatypes.generated.Uint256(balance)),
+                        Arrays.<Type>asList(new Utf8String(user), new Uint256(balance)),
                         Collections.<TypeReference<?>>emptyList());
         asyncExecuteTransaction(function, callback);
     }
@@ -221,9 +218,7 @@ public class DagTransfer extends Contract {
         final Function function =
                 new Function(
                         FUNC_USERSAVE,
-                        Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user),
-                                new org.fisco.bcos.sdk.abi.datatypes.generated.Uint256(balance)),
+                        Arrays.<Type>asList(new Utf8String(user), new Uint256(balance)),
                         Collections.<TypeReference<?>>emptyList());
         return createSignedTransaction(function);
     }
@@ -237,7 +232,8 @@ public class DagTransfer extends Contract {
                         Arrays.<TypeReference<?>>asList(
                                 new TypeReference<Utf8String>() {},
                                 new TypeReference<Uint256>() {}));
-        List<Type> results = FunctionReturnDecoder.decode(data, function.getOutputParameters());
+        List<Type> results =
+                this.functionReturnDecoder.decode(data, function.getOutputParameters());
         return new Tuple2<String, BigInteger>(
                 (String) results.get(0).getValue(), (BigInteger) results.get(1).getValue());
     }
@@ -249,7 +245,8 @@ public class DagTransfer extends Contract {
                         FUNC_USERSAVE,
                         Arrays.<Type>asList(),
                         Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
-        List<Type> results = FunctionReturnDecoder.decode(data, function.getOutputParameters());
+        List<Type> results =
+                this.functionReturnDecoder.decode(data, function.getOutputParameters());
         return new Tuple1<BigInteger>((BigInteger) results.get(0).getValue());
     }
 
@@ -257,9 +254,7 @@ public class DagTransfer extends Contract {
         final Function function =
                 new Function(
                         FUNC_USERDRAW,
-                        Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user),
-                                new org.fisco.bcos.sdk.abi.datatypes.generated.Uint256(balance)),
+                        Arrays.<Type>asList(new Utf8String(user), new Uint256(balance)),
                         Collections.<TypeReference<?>>emptyList());
         return executeTransaction(function);
     }
@@ -268,9 +263,7 @@ public class DagTransfer extends Contract {
         final Function function =
                 new Function(
                         FUNC_USERDRAW,
-                        Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user),
-                                new org.fisco.bcos.sdk.abi.datatypes.generated.Uint256(balance)),
+                        Arrays.<Type>asList(new Utf8String(user), new Uint256(balance)),
                         Collections.<TypeReference<?>>emptyList());
         asyncExecuteTransaction(function, callback);
     }
@@ -279,9 +272,7 @@ public class DagTransfer extends Contract {
         final Function function =
                 new Function(
                         FUNC_USERDRAW,
-                        Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.abi.datatypes.Utf8String(user),
-                                new org.fisco.bcos.sdk.abi.datatypes.generated.Uint256(balance)),
+                        Arrays.<Type>asList(new Utf8String(user), new Uint256(balance)),
                         Collections.<TypeReference<?>>emptyList());
         return createSignedTransaction(function);
     }
@@ -295,7 +286,8 @@ public class DagTransfer extends Contract {
                         Arrays.<TypeReference<?>>asList(
                                 new TypeReference<Utf8String>() {},
                                 new TypeReference<Uint256>() {}));
-        List<Type> results = FunctionReturnDecoder.decode(data, function.getOutputParameters());
+        List<Type> results =
+                this.functionReturnDecoder.decode(data, function.getOutputParameters());
         return new Tuple2<String, BigInteger>(
                 (String) results.get(0).getValue(), (BigInteger) results.get(1).getValue());
     }
@@ -307,7 +299,8 @@ public class DagTransfer extends Contract {
                         FUNC_USERDRAW,
                         Arrays.<Type>asList(),
                         Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
-        List<Type> results = FunctionReturnDecoder.decode(data, function.getOutputParameters());
+        List<Type> results =
+                this.functionReturnDecoder.decode(data, function.getOutputParameters());
         return new Tuple1<BigInteger>((BigInteger) results.get(0).getValue());
     }
 
@@ -319,6 +312,12 @@ public class DagTransfer extends Contract {
     public static DagTransfer deploy(Client client, CryptoKeyPair credential)
             throws ContractException {
         return deploy(
-                DagTransfer.class, client, credential, getBinary(client.getCryptoSuite()), null);
+                DagTransfer.class,
+                client,
+                credential,
+                getBinary(client.getCryptoSuite()),
+                null,
+                null,
+                null);
     }
 }

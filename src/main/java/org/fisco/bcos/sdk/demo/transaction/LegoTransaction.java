@@ -3,9 +3,9 @@ package org.fisco.bcos.sdk.demo.transaction;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import org.bouncycastle.util.encoders.Hex;
-import org.fisco.bcos.sdk.abi.ABICodecException;
 import org.fisco.bcos.sdk.client.Client;
-import org.fisco.bcos.sdk.client.protocol.model.TransactionData;
+import org.fisco.bcos.sdk.client.protocol.model.tars.TransactionData;
+import org.fisco.bcos.sdk.codec.ABICodecException;
 import org.fisco.bcos.sdk.crypto.signature.ECDSASignatureResult;
 import org.fisco.bcos.sdk.crypto.signature.SM2SignatureResult;
 import org.fisco.bcos.sdk.crypto.signature.SignatureResult;
@@ -82,7 +82,9 @@ public class LegoTransaction {
             throws JsonProcessingException, TransactionException, IOException, ABICodecException {
 
         TransactionDecoderInterface transactionDecoder =
-                new TransactionDecoderService(bcosClientWrapper.getClient().getCryptoSuite());
+                new TransactionDecoderService(
+                        bcosClientWrapper.getClient().getCryptoSuite(),
+                        bcosClientWrapper.getClient().isWASM());
         TransactionResponse response;
         if (abiTx.isDeployTransaction)
             return transactionDecoder.decodeReceiptWithoutValues(abiTx.abiContent, receipt);
@@ -122,7 +124,7 @@ public class LegoTransaction {
                 abiTx.makeRawTransaction(
                         bcosClientWrapper.getClient(),
                         chainId,
-                        bcosClientWrapper.getClient().getGroupId());
+                        bcosClientWrapper.getClient().getGroup());
         // 请求签名服务，获取交易HASH的签名，这里用同步方式
         byte[] rawTxHash = abiTx.calcRawTransactionHash(rawTransaction);
         String signatureStr =
@@ -160,7 +162,7 @@ public class LegoTransaction {
                 abiTx.makeMethodRawTransaction(
                         bcosClientWrapper.getClient(),
                         chainId,
-                        bcosClientWrapper.getClient().getGroupId());
+                        bcosClientWrapper.getClient().getGroup());
         SignedTxCallback afterSignedTxCallback =
                 new SignedTxCallback(
                         bcosClientWrapper.getClient(), abiTx, rawTransaction, txCallback);

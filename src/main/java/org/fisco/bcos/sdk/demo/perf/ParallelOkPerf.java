@@ -66,7 +66,7 @@ public class ParallelOkPerf {
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
-            client = sdk.getClientByGroupID(groupId);
+            client = sdk.getClient(groupId);
             dagUserInfo.setFile(userFile);
             ThreadPoolService threadPoolService =
                     new ThreadPoolService(
