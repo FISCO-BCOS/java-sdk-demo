@@ -29,6 +29,7 @@ import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
 import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.fisco.bcos.sdk.model.CryptoType;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
+import org.fisco.bcos.sdk.network.NetworkException;
 import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.utils.ThreadPoolService;
 import org.slf4j.Logger;
@@ -73,7 +74,7 @@ public class PerformanceSM2EvidenceVerify {
             BcosSDK sdk = BcosSDK.build(configFile);
 
             // build the client
-            Client client = sdk.getClientByGroupID(groupId);
+            Client client = sdk.getClient(groupId);
 
             // deploy the HelloWorld
             System.out.println("====== Deploy SM2EvidenceVerify ====== ");
@@ -158,7 +159,7 @@ public class PerformanceSM2EvidenceVerify {
             }
             threadPoolService.stop();
             System.exit(0);
-        } catch (BcosSDKException | ContractException | InterruptedException e) {
+        } catch (BcosSDKException | ContractException | InterruptedException | NetworkException e) {
             System.out.println(
                     "====== PerformanceSM2EvidenceVerify test failed, error message: "
                             + e.getMessage());

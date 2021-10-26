@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.fisco.bcos.sdk.abi.ABICodecException;
+import org.fisco.bcos.sdk.codec.ABICodecException;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
 import org.fisco.bcos.sdk.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.transaction.codec.decode.TransactionDecoderInterface;
@@ -110,7 +110,8 @@ public class LegoTransactionDemo {
 
             TransactionDecoderInterface transactionDecoder =
                     new TransactionDecoderService(
-                            lt.bcosClientWrapper.getClient().getCryptoSuite());
+                            lt.bcosClientWrapper.getClient().getCryptoSuite(),
+                            lt.bcosClientWrapper.getClient().isWASM());
             TransactionResponse response;
             try {
                 response =

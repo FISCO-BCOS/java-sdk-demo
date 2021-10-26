@@ -2,10 +2,10 @@ package org.fisco.bcos.sdk.demo.transaction;
 
 import java.math.BigInteger;
 import java.util.List;
-import org.fisco.bcos.sdk.abi.ABICodec;
-import org.fisco.bcos.sdk.abi.ABICodecException;
 import org.fisco.bcos.sdk.client.Client;
-import org.fisco.bcos.sdk.client.protocol.model.TransactionData;
+import org.fisco.bcos.sdk.client.protocol.model.tars.TransactionData;
+import org.fisco.bcos.sdk.codec.ABICodec;
+import org.fisco.bcos.sdk.codec.ABICodecException;
 import org.fisco.bcos.sdk.crypto.CryptoSuite;
 import org.fisco.bcos.sdk.crypto.signature.SignatureResult;
 import org.fisco.bcos.sdk.transaction.builder.TransactionBuilderInterface;
@@ -117,7 +117,7 @@ public class BasicAbiTransaction {
         this.cryptoSuite = cryptoSuite_;
         this.abiCodec = abiCodec_;
         if (this.abiCodec == null) {
-            this.abiCodec = new ABICodec(cryptoSuite);
+            this.abiCodec = new ABICodec(cryptoSuite, false);
         }
         this.transactionEncoder = transactionEncoder_;
         if (this.transactionEncoder == null) {

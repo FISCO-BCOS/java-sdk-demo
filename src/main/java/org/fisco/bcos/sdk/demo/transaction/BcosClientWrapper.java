@@ -83,7 +83,7 @@ public class BcosClientWrapper {
         ApplicationContext context =
                 new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
         bcosSDK = context.getBean(BcosSDK.class);
-        client = bcosSDK.getClientByGroupID(groupId);
+        client = bcosSDK.getClient(groupId);
 
         String eccPrivateKeySample =
                 "28018238ac7eec853401dfc3f31133330e78ac27a2f53481270083abb1a126f9";
