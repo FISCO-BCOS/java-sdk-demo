@@ -66,57 +66,54 @@ public class DagPrecompiledDemo {
         AtomicInteger sendFailed = new AtomicInteger(9);
         collector.setTotal(userCount.intValue());
 
-        for (Integer i = 0; i < userCount.intValue(); i++) {
-            final Integer index = i;
+        for (int i = 0; i < userCount.intValue(); i++) {
+            final int index = i;
             limiter.acquire();
             threadPoolService
                     .getThreadPool()
                     .execute(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    String user =
-                                            Long.toHexString(seconds) + Integer.toHexString(index);
-                                    BigInteger amount = new BigInteger("1000000000");
-                                    DagTransferUser dtu = new DagTransferUser();
-                                    dtu.setUser(user);
-                                    dtu.setAmount(amount);
-                                    ParallelOkCallback callback =
-                                            new ParallelOkCallback(
-                                                    collector,
-                                                    dagUserInfo,
-                                                    ParallelOkCallback.ADD_USER_CALLBACK);
-                                    callback.setUser(dtu);
-                                    try {
-                                        callback.recordStartTime();
-                                        callback.setTimeout(0);
-                                        dagTransfer.userAdd(user, amount, callback);
-                                        int current = sended.incrementAndGet();
-                                        if (current >= area && ((current % area) == 0)) {
-                                            System.out.println(
-                                                    "Already sended: "
-                                                            + current
-                                                            + "/"
-                                                            + userCount
-                                                            + " transactions");
-                                        }
-                                    } catch (Exception e) {
-                                        TransactionReceipt receipt = new TransactionReceipt();
-                                        receipt.setStatus(-1);
-                                        callback.onResponse(receipt);
-                                        logger.error(
-                                                "dagTransfer add failed, error info: "
-                                                        + e.getMessage());
-                                        sendFailed.incrementAndGet();
-                                        logger.info(e.getMessage());
+                            () -> {
+                                String user =
+                                        Long.toHexString(seconds) + Integer.toHexString(index);
+                                BigInteger amount = BigInteger.valueOf(1000000000);
+                                DagTransferUser dtu = new DagTransferUser();
+                                dtu.setUser(user);
+                                dtu.setAmount(amount);
+                                ParallelOkCallback callback =
+                                        new ParallelOkCallback(
+                                                collector,
+                                                dagUserInfo,
+                                                ParallelOkCallback.ADD_USER_CALLBACK);
+                                callback.setUser(dtu);
+                                try {
+                                    callback.recordStartTime();
+                                    callback.setTimeout(0);
+                                    dagTransfer.userAdd(user, amount, callback);
+                                    int current = sended.incrementAndGet();
+                                    if (current >= area && ((current % area) == 0)) {
+                                        System.out.println(
+                                                "Already sended: "
+                                                        + current
+                                                        + "/"
+                                                        + userCount
+                                                        + " transactions");
                                     }
+                                } catch (Exception e) {
+                                    TransactionReceipt receipt = new TransactionReceipt();
+                                    receipt.setStatus(-1);
+                                    callback.onResponse(receipt);
+                                    logger.error(
+                                            "dagTransfer add failed, error info: {}",
+                                            e.getMessage());
+                                    sendFailed.incrementAndGet();
+                                    logger.info(e.getMessage());
                                 }
                             });
         }
         while (collector.getReceived().intValue() != collector.getTotal().intValue()) {
             logger.info(
                     " received: {}, total: {}, sendFailed: {}, sended: {}",
-                    collector.getReceived().intValue(),
+                    collector.getReceived(),
                     collector.getTotal(),
                     sendFailed.get(),
                     sended.get());
