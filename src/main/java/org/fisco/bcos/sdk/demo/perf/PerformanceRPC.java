@@ -55,10 +55,7 @@ public class PerformanceRPC {
             RateLimiter limiter = RateLimiter.create(qps);
             Integer area = count / 10;
             final Integer total = count;
-            ThreadPoolService threadPoolService =
-                    new ThreadPoolService(
-                            "PerformanceRPC",
-                            sdk.getConfig().getThreadPoolConfig().getMaxBlockingQueueSize());
+            ThreadPoolService threadPoolService = new ThreadPoolService("PerformanceRPC", 1000000);
 
             System.out.println("Start test, total: " + count);
             for (Integer i = 0; i < count; ++i) {

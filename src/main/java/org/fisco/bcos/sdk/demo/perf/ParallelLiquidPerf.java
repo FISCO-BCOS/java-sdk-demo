@@ -62,10 +62,7 @@ public class ParallelLiquidPerf {
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
             dagUserInfo.setFile(userFile);
-            ThreadPoolService threadPoolService =
-                    new ThreadPoolService(
-                            "ParallelLiquid",
-                            sdk.getConfig().getThreadPoolConfig().getMaxBlockingQueueSize());
+            ThreadPoolService threadPoolService = new ThreadPoolService("ParallelLiquid", 1000000);
             parallelLiquidPerf(groupId, command, count, qps, threadPoolService);
         } catch (Exception e) {
             System.out.println("ParallelLiquid test failed, error info: " + e.getMessage());

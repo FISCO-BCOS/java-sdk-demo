@@ -26,7 +26,6 @@ import org.fisco.bcos.sdk.demo.perf.callback.PerformanceCallback;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
 import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.network.NetworkException;
 import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.utils.ThreadPoolService;
 import org.slf4j.Logger;
@@ -85,10 +84,7 @@ public class PerformanceOkD {
 
             System.out.println("====== PerformanceOkD trans start ======");
 
-            ThreadPoolService threadPoolService =
-                    new ThreadPoolService(
-                            "PerformanceOkD",
-                            sdk.getConfig().getThreadPoolConfig().getMaxBlockingQueueSize());
+            ThreadPoolService threadPoolService = new ThreadPoolService("PerformanceOkD", 100000);
             Random random = new Random(System.currentTimeMillis());
             for (Integer i = 0; i < count; ++i) {
                 limiter.acquire();
@@ -130,7 +126,7 @@ public class PerformanceOkD {
             }
             threadPoolService.stop();
             System.exit(0);
-        } catch (BcosSDKException | ContractException | InterruptedException | NetworkException e) {
+        } catch (BcosSDKException | ContractException | InterruptedException e) {
             System.out.println(
                     "====== PerformanceOkD test failed, error message: " + e.getMessage());
             System.exit(0);
