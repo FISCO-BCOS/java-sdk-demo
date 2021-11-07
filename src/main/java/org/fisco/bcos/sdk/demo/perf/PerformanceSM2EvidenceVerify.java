@@ -29,7 +29,6 @@ import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
 import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.fisco.bcos.sdk.model.CryptoType;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.network.NetworkException;
 import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.utils.ThreadPoolService;
 import org.slf4j.Logger;
@@ -94,9 +93,7 @@ public class PerformanceSM2EvidenceVerify {
             System.out.println("====== PerformanceSM2EvidenceVerify trans start ======");
 
             ThreadPoolService threadPoolService =
-                    new ThreadPoolService(
-                            "PerformanceSM2EvidenceVerify",
-                            sdk.getConfig().getThreadPoolConfig().getMaxBlockingQueueSize());
+                    new ThreadPoolService("PerformanceSM2EvidenceVerify", 1000000);
 
             CryptoSuite ecdsaCryptoSuite = new CryptoSuite(CryptoType.SM_TYPE);
             for (Integer i = 0; i < count; ++i) {
@@ -159,7 +156,7 @@ public class PerformanceSM2EvidenceVerify {
             }
             threadPoolService.stop();
             System.exit(0);
-        } catch (BcosSDKException | ContractException | InterruptedException | NetworkException e) {
+        } catch (BcosSDKException | ContractException | InterruptedException e) {
             System.out.println(
                     "====== PerformanceSM2EvidenceVerify test failed, error message: "
                             + e.getMessage());

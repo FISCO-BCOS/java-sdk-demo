@@ -56,7 +56,7 @@ public class HelloWorldLiquidDemo {
                     new TransactionCallback() {
                         @Override
                         public void onResponse(TransactionReceipt receipt) {
-                            if (receipt.getStatus().equals(0)) {
+                            if (receipt.getStatus() == 0) {
                                 System.out.println("Set success!");
                             } else {
                                 System.out.println("Set failed.");

@@ -28,7 +28,6 @@ import org.fisco.bcos.sdk.demo.perf.callback.PerformanceCallback;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
 import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.network.NetworkException;
 import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.utils.ThreadPoolService;
 import org.slf4j.Logger;
@@ -106,9 +105,7 @@ public class PerformanceTable {
 
             System.out.println("====== PerformanceTable " + command + " start ======");
             ThreadPoolService threadPoolService =
-                    new ThreadPoolService(
-                            "PerformanceTable",
-                            sdk.getConfig().getThreadPoolConfig().getMaxBlockingQueueSize());
+                    new ThreadPoolService("PerformanceTable", 1000000);
             for (Integer i = 0; i < count; ++i) {
                 limiter.acquire();
                 threadPoolService
@@ -136,7 +133,7 @@ public class PerformanceTable {
             }
             threadPoolService.stop();
             System.exit(0);
-        } catch (BcosSDKException | ContractException | InterruptedException | NetworkException e) {
+        } catch (BcosSDKException | ContractException | InterruptedException e) {
             System.out.println(
                     "====== PerformanceTable test failed, error message: " + e.getMessage());
             System.exit(0);
