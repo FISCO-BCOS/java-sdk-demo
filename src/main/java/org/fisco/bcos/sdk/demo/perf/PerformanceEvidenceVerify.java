@@ -116,7 +116,7 @@ public class PerformanceEvidenceVerify {
                                             // sign to evi
                                             byte[] message = ecdsaCryptoSuite.hash(evi.getBytes());
                                             CryptoKeyPair cryptoKeyPair =
-                                                    ecdsaCryptoSuite.createKeyPair();
+                                                    ecdsaCryptoSuite.generateRandomKeyPair();
                                             // sign with secp256k1
                                             ECDSASignatureResult signatureResult =
                                                     (ECDSASignatureResult)

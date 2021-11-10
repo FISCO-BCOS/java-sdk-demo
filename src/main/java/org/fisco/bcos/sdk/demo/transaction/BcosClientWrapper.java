@@ -88,7 +88,7 @@ public class BcosClientWrapper {
         String eccPrivateKeySample =
                 "28018238ac7eec853401dfc3f31133330e78ac27a2f53481270083abb1a126f9";
         txCryptoSuite = new CryptoSuite(client.getCryptoType());
-        txCryptoSuite.createKeyPair(eccPrivateKeySample);
+        txCryptoSuite.loadKeyPair(eccPrivateKeySample);
         txCryptoSuite = client.getCryptoSuite();
 
         transactionProcessor =
