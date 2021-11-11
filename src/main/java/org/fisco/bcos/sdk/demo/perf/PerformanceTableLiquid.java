@@ -14,7 +14,6 @@
 package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
-import java.math.BigInteger;
 import java.net.URL;
 import java.util.Random;
 import java.util.UUID;
@@ -186,10 +185,7 @@ public class PerformanceTableLiquid {
         try {
             long nextID = getNextID();
             tableTest.insert(
-                    "fruit" + nextID % 100,
-                    String.valueOf(nextID),
-                    "apple" + getId(),
-                    callback);
+                    "fruit" + nextID % 100, String.valueOf(nextID), "apple" + getId(), callback);
         } catch (Exception e) {
             sendTransactionException(e, "insert", callback);
         }
