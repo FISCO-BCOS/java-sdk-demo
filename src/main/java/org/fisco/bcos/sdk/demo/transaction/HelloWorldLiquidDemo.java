@@ -1,7 +1,6 @@
 package org.fisco.bcos.sdk.demo.transaction;
 
 import java.net.URL;
-import java.util.Random;
 import org.fisco.bcos.sdk.BcosSDK;
 import org.fisco.bcos.sdk.client.Client;
 import org.fisco.bcos.sdk.demo.contract.HelloWorldLiquid;
@@ -18,10 +17,13 @@ public class HelloWorldLiquidDemo {
     public static void Usage() {
         System.out.println(" Usage:");
         System.out.println("===== HelloWorldLiquidDemo =====");
+        System.out.println("Note: you SHOULD deploy first.");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.transaction.HelloWorldLiquidDemo [group] [get].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.transaction.HelloWorldLiquidDemo [group] [path] [deploy].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.transaction.HelloWorldLiquidDemo [group] [set] [something].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.transaction.HelloWorldLiquidDemo [group] [path] [get].");
+        System.out.println(
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.transaction.HelloWorldLiquidDemo [group] [path] [set] [something].");
     }
 
     public static void main(String[] args) throws NetworkException, ContractException {
@@ -35,21 +37,43 @@ public class HelloWorldLiquidDemo {
             Usage();
             return;
         }
-        String groupId = args[1];
+        String groupId = args[0];
+        String path = args[1];
         String method = args[2];
         String configFile = configUrl.getPath();
         BcosSDK sdk = BcosSDK.build(configFile);
         client = sdk.getClient(groupId);
 
-        String helloPath = "hello" + new Random().nextInt(1000);
-        HelloWorldLiquid helloWorldLiquid =
-                HelloWorldLiquid.deploy(
-                        client, client.getCryptoSuite().getCryptoKeyPair(), helloPath);
-
         if (method.equals(HelloWorldLiquid.FUNC_GET)) {
+            HelloWorldLiquid helloWorldLiquid =
+                    HelloWorldLiquid.load(path, client, client.getCryptoSuite().getCryptoKeyPair());
             System.out.println(helloWorldLiquid.get());
-        }
-        if (method.equals(HelloWorldLiquid.FUNC_SET) && args.length == 4) {
+        } else if (method.equals("deploy")) {
+            try {
+                HelloWorldLiquid helloWorldLiquid =
+                        HelloWorldLiquid.deploy(
+                                client,
+                                client.getCryptoSuite().getCryptoKeyPair(),
+                                path,
+                                "Hello World!");
+                if (helloWorldLiquid != null
+                        && helloWorldLiquid.getDeployReceipt() != null
+                        && helloWorldLiquid.getDeployReceipt().getStatus() == 0) {
+                    System.out.println("Deploy success!");
+                } else {
+                    System.out.println("Deploy failed!");
+                }
+            } catch (ContractException e) {
+                System.out.println(
+                        "Deploy error, error code: {"
+                                + e.getErrorCode()
+                                + "}, error msg: {"
+                                + e.getMessage()
+                                + "}");
+            }
+        } else if (method.equals(HelloWorldLiquid.FUNC_SET) && args.length == 4) {
+            HelloWorldLiquid helloWorldLiquid =
+                    HelloWorldLiquid.load(path, client, client.getCryptoSuite().getCryptoKeyPair());
             String value = args[3];
             helloWorldLiquid.set(
                     value,
