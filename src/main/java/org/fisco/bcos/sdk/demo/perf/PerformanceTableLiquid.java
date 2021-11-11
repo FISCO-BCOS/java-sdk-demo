@@ -187,7 +187,7 @@ public class PerformanceTableLiquid {
             long nextID = getNextID();
             tableTest.insert(
                     "fruit" + nextID % 100,
-                    BigInteger.valueOf(nextID),
+                    String.valueOf(nextID),
                     "apple" + getId(),
                     callback);
         } catch (Exception e) {
@@ -201,7 +201,7 @@ public class PerformanceTableLiquid {
             long nextID = getNextID();
             long l1 = new Random().nextLong();
             tableTest.update(
-                    "fruit" + l1 % 100, BigInteger.valueOf(nextID), "apple" + getId(), callback);
+                    "fruit" + l1 % 100, String.valueOf(nextID), "apple" + getId(), callback);
         } catch (Exception e) {
             sendTransactionException(e, "update", callback);
         }

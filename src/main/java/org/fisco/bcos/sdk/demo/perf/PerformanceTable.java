@@ -14,7 +14,6 @@
 package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
-import java.math.BigInteger;
 import java.net.URL;
 import java.util.Random;
 import java.util.UUID;
@@ -185,8 +184,7 @@ public class PerformanceTable {
         PerformanceCallback callback = createCallback(collector);
         try {
             long _id = getNextID();
-            tableTest.insert(
-                    "fruit" + _id % 100, BigInteger.valueOf(_id), "apple" + getId(), callback);
+            tableTest.insert("fruit" + _id % 100, String.valueOf(_id), "apple" + getId(), callback);
         } catch (Exception e) {
             sendTransactionException(e, "insert", callback);
         }
@@ -198,8 +196,7 @@ public class PerformanceTable {
             long _id = getNextID();
             Random r = new Random();
             long l1 = r.nextLong();
-            tableTest.update(
-                    "fruit" + l1 % 100, BigInteger.valueOf(_id), "apple" + getId(), callback);
+            tableTest.update("fruit" + l1 % 100, String.valueOf(_id), "apple" + getId(), callback);
         } catch (Exception e) {
             sendTransactionException(e, "update", callback);
         }
