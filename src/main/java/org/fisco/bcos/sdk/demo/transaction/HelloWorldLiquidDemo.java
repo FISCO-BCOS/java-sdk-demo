@@ -7,7 +7,6 @@ import org.fisco.bcos.sdk.demo.contract.HelloWorldLiquid;
 import org.fisco.bcos.sdk.demo.perf.ParallelLiquidPerf;
 import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.network.NetworkException;
 import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
 
@@ -62,6 +61,10 @@ public class HelloWorldLiquidDemo {
                     System.out.println("Deploy success!");
                 } else {
                     System.out.println("Deploy failed!");
+                    assert helloWorldLiquid != null;
+                    System.out.println(
+                            "Receipt status code: "
+                                    + helloWorldLiquid.getDeployReceipt().getStatus());
                 }
             } catch (ContractException e) {
                 System.out.println(
@@ -70,25 +73,22 @@ public class HelloWorldLiquidDemo {
                                 + "}, error msg: {"
                                 + e.getMessage()
                                 + "}");
+                System.exit(0);
             }
         } else if (method.equals(HelloWorldLiquid.FUNC_SET) && args.length == 4) {
             HelloWorldLiquid helloWorldLiquid =
                     HelloWorldLiquid.load(path, client, client.getCryptoSuite().getCryptoKeyPair());
             String value = args[3];
-            helloWorldLiquid.set(
-                    value,
-                    new TransactionCallback() {
-                        @Override
-                        public void onResponse(TransactionReceipt receipt) {
-                            if (receipt.getStatus() == 0) {
-                                System.out.println("Set success!");
-                            } else {
-                                System.out.println("Set failed.");
-                            }
-                        }
-                    });
+            TransactionReceipt receipt = helloWorldLiquid.set(value);
+            if (receipt.getStatus() == 0) {
+                System.out.println("Set success!");
+            } else {
+                System.out.println("Set failed.");
+                System.out.println("Receipt status code: " + receipt.getStatus());
+            }
         } else {
             Usage();
         }
+        System.exit(0);
     }
 }
