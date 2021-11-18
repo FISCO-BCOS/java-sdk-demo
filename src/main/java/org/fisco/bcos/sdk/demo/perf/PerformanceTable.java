@@ -15,7 +15,6 @@ package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
 import java.net.URL;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -183,8 +182,8 @@ public class PerformanceTable {
     private static void insert(TableTest tableTest, PerformanceCollector collector) {
         PerformanceCallback callback = createCallback(collector);
         try {
-            long _id = getNextID();
-            tableTest.insert("fruit" + _id % 100, String.valueOf(_id), "apple" + getId(), callback);
+            long id = getNextID();
+            tableTest.insert("fruit" + id, String.valueOf(id), "apple" + getId(), callback);
         } catch (Exception e) {
             sendTransactionException(e, "insert", callback);
         }
@@ -193,10 +192,8 @@ public class PerformanceTable {
     private static void update(TableTest tableTest, PerformanceCollector collector) {
         PerformanceCallback callback = createCallback(collector);
         try {
-            long _id = getNextID();
-            Random r = new Random();
-            long l1 = r.nextLong();
-            tableTest.update("fruit" + l1 % 100, String.valueOf(_id), "apple" + getId(), callback);
+            long id = getNextID();
+            tableTest.update("fruit" + id, String.valueOf(id), "apple" + getId(), callback);
         } catch (Exception e) {
             sendTransactionException(e, "update", callback);
         }
@@ -205,9 +202,8 @@ public class PerformanceTable {
     private static void remove(TableTest tableTest, PerformanceCollector collector) {
         PerformanceCallback callback = createCallback(collector);
         try {
-            Random r = new Random();
-            long l1 = r.nextLong();
-            tableTest.remove("fruit" + l1 % 100, callback);
+            long id = getNextID();
+            tableTest.remove("fruit" + id, callback);
 
         } catch (Exception e) {
             sendTransactionException(e, "remove", callback);
@@ -217,9 +213,8 @@ public class PerformanceTable {
     private static void query(TableTest tableTest, PerformanceCollector collector) {
         try {
             Long time_before = System.currentTimeMillis();
-            Random r = new Random();
-            long l1 = r.nextLong();
-            tableTest.select("fruit" + l1 % 100);
+            long id = getNextID();
+            tableTest.select("fruit" + id);
             Long time_after = System.currentTimeMillis();
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setStatus(0x0);

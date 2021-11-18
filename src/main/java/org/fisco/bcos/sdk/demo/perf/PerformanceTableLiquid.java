@@ -184,8 +184,7 @@ public class PerformanceTableLiquid {
         PerformanceCallback callback = createCallback(collector);
         try {
             long nextID = getNextID();
-            tableTest.insert(
-                    "fruit" + nextID % 100, String.valueOf(nextID), "apple" + getId(), callback);
+            tableTest.insert("fruit" + nextID, String.valueOf(nextID), "apple" + getId(), callback);
         } catch (Exception e) {
             sendTransactionException(e, "insert", callback);
         }
@@ -195,9 +194,7 @@ public class PerformanceTableLiquid {
         PerformanceCallback callback = createCallback(collector);
         try {
             long nextID = getNextID();
-            long l1 = new Random().nextLong();
-            tableTest.update(
-                    "fruit" + l1 % 100, String.valueOf(nextID), "apple" + getId(), callback);
+            tableTest.update("fruit" + nextID, String.valueOf(nextID), "apple" + getId(), callback);
         } catch (Exception e) {
             sendTransactionException(e, "update", callback);
         }
@@ -206,8 +203,8 @@ public class PerformanceTableLiquid {
     private static void remove(TableTestLiquid tableTest, PerformanceCollector collector) {
         PerformanceCallback callback = createCallback(collector);
         try {
-            long l1 = new Random().nextLong();
-            tableTest.remove("fruit" + l1 % 100, callback);
+            long nextID = getNextID();
+            tableTest.remove("fruit" + nextID, callback);
 
         } catch (Exception e) {
             sendTransactionException(e, "remove", callback);
@@ -217,8 +214,8 @@ public class PerformanceTableLiquid {
     private static void query(TableTestLiquid tableTest, PerformanceCollector collector) {
         try {
             Long timeBefore = System.currentTimeMillis();
-            long l1 = new Random().nextLong();
-            tableTest.select("fruit" + l1 % 100);
+            long nextID = getNextID();
+            tableTest.select("fruit" + nextID);
             Long timeAfter = System.currentTimeMillis();
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setStatus(0x0);
