@@ -62,10 +62,14 @@ public class Publish {
                         @Override
                         public void onResponse(Response response) {
                             System.out.println(" ==> receive response message from server");
-                            System.out.println(" \t errorCode: " + response.getErrorCode());
-                            System.out.println(" \t errorMessage: " + response.getErrorMessage());
-                            System.out.println(
-                                    " \t responseData: " + new String(response.getData()));
+                            if (response.getErrorCode() == 0) {
+                                System.out.println(
+                                        " \t responseData: " + new String(response.getData()));
+                            } else {
+                                System.out.println(" \t errorCode: " + response.getErrorCode());
+                                System.out.println(
+                                        " \t errorMessage: " + response.getErrorMessage());
+                            }
                         }
                     });
 
