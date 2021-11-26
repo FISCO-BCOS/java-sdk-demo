@@ -96,6 +96,7 @@ dependencies {
     compile ("org.fisco-bcos:solcJ:${solcJVersion}")
     compile ("com.google.guava:guava:${guavaVersion}")
     compile ("org.apache.commons:commons-collections4:${commonsCollections4Version}")
+    compile ("me.tongfei:progressbar:0.9.2")
     compile spring
     compile logger
 }
