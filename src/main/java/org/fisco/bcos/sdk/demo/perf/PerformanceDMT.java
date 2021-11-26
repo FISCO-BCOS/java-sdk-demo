@@ -18,8 +18,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URL;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
@@ -43,7 +45,8 @@ public class PerformanceDMT {
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceDMT [groupId] [userCount] [count] [qps].");
     }
 
-    public static void main(String[] args) throws ContractException, IOException, InterruptedException {
+    public static void main(String[] args)
+            throws ContractException, IOException, InterruptedException {
         try {
             String configFileName = ConstantConfig.CONFIG_FILE_NAME;
             URL configUrl = ParallelOkPerf.class.getClassLoader().getResource(configFileName);
@@ -64,85 +67,167 @@ public class PerformanceDMT {
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
-            ThreadPoolService threadPoolService = new ThreadPoolService("DMTClient",
-                    Runtime.getRuntime().availableProcessors());
+            ThreadPoolService threadPoolService =
+                    new ThreadPoolService("DMTClient", Runtime.getRuntime().availableProcessors());
 
             start(groupId, userCount, count, qps, threadPoolService);
 
-            threadPoolService.getThreadPool().shutdown();
+            threadPoolService.getThreadPool().awaitTermination(0, TimeUnit.SECONDS);
+            System.exit(0);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(0);
         }
     }
 
-    public static void start(String groupId, int userCount, int count, Integer qps, ThreadPoolService threadPoolService)
+    public static void start(
+            String groupId,
+            int userCount,
+            int count,
+            Integer qps,
+            ThreadPoolService threadPoolService)
             throws IOException, InterruptedException, ContractException {
-        System.out.println("====== Start test, user count: + " + userCount + "count: " + count + ", qps:" + qps
-                + ", groupId: " + groupId);
+        System.out.println(
+                "====== Start test, user count: + "
+                        + userCount
+                        + "count: "
+                        + count
+                        + ", qps:"
+                        + qps
+                        + ", groupId: "
+                        + groupId);
+
+        RateLimiter limiter = RateLimiter.create(qps.intValue());
 
         Account[] accounts = new Account[userCount];
         Map<Integer, AtomicLong> summary = new ConcurrentHashMap<Integer, AtomicLong>();
+
+        final Random random = new Random();
+        random.setSeed(System.currentTimeMillis());
 
         System.out.println("Create account...");
         CountDownLatch userLatch = new CountDownLatch(userCount);
         for (int i = 0; i < userCount; ++i) {
             final int index = i;
-            threadPoolService.getThreadPool().execute(new Runnable() {
-                public void run() {
-                    Account account;
-                    try {
-                        account = Account.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
-                        accounts[index] = account;
-                        summary.put(index, new AtomicLong(0));
-                        userLatch.countDown();
-                    } catch (ContractException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
+            threadPoolService
+                    .getThreadPool()
+                    .execute(
+                            new Runnable() {
+                                public void run() {
+                                    Account account;
+                                    try {
+                                        long initBalance = Math.abs(random.nextLong());
+
+                                        limiter.acquire();
+                                        account =
+                                                Account.deploy(
+                                                        client,
+                                                        client.getCryptoSuite().getCryptoKeyPair());
+                                        account.addBalance(BigInteger.valueOf(initBalance));
+
+                                        accounts[index] = account;
+                                        summary.put(index, new AtomicLong(initBalance));
+                                        userLatch.countDown();
+                                    } catch (ContractException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            });
         }
         userLatch.await();
-        System.out.println("Create account finished");
+        System.out.println("Create account finished!");
 
         System.out.println("Sending transactions...");
-        ProgressBar sendedBar = new ProgressBarBuilder().setTaskName("Send   :").setInitialMax(count)
-                .setStyle(ProgressBarStyle.UNICODE_BLOCK).build();
-        ProgressBar receivedBar = new ProgressBarBuilder().setTaskName("Receive:").setInitialMax(count)
-                .setStyle(ProgressBarStyle.UNICODE_BLOCK).build();
-        RateLimiter limiter = RateLimiter.create(qps.intValue());
+        ProgressBar sendedBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Send   :")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        ProgressBar receivedBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Receive:")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
 
         CountDownLatch transactionLatch = new CountDownLatch(count);
         long now = System.currentTimeMillis();
         AtomicLong totalCost = new AtomicLong(0);
+
         for (int i = 0; i < count; ++i) {
             limiter.acquire();
 
             final int index = i % accounts.length;
-            threadPoolService.getThreadPool().execute(new Runnable() {
-                @Override
-                public void run() {
-                    Account account = accounts[index];
-                    long now = System.currentTimeMillis();
-                    account.addBalance(BigInteger.valueOf(1), new TransactionCallback() {
-                        @Override
-                        public void onResponse(TransactionReceipt receipt) {
-                            AtomicLong count = summary.get(index);
-                            count.incrementAndGet();
+            threadPoolService
+                    .getThreadPool()
+                    .execute(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    Account account = accounts[index];
+                                    long now = System.currentTimeMillis();
 
-                            receivedBar.step();
-                            transactionLatch.countDown();
-                            totalCost.addAndGet(System.currentTimeMillis() - now);
-                        }
-                    });
-                    sendedBar.step();
-                }
-            });
+                                    final long value = Math.abs(random.nextLong() % 1000);
+
+                                    account.addBalance(
+                                            BigInteger.valueOf(value),
+                                            new TransactionCallback() {
+                                                @Override
+                                                public void onResponse(TransactionReceipt receipt) {
+                                                    AtomicLong count = summary.get(index);
+                                                    count.addAndGet(value);
+
+                                                    receivedBar.step();
+                                                    transactionLatch.countDown();
+                                                    totalCost.addAndGet(
+                                                            System.currentTimeMillis() - now);
+                                                }
+                                            });
+                                    sendedBar.step();
+                                }
+                            });
         }
-
         transactionLatch.await();
         sendedBar.close();
         receivedBar.close();
+
+        System.out.println("Sending transactions finished!");
+
+        System.out.println("Checking result...");
+        CountDownLatch checkLatch = new CountDownLatch(count);
+        for (Map.Entry<Integer, AtomicLong> entry : summary.entrySet()) {
+            limiter.acquire();
+            final int index = entry.getKey().intValue();
+            final long expectBalance = entry.getValue().longValue();
+            threadPoolService
+                    .getThreadPool()
+                    .execute(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        limiter.acquire();
+                                        BigInteger balance = accounts[index].balance();
+                                        if (balance.longValue() != expectBalance) {
+                                            System.out.println(
+                                                    "Check failed! Account["
+                                                            + index
+                                                            + "] balance: "
+                                                            + balance
+                                                            + " not equal to expected: "
+                                                            + expectBalance);
+                                        }
+
+                                        checkLatch.countDown();
+                                    } catch (ContractException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            });
+        }
+        System.out.println("Checking finished!");
+
         long elapsed = System.currentTimeMillis() - now;
 
         System.out.println("Total elapsed: " + elapsed);
