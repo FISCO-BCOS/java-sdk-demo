@@ -88,9 +88,9 @@ public class PerformanceDMT {
             ThreadPoolService threadPoolService)
             throws IOException, InterruptedException, ContractException {
         System.out.println(
-                "====== Start test, user count: + "
+                "====== Start test, user count: "
                         + userCount
-                        + "count: "
+                        + ", count: "
                         + count
                         + ", qps:"
                         + qps
