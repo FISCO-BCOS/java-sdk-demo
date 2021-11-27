@@ -152,8 +152,9 @@ public class PerformanceDMT {
                         .build();
 
         CountDownLatch transactionLatch = new CountDownLatch(count);
-        long now = System.currentTimeMillis();
         AtomicLong totalCost = new AtomicLong(0);
+        Collector collector = new Collector();
+        collector.setTotal(count);
 
         for (int i = 0; i < count; ++i) {
             limiter.acquire();
@@ -178,6 +179,9 @@ public class PerformanceDMT {
                                                     AtomicLong count = summary.get(index);
                                                     count.addAndGet(value);
 
+                                                    long cost = System.currentTimeMillis() - now;
+                                                    collector.onMessage(receipt, cost);
+
                                                     receivedBar.step();
                                                     transactionLatch.countDown();
                                                     totalCost.addAndGet(
@@ -189,8 +193,10 @@ public class PerformanceDMT {
                             });
         }
         transactionLatch.await();
+
         sendedBar.close();
         receivedBar.close();
+        collector.report();
 
         System.out.println("Sending transactions finished!");
 
@@ -228,9 +234,8 @@ public class PerformanceDMT {
         }
         System.out.println("Checking finished!");
 
-        long elapsed = System.currentTimeMillis() - now;
-
-        System.out.println("Total elapsed: " + elapsed);
-        System.out.println("TPS: " + (double) count / ((double) elapsed / 1000));
+        // collector.
+        // System.out.println("Total elapsed: " + elapsed);
+        // System.out.println("TPS: " + (double) count / ((double) elapsed / 1000));
     }
 }
