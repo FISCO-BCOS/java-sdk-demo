@@ -69,7 +69,8 @@ public class LegoTransaction {
             System.out.println("2:SignatureResult: " + signature.convertToString());
             // 产生带有签名的交易
             byte[] signedTransaction =
-                    abiTx.encodeRawTransactionWithSignature(rawTransaction, signature);
+                    abiTx.encodeRawTransactionWithSignature(
+                            rawTransaction, signature, bcosClientWrapper.getClient().isWASM());
             System.out.println("3:signedTransaction: " + new String(Hex.encode(signedTransaction)));
             // 发送交易，传入调用者的TransactionCallback
             txPusher.pushAsync(Hex.toHexString(signedTransaction), txCallback);
@@ -133,7 +134,8 @@ public class LegoTransaction {
         SignatureResult signature = decodeSignatureString(signatureStr);
         // 产生带有签名的交易
         byte[] signedTransaction =
-                abiTx.encodeRawTransactionWithSignature(rawTransaction, signature);
+                abiTx.encodeRawTransactionWithSignature(
+                        rawTransaction, signature, bcosClientWrapper.getClient().isWASM());
         System.out.println("3:signedTransaction: " + new String(Hex.encode(signedTransaction)));
         // 发送交易
         TransactionReceipt receipt = txPusher.push(Hex.toHexString(signedTransaction));
