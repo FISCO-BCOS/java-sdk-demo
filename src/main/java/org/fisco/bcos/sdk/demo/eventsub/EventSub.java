@@ -125,7 +125,13 @@ public class EventSub {
         }
 
         for (int i = 0; i < topics.size(); i++) {
+            if (topics.get(i) == null) {
+                continue;
+            }
             for (int j = 0; j < topics.get(i).size(); j++) {
+                if (topics.get(i).get(j) == null) {
+                    continue;
+                }
                 eventLogParams.addTopic(i, topics.get(i).get(j));
             }
         }
