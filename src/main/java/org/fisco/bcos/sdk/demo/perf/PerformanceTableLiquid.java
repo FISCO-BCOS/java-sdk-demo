@@ -13,25 +13,17 @@
  */
 package org.fisco.bcos.sdk.demo.perf;
 
-import com.google.common.util.concurrent.RateLimiter;
-import java.net.URL;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import org.fisco.bcos.sdk.BcosSDK;
-import org.fisco.bcos.sdk.BcosSDKException;
-import org.fisco.bcos.sdk.client.Client;
 import org.fisco.bcos.sdk.demo.contract.TableTestLiquid;
 import org.fisco.bcos.sdk.demo.perf.callback.PerformanceCallback;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
-import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
-import org.fisco.bcos.sdk.utils.ThreadPoolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated
 public class PerformanceTableLiquid {
     private static final Logger logger = LoggerFactory.getLogger(PerformanceTableLiquid.class);
     private static AtomicInteger sentTransactions = new AtomicInteger(0);
@@ -51,6 +43,7 @@ public class PerformanceTableLiquid {
     }
 
     public static void main(String[] args) {
+        /*
         try {
             String configFileName = ConstantConfig.CONFIG_FILE_NAME;
             URL configUrl =
@@ -137,6 +130,7 @@ public class PerformanceTableLiquid {
                     "====== PerformanceTableLiquid test failed, error message: " + e.getMessage());
             System.exit(0);
         }
+         */
     }
 
     private static void callTableOperation(
