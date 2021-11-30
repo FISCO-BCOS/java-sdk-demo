@@ -3,6 +3,7 @@ package org.fisco.bcos.sdk.demo.transaction;
 import java.math.BigInteger;
 import java.util.List;
 import org.fisco.bcos.sdk.client.Client;
+import org.fisco.bcos.sdk.client.protocol.model.tars.Transaction;
 import org.fisco.bcos.sdk.client.protocol.model.tars.TransactionData;
 import org.fisco.bcos.sdk.codec.ABICodec;
 import org.fisco.bcos.sdk.codec.ABICodecException;
@@ -197,9 +198,17 @@ public class BasicAbiTransaction {
      * @return 带有签名的交易编码
      */
     public byte[] encodeRawTransactionWithSignature(
-            TransactionData transaction, SignatureResult signatureResult) {
+            TransactionData transaction, SignatureResult signatureResult, boolean isWASM) {
         byte[] hash = transactionEncoder.encodeAndHashBytes(transaction);
-        return transactionEncoder.encodeToTransactionBytes(transaction, hash, signatureResult);
+        int txAttribute = 0;
+        if (isWASM) {
+            txAttribute |= Transaction.LIQUID_SCALE_CODEC;
+            if (this.isDeployTransaction) {
+                txAttribute |= Transaction.LIQUID_CREATE;
+            }
+        }
+        return transactionEncoder.encodeToTransactionBytes(
+                transaction, hash, signatureResult, txAttribute);
     }
 
     public TransactionData makeRawTransaction(Client client, String chainId, String groupId)
