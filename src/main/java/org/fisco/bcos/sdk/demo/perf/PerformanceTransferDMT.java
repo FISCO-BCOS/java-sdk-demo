@@ -159,8 +159,8 @@ public class PerformanceTransferDMT {
         for (int i = 0; i < count; ++i) {
             limiter.acquire();
 
-            final int fromIndex = random.nextInt() % accounts.length;
-            final int toIndex = random.nextInt() % accounts.length;
+            final int fromIndex = Math.abs(random.nextInt()) % accounts.length;
+            final int toIndex = Math.abs(random.nextInt()) % accounts.length;
             threadPoolService
                     .getThreadPool()
                     .execute(
@@ -186,6 +186,7 @@ public class PerformanceTransferDMT {
                                                         AtomicLong toBalance = summary.get(toIndex);
                                                         toBalance.addAndGet(value);
                                                     }
+
                                                     long cost = System.currentTimeMillis() - now;
                                                     collector.onMessage(receipt, cost);
                                                     receivedBar.step();
