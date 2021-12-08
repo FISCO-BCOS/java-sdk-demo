@@ -67,9 +67,10 @@ public class ParallelOkPerf {
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
-            client.setDAG(true);
             dagUserInfo.setFile(userFile);
-            ThreadPoolService threadPoolService = new ThreadPoolService("ParallelOkPerf", 1000000);
+            ThreadPoolService threadPoolService =
+                    new ThreadPoolService(
+                            "ParallelOkPerf", Runtime.getRuntime().availableProcessors());
 
             if (perfType.compareToIgnoreCase("parallelok") == 0) {
                 parallelOkPerf(groupId, command, count, qps, threadPoolService);
