@@ -35,14 +35,14 @@ import org.fisco.bcos.sdk.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.utils.ThreadPoolService;
 
-public class PerformanceDMT {
+public class PerformanceTransferDMC {
     private static Client client;
 
     public static void Usage() {
         System.out.println(" Usage:");
-        System.out.println("===== PerformanceDMT test===========");
+        System.out.println("===== PerformanceDMC test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceDMT [groupId] [userCount] [count] [qps].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTransferDMC [groupId] [userCount] [count] [qps].");
     }
 
     public static void main(String[] args)
@@ -68,7 +68,7 @@ public class PerformanceDMT {
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
             ThreadPoolService threadPoolService =
-                    new ThreadPoolService("DMTClient", Runtime.getRuntime().availableProcessors());
+                    new ThreadPoolService("DMCClient", Runtime.getRuntime().availableProcessors());
 
             start(groupId, userCount, count, qps, threadPoolService);
 
@@ -159,29 +159,36 @@ public class PerformanceDMT {
         for (int i = 0; i < count; ++i) {
             limiter.acquire();
 
-            final int index = i % accounts.length;
+            final int fromIndex = Math.abs(random.nextInt()) % accounts.length;
+            final int toIndex = Math.abs(random.nextInt()) % accounts.length;
             threadPoolService
                     .getThreadPool()
                     .execute(
                             new Runnable() {
                                 @Override
                                 public void run() {
-                                    Account account = accounts[index];
+                                    Account account = accounts[fromIndex];
                                     long now = System.currentTimeMillis();
 
                                     final long value = Math.abs(random.nextLong() % 1000);
 
-                                    account.addBalance(
+                                    account.transfer(
+                                            accounts[toIndex].getContractAddress(),
                                             BigInteger.valueOf(value),
                                             new TransactionCallback() {
                                                 @Override
                                                 public void onResponse(TransactionReceipt receipt) {
-                                                    AtomicLong count = summary.get(index);
-                                                    count.addAndGet(value);
+                                                    if (receipt.getStatus() == 0) {
+                                                        AtomicLong fromBalance =
+                                                                summary.get(fromIndex);
+                                                        fromBalance.addAndGet(-value);
+
+                                                        AtomicLong toBalance = summary.get(toIndex);
+                                                        toBalance.addAndGet(value);
+                                                    }
 
                                                     long cost = System.currentTimeMillis() - now;
                                                     collector.onMessage(receipt, cost);
-
                                                     receivedBar.step();
                                                     transactionLatch.countDown();
                                                     totalCost.addAndGet(
