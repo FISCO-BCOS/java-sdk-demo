@@ -1,5 +1,3 @@
-[English](../CONTRIBUTING.md) / 中文
-
 # 贡献代码
 
 非常感谢能有心为FISCO-BCOS社区贡献代码！
