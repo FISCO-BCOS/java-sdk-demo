@@ -34,14 +34,14 @@ public class ParallelOkPerf {
         System.out.println(" Usage:");
         System.out.println("===== ParallelOk test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [add] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [add] [count] [tps] [file] [enableDAG].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [transfer] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [transfer] [count] [tps] [file] [enableDAG].");
         System.out.println("===== DagTransafer test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupId] [add] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupId] [add] [count] [tps] [file] [enableDAG].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupId] [transfer] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupId] [transfer] [count] [tps] [file] [enableDAG].");
     }
 
     public static void main(String[] args)
@@ -53,7 +53,7 @@ public class ParallelOkPerf {
                 System.out.println("The configFile " + configFileName + " doesn't exist!");
                 return;
             }
-            if (args.length < 6) {
+            if (args.length < 7) {
                 Usage();
                 return;
             }
@@ -63,10 +63,15 @@ public class ParallelOkPerf {
             Integer count = Integer.valueOf(args[3]);
             Integer qps = Integer.valueOf(args[4]);
             String userFile = args[5];
+            boolean enableDAG = Boolean.valueOf(args[6]);
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
+            client.setDAG(false);
+            if (enableDAG) {
+                client.setDAG(true);
+            }
             dagUserInfo.setFile(userFile);
             ThreadPoolService threadPoolService =
                     new ThreadPoolService(
