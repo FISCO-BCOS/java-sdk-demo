@@ -17,11 +17,14 @@ import com.google.common.util.concurrent.RateLimiter;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import me.tongfei.progressbar.ProgressBar;
@@ -29,17 +32,18 @@ import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.fisco.bcos.sdk.BcosSDK;
+import org.fisco.bcos.sdk.abi.datatypes.generated.tuples.generated.Tuple3;
+import org.fisco.bcos.sdk.abi.datatypes.generated.tuples.generated.Tuple4;
 import org.fisco.bcos.sdk.client.Client;
 import org.fisco.bcos.sdk.demo.contract.TigerHole;
-import org.fisco.bcos.sdk.demo.contract.TigerHole2;
 import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
 import org.fisco.bcos.sdk.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
-import org.fisco.bcos.sdk.utils.ThreadPoolService;
 
 public class PerformanceTiger {
     private static Client client;
+    private static RateLimiter limiter;
 
     public static void Usage() {
         System.out.println(" Usage:");
@@ -69,13 +73,12 @@ public class PerformanceTiger {
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
-            ThreadPoolService threadPoolService =
-                    new ThreadPoolService(
-                            "TigerClient", Runtime.getRuntime().availableProcessors());
+            ExecutorService executor =
+                    Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+            limiter = RateLimiter.create(qps.intValue());
 
-            start(groupId, count, qps, threadPoolService);
+            start(groupId, count, qps, executor);
 
-            threadPoolService.getThreadPool().awaitTermination(0, TimeUnit.SECONDS);
             System.exit(0);
         } catch (Exception e) {
             e.printStackTrace();
@@ -83,23 +86,12 @@ public class PerformanceTiger {
         }
     }
 
-    public static void start(
-            int groupId, int count, Integer qps, ThreadPoolService threadPoolService)
-            throws IOException, InterruptedException, ContractException {
-        System.out.println(
-                "====== Start test, count: " + count + ", qps:" + qps + ", groupId: " + groupId);
+    public static Map<String, Integer> createSeedUsers(
+            TigerHole tigerHole, int count, ExecutorService executor) throws InterruptedException {
+        AtomicLong totalCost = new AtomicLong(0);
+        Collector collector = new Collector();
+        collector.setTotal(count);
 
-        RateLimiter limiter = RateLimiter.create(qps.intValue());
-
-        final Random random = new Random();
-        random.setSeed(System.currentTimeMillis());
-
-        System.out.println("Create tiger hole...");
-        TigerHole2 tigerHole = TigerHole2.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
-        tigerHole.enableParallel();
-        System.out.println("Create tiger hole finished!");
-
-        System.out.println("Sending transactions...");
         ProgressBar sendedBar =
                 new ProgressBarBuilder()
                         .setTaskName("Send   :")
@@ -113,69 +105,69 @@ public class PerformanceTiger {
                         .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                         .build();
 
+        Map<String, Integer> seedUsers = new ConcurrentHashMap<String, Integer>();
+        final Random random = new Random();
+
         CountDownLatch transactionLatch = new CountDownLatch(count);
-        AtomicLong totalCost = new AtomicLong(0);
-        Collector collector = new Collector();
-        collector.setTotal(count);
+        AtomicInteger tigerIDStart = new AtomicInteger(random.nextInt(22 * 10000));
 
-        final ConcurrentHashMap<Integer, String> results = new ConcurrentHashMap<Integer, String>();
-        final AtomicInteger duplicateCount = new AtomicInteger(0);
-
+        System.out.println("Creating seed users...");
         for (int i = 0; i < count; ++i) {
-            threadPoolService
-                    .getThreadPool()
-                    .execute(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    limiter.acquire();
+            executor.submit(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            limiter.acquire();
 
-                                    final String openID =
-                                            RandomStringUtils.random(32); // random open id
-                                    final int tigerID =
-                                            random.nextInt(2022 * 10000); // total 2022w tigers
+                            final String openID = RandomStringUtils.random(32);
+                            int tigerID = tigerIDStart.addAndGet(1);
 
-                                    long now = System.currentTimeMillis();
+                            String randomStr1 = RandomStringUtils.random(32);
+                            String randomStr2 = RandomStringUtils.random(32);
 
-                                    tigerHole.setTiger(
-                                            openID,
-                                            BigInteger.valueOf(tigerID),
-                                            new TransactionCallback() {
-                                                @Override
-                                                public void onResponse(TransactionReceipt receipt) {
-                                                    if (receipt.isStatusOK()) {
-                                                        BigInteger inserted =
-                                                                new BigInteger(
-                                                                        receipt.getOutput()
-                                                                                .substring(2),
-                                                                        16);
-                                                        if (inserted.intValue() == 1) {
-                                                            // Success insert
-                                                            results.put(tigerID, openID);
-                                                        } else {
-                                                            duplicateCount.addAndGet(1);
-                                                            // System.out.println(
-                                                            // "Duplicate tiger: "
-                                                            // + openID
-                                                            // + ":"
-                                                            // + tigerID);
-                                                        }
-                                                    } else {
-                                                        System.err.println(
-                                                                "Error! " + receipt.getMessage());
-                                                    }
+                            long now = System.currentTimeMillis();
 
-                                                    long cost = System.currentTimeMillis() - now;
-                                                    collector.onMessage(receipt, cost);
-                                                    receivedBar.step();
-                                                    transactionLatch.countDown();
-                                                    totalCost.addAndGet(
-                                                            System.currentTimeMillis() - now);
+                            tigerHole.tradeTiger(
+                                    openID,
+                                    BigInteger.valueOf(tigerID),
+                                    randomStr1,
+                                    randomStr2,
+                                    BigInteger.valueOf(0),
+                                    BigInteger.valueOf(0),
+                                    new TransactionCallback() {
+                                        @Override
+                                        public void onResponse(TransactionReceipt receipt) {
+                                            if (receipt.isStatusOK()) {
+                                                BigInteger code =
+                                                        new BigInteger(
+                                                                receipt.getOutput().substring(2),
+                                                                16);
+                                                if (code.intValue() == 0) {
+                                                    // Success insert
+                                                    seedUsers.put(openID, tigerID);
+                                                } else {
+                                                    System.err.println(
+                                                            "Error, code: "
+                                                                    + code.intValue()
+                                                                    + ", "
+                                                                    + tigerID);
                                                 }
-                                            });
-                                    sendedBar.step();
-                                }
-                            });
+                                            } else {
+                                                System.err.println(
+                                                        "Error! " + receipt.getMessage());
+                                            }
+
+                                            long cost = System.currentTimeMillis() - now;
+                                            collector.onMessage(receipt, cost);
+                                            receivedBar.step();
+                                            transactionLatch.countDown();
+                                            totalCost.addAndGet(System.currentTimeMillis() - now);
+                                        }
+                                    });
+
+                            sendedBar.step();
+                        }
+                    });
         }
         transactionLatch.await();
 
@@ -183,42 +175,152 @@ public class PerformanceTiger {
         receivedBar.close();
         collector.report();
 
-        System.out.println("Sending transactions finished!");
+        System.out.println("Create seed user finished!");
+        return seedUsers;
+    }
 
-        System.out.println("Checking result...");
-        CountDownLatch checkLatch = new CountDownLatch(count);
-        for (Map.Entry<Integer, String> entry : results.entrySet()) {
-            threadPoolService
-                    .getThreadPool()
-                    .execute(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        limiter.acquire();
+    public static void publishCards(
+            TigerHole tigerHole, Map<String, Integer> seedUsers, ExecutorService executor)
+            throws InterruptedException {
+        AtomicLong totalCost = new AtomicLong(0);
+        Collector collector = new Collector();
 
-                                        String openID =
-                                                tigerHole.getOpenIDByTiger(
-                                                        BigInteger.valueOf(entry.getKey()));
+        int count = seedUsers.size() * 10;
+        collector.setTotal(count);
 
-                                        if (!openID.equals(entry.getValue())) {
-                                            System.out.println(
-                                                    "Check failed! tigerID: ["
-                                                            + entry.getKey()
-                                                            + "] Expected openID["
-                                                            + entry.getValue()
-                                                            + "] not equal to ["
-                                                            + openID
-                                                            + "]");
+        ProgressBar sendedBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Send   :")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        ProgressBar receivedBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Receive:")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+
+        final Random random = new Random();
+        CountDownLatch transactionLatch = new CountDownLatch(count);
+        AtomicInteger tigerIDStart = new AtomicInteger(random.nextInt(22 * 10000));
+
+        System.out.println("Publish card...");
+        for (int i = 0; i < count; ++i) {
+            executor.submit(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            limiter.acquire();
+
+                            int index = random.nextInt(seedUsers.size());
+                            Map.Entry<String, Integer> entry =
+                                    (Entry<String, Integer>) seedUsers.entrySet().toArray()[index];
+                            final String fromOpenID = entry.getKey();
+                            final String toOpenID = RandomStringUtils.random(32);
+                            int tigerID = tigerIDStart.addAndGet(1);
+
+                            long now = System.currentTimeMillis();
+
+                            tigerHole.tradeTiger(
+                                    toOpenID,
+                                    BigInteger.valueOf(tigerID),
+                                    fromOpenID,
+                                    fromOpenID,
+                                    BigInteger.valueOf(10),
+                                    BigInteger.valueOf(1),
+                                    new TransactionCallback() {
+                                        @Override
+                                        public void onResponse(TransactionReceipt receipt) {
+                                            if (receipt.isStatusOK()) {
+                                                BigInteger code =
+                                                        new BigInteger(
+                                                                receipt.getOutput().substring(2),
+                                                                16);
+                                                if (code.intValue() == 0) {
+                                                    // Success get
+                                                } else {
+                                                    if (code.intValue() == -3) {
+                                                        // Tiger own limit
+                                                        Tuple4<
+                                                                        List<BigInteger>,
+                                                                        List<String>,
+                                                                        BigInteger,
+                                                                        Boolean>
+                                                                result;
+                                                        try {
+                                                            result = tigerHole.getUser(toOpenID);
+                                                        } catch (ContractException e) {
+                                                            e.printStackTrace();
+                                                            return;
+                                                        }
+
+                                                        if (result.getValue1().size() != 1024) {
+                                                            System.err.println(
+                                                                    "User tigers limit mismatch!");
+                                                        }
+                                                    } else if (code.intValue() == -5) {
+                                                        Tuple3<String, BigInteger, BigInteger>
+                                                                result;
+                                                        try {
+                                                            result = tigerHole.getCard(fromOpenID);
+                                                        } catch (ContractException e) {
+                                                            e.printStackTrace();
+                                                            return;
+                                                        }
+
+                                                        if (result.getValue2().intValue()
+                                                                != result.getValue3().intValue()) {
+                                                            System.err.println(
+                                                                    "Card limit mismatch!");
+                                                        }
+                                                    } else {
+                                                        System.err.println(
+                                                                "Unknown error! "
+                                                                        + code.intValue());
+                                                    }
+                                                }
+                                            } else {
+                                                System.err.println(
+                                                        "Error! " + receipt.getMessage());
+                                            }
+
+                                            long cost = System.currentTimeMillis() - now;
+                                            collector.onMessage(receipt, cost);
+                                            receivedBar.step();
+                                            transactionLatch.countDown();
+                                            totalCost.addAndGet(System.currentTimeMillis() - now);
                                         }
+                                    });
 
-                                        checkLatch.countDown();
-                                    } catch (ContractException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            });
+                            sendedBar.step();
+                        }
+                    });
         }
-        System.out.println("Checking finished!");
+        transactionLatch.await();
+
+        sendedBar.close();
+        receivedBar.close();
+        collector.report();
+
+        System.out.println("Publish card finished!");
+    }
+
+    public static void start(int groupId, int count, Integer qps, ExecutorService executor)
+            throws IOException, InterruptedException, ContractException {
+        System.out.println(
+                "====== Start test, count: " + count + ", qps:" + qps + ", groupId: " + groupId);
+
+        final Random random = new Random();
+        random.setSeed(System.currentTimeMillis());
+
+        System.out.println("Create tiger hole...");
+        TigerHole tigerHole = TigerHole.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
+        tigerHole.enableParallel();
+        System.out.println("Create tiger hole finished!");
+
+        Map<String, Integer> seedUsers = createSeedUsers(tigerHole, count, executor);
+
+        publishCards(tigerHole, seedUsers, executor);
     }
 }
