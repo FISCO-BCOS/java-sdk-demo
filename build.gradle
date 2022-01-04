@@ -21,7 +21,7 @@ ext {
 }
 
 archivesBaseName = 'java-sdk-demo'
-version = '3.0.0-rc1'
+version = '3.0.0-rc2-SNAPSHOT'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
