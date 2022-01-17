@@ -12,7 +12,6 @@ import org.fisco.bcos.sdk.crypto.signature.SignatureResult;
 import org.fisco.bcos.sdk.transaction.builder.TransactionBuilderInterface;
 import org.fisco.bcos.sdk.transaction.builder.TransactionBuilderService;
 import org.fisco.bcos.sdk.transaction.codec.encode.TransactionEncoderService;
-import org.fisco.bcos.sdk.transaction.model.gas.DefaultGasProvider;
 
 public class BasicAbiTransaction {
     String contractName;
@@ -51,31 +50,12 @@ public class BasicAbiTransaction {
         return this;
     }
 
-    BigInteger gasPrice = DefaultGasProvider.GAS_PRICE;
-    BigInteger gasLimit = DefaultGasProvider.GAS_LIMIT;
     BigInteger value = BigInteger.ZERO;
     String extraData = "";
 
     CryptoSuite cryptoSuite;
     ABICodec abiCodec;
     TransactionEncoderService transactionEncoder;
-
-    public BigInteger getGasPrice() {
-        return gasPrice;
-    }
-
-    public void setGasPrice(BigInteger gasPrice) {
-        this.gasPrice = gasPrice;
-    }
-
-    public BigInteger getGasLimit() {
-        return gasLimit;
-    }
-
-    public BasicAbiTransaction setGasLimit(BigInteger gasLimit) {
-        this.gasLimit = gasLimit;
-        return this;
-    }
 
     public BigInteger getValue() {
         return value;
