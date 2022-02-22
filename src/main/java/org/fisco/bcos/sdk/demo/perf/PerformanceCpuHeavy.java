@@ -14,13 +14,18 @@
 package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.URL;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
 import org.fisco.bcos.sdk.BcosSDK;
 import org.fisco.bcos.sdk.client.Client;
-import org.fisco.bcos.sdk.codec.datatypes.Bool;
-import org.fisco.bcos.sdk.demo.contract.Account;
 import org.fisco.bcos.sdk.demo.contract.ParallelCpuHeavy;
 import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
@@ -28,18 +33,8 @@ import org.fisco.bcos.sdk.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.utils.ThreadPoolService;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.net.URL;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
 public class PerformanceCpuHeavy {
-    private final static int DEFAULT_SORT_ARRAY_SIZE = 32;
+    private static final int DEFAULT_SORT_ARRAY_SIZE = 32;
     private static Client client;
 
     public static void Usage() {
@@ -48,7 +43,9 @@ public class PerformanceCpuHeavy {
         System.out.println(
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceCpuHeavy [groupId] [contractsNum] [count] [qps] [parallel(true/false)].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceCpuHeavy [groupId] [contractsNum] [count] [qps] [parallel(true/false)] [sort array size(default " + DEFAULT_SORT_ARRAY_SIZE + ")].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceCpuHeavy [groupId] [contractsNum] [count] [qps] [parallel(true/false)] [sort array size(default "
+                        + DEFAULT_SORT_ARRAY_SIZE
+                        + ")].");
     }
 
     public static void main(String[] args)
@@ -75,7 +72,6 @@ public class PerformanceCpuHeavy {
                 sortArraySize = Integer.valueOf(args[5]).intValue();
             }
 
-
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
@@ -83,7 +79,14 @@ public class PerformanceCpuHeavy {
             ThreadPoolService threadPoolService =
                     new ThreadPoolService("DMCClient", Runtime.getRuntime().availableProcessors());
 
-            start(groupId, contractsNum, count, qps, enableParallel, sortArraySize, threadPoolService);
+            start(
+                    groupId,
+                    contractsNum,
+                    count,
+                    qps,
+                    enableParallel,
+                    sortArraySize,
+                    threadPoolService);
 
             threadPoolService.getThreadPool().awaitTermination(0, TimeUnit.SECONDS);
             System.exit(0);
@@ -191,19 +194,21 @@ public class PerformanceCpuHeavy {
 
                                     final long value = Math.abs(random.nextLong() % 1000);
 
+                                    contract.sort(
+                                            BigInteger.valueOf(sortArraySize.longValue()),
+                                            BigInteger.valueOf(signature),
+                                            new TransactionCallback() {
+                                                @Override
+                                                public void onResponse(TransactionReceipt receipt) {
+                                                    long cost = System.currentTimeMillis() - now;
+                                                    collector.onMessage(receipt, cost);
 
-                                    contract.sort(BigInteger.valueOf(sortArraySize.longValue()), BigInteger.valueOf(signature), new TransactionCallback() {
-                                        @Override
-                                        public void onResponse(TransactionReceipt receipt) {
-                                            long cost = System.currentTimeMillis() - now;
-                                            collector.onMessage(receipt, cost);
-
-                                            receivedBar.step();
-                                            transactionLatch.countDown();
-                                            totalCost.addAndGet(
-                                                    System.currentTimeMillis() - now);
-                                        }
-                                    });
+                                                    receivedBar.step();
+                                                    transactionLatch.countDown();
+                                                    totalCost.addAndGet(
+                                                            System.currentTimeMillis() - now);
+                                                }
+                                            });
 
                                     sendedBar.step();
                                 }

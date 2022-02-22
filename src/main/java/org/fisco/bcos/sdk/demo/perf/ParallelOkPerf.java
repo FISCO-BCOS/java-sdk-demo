@@ -78,7 +78,7 @@ public class ParallelOkPerf {
                             "ParallelOkPerf", Runtime.getRuntime().availableProcessors());
 
             if (perfType.compareToIgnoreCase("parallelok") == 0) {
-                parallelOkPerf(groupId, command, count, qps, threadPoolService);
+                parallelOkPerf(groupId, command, count, qps, threadPoolService, enableDAG);
             } else if (perfType.compareToIgnoreCase("precompiled") == 0) {
                 dagTransferPerf(groupId, command, count, qps, threadPoolService);
             } else {
@@ -99,7 +99,8 @@ public class ParallelOkPerf {
             String command,
             Integer count,
             Integer qps,
-            ThreadPoolService threadPoolService)
+            ThreadPoolService threadPoolService,
+            boolean enableDAG)
             throws IOException, InterruptedException, ContractException {
         System.out.println(
                 "====== ParallelOk trans, count: "
@@ -132,6 +133,15 @@ public class ParallelOkPerf {
                 System.out.println(
                         "====== ParallelOk trans, load success, address: "
                                 + parallelOk.getContractAddress());
+                if (enableDAG) {
+                    parallelOk.enableParallel();
+                    System.out.println("Enable DAG");
+                } else {
+                    parallelOk.disableParallel();
+                    System.out.println("Disable DAG");
+                }
+
+                System.out.println("Start transfer...");
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.userTransfer(BigInteger.valueOf(count), BigInteger.valueOf(qps));
                 break;
