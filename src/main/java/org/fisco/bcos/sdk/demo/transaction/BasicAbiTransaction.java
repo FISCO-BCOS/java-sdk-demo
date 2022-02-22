@@ -3,15 +3,15 @@ package org.fisco.bcos.sdk.demo.transaction;
 import java.math.BigInteger;
 import java.util.List;
 import org.fisco.bcos.sdk.client.Client;
-import org.fisco.bcos.sdk.client.protocol.model.tars.Transaction;
-import org.fisco.bcos.sdk.client.protocol.model.tars.TransactionData;
+import org.fisco.bcos.sdk.client.protocol.model.Transaction;
 import org.fisco.bcos.sdk.codec.ABICodec;
 import org.fisco.bcos.sdk.codec.ABICodecException;
 import org.fisco.bcos.sdk.crypto.CryptoSuite;
 import org.fisco.bcos.sdk.crypto.signature.SignatureResult;
-import org.fisco.bcos.sdk.transaction.builder.TransactionBuilderInterface;
-import org.fisco.bcos.sdk.transaction.builder.TransactionBuilderService;
+import org.fisco.bcos.sdk.jni.common.JniException;
+import org.fisco.bcos.sdk.jni.utilities.tx.TransactionBuilderJniObj;
 import org.fisco.bcos.sdk.transaction.codec.encode.TransactionEncoderService;
+import org.fisco.bcos.sdk.utils.Hex;
 
 public class BasicAbiTransaction {
     String contractName;
@@ -165,7 +165,7 @@ public class BasicAbiTransaction {
      * @param rawTransaction 需要编码的交易
      * @return 编码后交易的哈希
      */
-    public byte[] calcRawTransactionHash(TransactionData rawTransaction) {
+    public byte[] calcRawTransactionHash(long rawTransaction) throws JniException {
         byte[] hash = transactionEncoder.encodeAndHashBytes(rawTransaction);
         return hash;
     }
@@ -178,7 +178,7 @@ public class BasicAbiTransaction {
      * @return 带有签名的交易编码
      */
     public byte[] encodeRawTransactionWithSignature(
-            TransactionData transaction, SignatureResult signatureResult, boolean isWASM) {
+            long transaction, SignatureResult signatureResult, boolean isWASM) throws JniException {
         byte[] hash = transactionEncoder.encodeAndHashBytes(transaction);
         int txAttribute = 0;
         if (isWASM) {
@@ -191,22 +191,26 @@ public class BasicAbiTransaction {
                 transaction, hash, signatureResult, txAttribute);
     }
 
-    public TransactionData makeRawTransaction(Client client, String chainId, String groupId)
-            throws ABICodecException {
+    public long makeRawTransaction(Client client, String chainId, String groupId)
+            throws ABICodecException, JniException {
         if (this.isDeployTransaction) return makeDeployRawTransaction(client, chainId, groupId);
         return makeMethodRawTransaction(client, chainId, groupId);
     }
 
-    public TransactionData makeRawTransactionByInput(
-            Client client, String chainId, String groupId, byte[] input) {
-        // 创建TransactionBuilder，构造RawTransaction
-        TransactionBuilderInterface transactionBuilder = new TransactionBuilderService(client);
-        TransactionData rawtx = transactionBuilder.createTransaction(to, input, chainId, groupId);
-        return rawtx;
+    public long makeRawTransactionByInput(
+            Client client, String chainId, String groupId, byte[] input) throws JniException {
+        // 构造RawTransaction
+        return TransactionBuilderJniObj.createTransactionData(
+                groupId,
+                chainId,
+                to,
+                Hex.toHexString(input),
+                "",
+                client.getBlockLimit().longValue());
     }
 
-    public TransactionData makeDeployRawTransaction(Client client, String chainId, String groupId)
-            throws ABICodecException {
+    public long makeDeployRawTransaction(Client client, String chainId, String groupId)
+            throws ABICodecException, JniException {
         byte[] deployInput = encodeConstructor();
         System.out.println("deploy contract bin:" + deployInput);
         System.out.println("bin size " + deployInput.length);
@@ -215,8 +219,8 @@ public class BasicAbiTransaction {
     }
 
     // 构造未签名交易
-    public TransactionData makeMethodRawTransaction(Client client, String chainId, String groupId)
-            throws ABICodecException {
+    public long makeMethodRawTransaction(Client client, String chainId, String groupId)
+            throws ABICodecException, JniException {
 
         // 编码交易内容
         byte[] txInput = encodeMethodInput(abiCodec);
