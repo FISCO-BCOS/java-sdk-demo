@@ -9,13 +9,12 @@ import org.fisco.bcos.sdk.demo.perf.ParallelOkPerf;
 import org.fisco.bcos.sdk.jni.amop.AmopResponseCallback;
 import org.fisco.bcos.sdk.jni.common.JniException;
 import org.fisco.bcos.sdk.jni.common.Response;
-import org.fisco.bcos.sdk.jni.test.amop.Sub;
 import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Publish {
-    private static final Logger logger = LoggerFactory.getLogger(Sub.class);
+    private static final Logger logger = LoggerFactory.getLogger(Publish.class);
 
     public static void usage() {
         System.out.println("\tUsage: ");

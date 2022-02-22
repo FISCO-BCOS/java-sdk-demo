@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.fisco.bcos.sdk.codec.ABICodecException;
+import org.fisco.bcos.sdk.jni.common.JniException;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
 import org.fisco.bcos.sdk.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.transaction.codec.decode.TransactionDecoderInterface;
@@ -59,7 +60,7 @@ public class LegoTransactionDemo {
     // 同步部署演示
     public void testDeploy()
             throws NoSuchTransactionFileException, JsonProcessingException, ABICodecException,
-                    TransactionException, IOException {
+                    TransactionException, IOException, JniException {
         BasicAbiTransaction abiTx = makeHelloWorldDeployTest();
         ISignTransaction signTxImpl =
                 new KeyToolSignTransaction(lt.bcosClientWrapper.getTxCryptoSuite());
@@ -72,7 +73,7 @@ public class LegoTransactionDemo {
     // 同步交易演示
     public TransactionResponse testTx()
             throws NoSuchTransactionFileException, JsonProcessingException, ABICodecException,
-                    TransactionException, IOException {
+                    TransactionException, IOException, JniException {
         // 构建一个调用接口的测试交易
         BasicAbiTransaction abiTx = makeHelloWorldSetTest();
         // 实例化一个签名服务的实现
@@ -87,7 +88,7 @@ public class LegoTransactionDemo {
     // 异步交易演示
     public void testTxAsyn()
             throws NoSuchTransactionFileException, ABICodecException, JsonProcessingException,
-                    TransactionException, IOException {
+                    TransactionException, IOException, JniException {
         // 构建一个调用接口的测试交易
         BasicAbiTransaction abiTx = makeHelloWorldSetTest();
         // 实例化一个签名服务的实现
