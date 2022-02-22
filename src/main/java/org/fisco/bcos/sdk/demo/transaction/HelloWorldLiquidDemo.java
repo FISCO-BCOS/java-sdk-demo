@@ -7,7 +7,6 @@ import org.fisco.bcos.sdk.demo.contract.HelloWorldLiquid;
 import org.fisco.bcos.sdk.demo.perf.ParallelLiquidPerf;
 import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.network.NetworkException;
 import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
 
 public class HelloWorldLiquidDemo {
@@ -25,7 +24,7 @@ public class HelloWorldLiquidDemo {
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.transaction.HelloWorldLiquidDemo [group] [path] [set] [something].");
     }
 
-    public static void main(String[] args) throws NetworkException, ContractException {
+    public static void main(String[] args) throws ContractException {
         String configFileName = ConstantConfig.CONFIG_FILE_NAME;
         URL configUrl = ParallelLiquidPerf.class.getClassLoader().getResource(configFileName);
         if (configUrl == null) {
