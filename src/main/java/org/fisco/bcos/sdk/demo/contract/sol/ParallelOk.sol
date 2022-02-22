@@ -1,4 +1,4 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.6.0;
 
 import "./ParallelContract.sol";
 
@@ -8,32 +8,32 @@ contract ParallelOk is ParallelContract
     mapping (string => uint256) _balance;
     
      // Just an example, overflow is ok, use 'SafeMath' if needed
-    function transfer(string from, string to, uint256 num) public
+    function transfer(string memory from, string memory to, uint256 num) public
     {
         _balance[from] -= num;
         _balance[to] += num;
     }
 
     // Just for testing whether the parallel revert function is working well, no practical use
-    function transferWithRevert(string from, string to, uint256 num) public
+    function transferWithRevert(string memory from, string memory to, uint256 num) public
     {
         _balance[from] -= num;
         _balance[to] += num;
         require(num <= 100);
     }
 
-    function set(string name, uint256 num) public
+    function set(string memory name, uint256 num) public
     {
         _balance[name] = num;
     }
 
-    function balanceOf(string name) public view returns (uint256)
+    function balanceOf(string memory name) public view returns (uint256)
     {
         return _balance[name];
     }
     
     // Register parallel function
-    function enableParallel() public
+    function enableParallel() public override
     {
         // critical number is to define how many critical params from start
         registerParallelFunction("transfer(string,string,uint256)", 2); // critical: string string
@@ -41,7 +41,7 @@ contract ParallelOk is ParallelContract
     } 
 
     // Disable register parallel function
-    function disableParallel() public
+    function disableParallel() public override
     {
         unregisterParallelFunction("transfer(string,string,uint256)"); 
         unregisterParallelFunction("set(string,uint256)");
