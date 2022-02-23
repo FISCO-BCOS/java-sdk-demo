@@ -26,6 +26,8 @@ import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
 import org.fisco.bcos.sdk.BcosSDK;
 import org.fisco.bcos.sdk.client.Client;
+import org.fisco.bcos.sdk.demo.contract.CpuHeavyContract;
+import org.fisco.bcos.sdk.demo.contract.CpuHeavyPrecompiled;
 import org.fisco.bcos.sdk.demo.contract.ParallelCpuHeavy;
 import org.fisco.bcos.sdk.model.ConstantConfig;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
@@ -34,16 +36,16 @@ import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.utils.ThreadPoolService;
 
 public class PerformanceCpuHeavy {
-    private static final int DEFAULT_SORT_ARRAY_SIZE = 32;
+    private static final int DEFAULT_SORT_ARRAY_SIZE = 100000;
     private static Client client;
 
     public static void Usage() {
         System.out.println(" Usage:");
         System.out.println("===== Performance Cpu Heavy test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceCpuHeavy [groupId] [contractsNum] [count] [qps] [parallel(true/false)].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceCpuHeavy [groupId] [precompiled/solidity] [contractsNum] [count] [qps] [parallel(true/false)].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceCpuHeavy [groupId] [contractsNum] [count] [qps] [parallel(true/false)] [sort array size(default "
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceCpuHeavy [groupId] [precompiled/solidity] [contractsNum] [count] [qps] [parallel(true/false)] [sort array size(default "
                         + DEFAULT_SORT_ARRAY_SIZE
                         + ")].");
     }
@@ -58,29 +60,38 @@ public class PerformanceCpuHeavy {
                 return;
             }
 
-            if (args.length < 5) {
+            if (args.length < 6) {
                 Usage();
                 return;
             }
             String groupId = args[0];
-            int contractsNum = Integer.valueOf(args[1]).intValue();
-            Integer count = Integer.valueOf(args[2]).intValue();
-            Integer qps = Integer.valueOf(args[3]).intValue();
-            boolean enableParallel = Boolean.valueOf(args[4]);
+            String type = args[1];
+            int contractsNum = Integer.valueOf(args[2]).intValue();
+            Integer count = Integer.valueOf(args[3]).intValue();
+            Integer qps = Integer.valueOf(args[4]).intValue();
+            boolean enableParallel = Boolean.valueOf(args[5]);
             Integer sortArraySize = DEFAULT_SORT_ARRAY_SIZE;
-            if (args.length == 6) {
-                sortArraySize = Integer.valueOf(args[5]).intValue();
+            if (args.length == 7) {
+                sortArraySize = Integer.valueOf(args[6]).intValue();
             }
+
+            if (!type.equals("precompiled") && !type.equals("solidity")) {
+                Usage();
+                return;
+            }
+            boolean isPrecompiled = type.equals("precompiled");
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
 
             ThreadPoolService threadPoolService =
-                    new ThreadPoolService("DMCClient", Runtime.getRuntime().availableProcessors());
+                    new ThreadPoolService(
+                            "CpuHeavyClient", Runtime.getRuntime().availableProcessors());
 
             start(
                     groupId,
+                    isPrecompiled,
                     contractsNum,
                     count,
                     qps,
@@ -98,6 +109,7 @@ public class PerformanceCpuHeavy {
 
     public static void start(
             String groupId,
+            boolean isPrecompiled,
             int contractsNum,
             int count,
             Integer qps,
@@ -106,7 +118,9 @@ public class PerformanceCpuHeavy {
             ThreadPoolService threadPoolService)
             throws IOException, InterruptedException, ContractException {
         System.out.println(
-                "====== Start test, contracts num: "
+                "====== Start "
+                        + (isPrecompiled ? "precompiled" : "solidity")
+                        + " test, contracts num: "
                         + contractsNum
                         + ", count: "
                         + count
@@ -119,43 +133,54 @@ public class PerformanceCpuHeavy {
 
         RateLimiter limiter = RateLimiter.create(qps.intValue());
 
-        ParallelCpuHeavy[] contracts = new ParallelCpuHeavy[contractsNum];
+        CpuHeavyContract[] contracts = new CpuHeavyContract[contractsNum];
 
         final Random random = new Random();
         random.setSeed(System.currentTimeMillis());
 
-        System.out.println("Create contract...");
-        CountDownLatch userLatch = new CountDownLatch(contractsNum);
-        for (int i = 0; i < contractsNum; ++i) {
-            final int index = i;
-            threadPoolService
-                    .getThreadPool()
-                    .execute(
-                            new Runnable() {
-                                public void run() {
-                                    ParallelCpuHeavy contract;
-                                    try {
-                                        long initBalance = Math.abs(random.nextLong());
+        if (!isPrecompiled) {
+            // solidity
+            System.out.println("Create contract...");
+            CountDownLatch userLatch = new CountDownLatch(contractsNum);
+            for (int i = 0; i < contractsNum; ++i) {
+                final int index = i;
+                threadPoolService
+                        .getThreadPool()
+                        .execute(
+                                new Runnable() {
+                                    public void run() {
+                                        ParallelCpuHeavy contract;
+                                        try {
+                                            long initBalance = Math.abs(random.nextLong());
 
-                                        limiter.acquire();
-                                        contract =
-                                                ParallelCpuHeavy.deploy(
-                                                        client,
-                                                        client.getCryptoSuite().getCryptoKeyPair());
-                                        if (enableParallel) {
-                                            contract.enableParallel();
+                                            limiter.acquire();
+                                            contract =
+                                                    ParallelCpuHeavy.deploy(
+                                                            client,
+                                                            client.getCryptoSuite()
+                                                                    .getCryptoKeyPair());
+                                            if (enableParallel) {
+                                                contract.enableParallel();
+                                            }
+
+                                            contracts[index] = contract;
+                                            userLatch.countDown();
+                                        } catch (ContractException e) {
+                                            e.printStackTrace();
                                         }
-
-                                        contracts[index] = contract;
-                                        userLatch.countDown();
-                                    } catch (ContractException e) {
-                                        e.printStackTrace();
                                     }
-                                }
-                            });
+                                });
+            }
+            userLatch.await();
+            System.out.println("Create contract finished!");
+        } else {
+            // precompiled
+            for (int i = 0; i < contractsNum; ++i) {
+                contracts[i] =
+                        CpuHeavyPrecompiled.load(
+                                i, client, client.getCryptoSuite().getCryptoKeyPair());
+            }
         }
-        userLatch.await();
-        System.out.println("Create contract finished!");
 
         System.out.println("Sending transactions...");
         ProgressBar sendedBar =
@@ -188,7 +213,7 @@ public class PerformanceCpuHeavy {
                             new Runnable() {
                                 @Override
                                 public void run() {
-                                    ParallelCpuHeavy contract = contracts[index];
+                                    CpuHeavyContract contract = contracts[index];
 
                                     long now = System.currentTimeMillis();
 
