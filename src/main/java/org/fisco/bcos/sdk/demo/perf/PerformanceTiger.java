@@ -482,7 +482,6 @@ public class PerformanceTiger {
         System.out.println("Create tiger hole...");
         TigerHoleV2 tigerHole =
                 TigerHoleV2.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
-        client.setDAG(true);
         tigerHole.enableParallel();
         System.out.println("Create tiger v2 hole finished!");
 
