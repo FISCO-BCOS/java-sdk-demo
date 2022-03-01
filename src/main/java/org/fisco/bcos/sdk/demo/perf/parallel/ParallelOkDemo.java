@@ -14,6 +14,9 @@
 package org.fisco.bcos.sdk.demo.perf.parallel;
 
 import com.google.common.util.concurrent.RateLimiter;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.text.SimpleDateFormat;
@@ -218,6 +221,67 @@ public class ParallelOkDemo {
         while (sent.get() < allUsers.size()) {
             Thread.sleep(50);
         }
+    }
+
+    public void generateTransferTxs(BigInteger count, String txsFile, BigInteger qps)
+            throws InterruptedException, IOException {
+        File file = new File(txsFile);
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        System.out.println(
+                "ParallelOkDemo: test generateTransferTxs, count: "
+                        + count
+                        + ", txsFile: "
+                        + txsFile);
+        System.out.println("===================================================================");
+        queryAccount(qps);
+        FileWriter fileWriter = new FileWriter(file.getName(), true);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        System.out.println(
+                "ParallelOkDemo: start generateTransferTxs, count: "
+                        + count
+                        + ", txsFile: "
+                        + txsFile);
+        AtomicInteger generated = new AtomicInteger(0);
+        Integer area = count.intValue() / 10;
+        for (Integer i = 0; i < count.intValue(); i++) {
+            final Integer index = i;
+
+            DagTransferUser from = dagUserInfo.getFrom(index);
+            DagTransferUser to = dagUserInfo.getTo(index);
+            Random random = new Random();
+            int r = random.nextInt(100) + 1;
+            BigInteger amount = BigInteger.valueOf(r);
+            String txData =
+                    parallelOk.getSignedTransactionForTransfer(
+                            from.getUser(), to.getUser(), amount);
+            try {
+                bufferedWriter.write(txData);
+                bufferedWriter.newLine();
+                generated.incrementAndGet();
+                if (generated.get() >= area && ((generated.get() % area) == 0)) {
+                    System.out.println(
+                            "Already generated: "
+                                    + generated.get()
+                                    + "/"
+                                    + count
+                                    + " transactions");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        while (generated.intValue() < count.intValue()) {
+            Thread.sleep(2000);
+        }
+        System.out.println(
+                "ParallelOkDemo: generateTransferTxs success ! count: "
+                        + count
+                        + ", txsFile: "
+                        + txsFile);
+        bufferedWriter.close();
+        System.exit(0);
     }
 
     public void userTransfer(BigInteger count, BigInteger qps)

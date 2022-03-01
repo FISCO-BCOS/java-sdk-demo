@@ -200,7 +200,6 @@ public class PerformanceCpuHeavy {
         AtomicLong totalCost = new AtomicLong(0);
         Collector collector = new Collector();
         collector.setTotal(count);
-        client.setDAG(enableParallel);
 
         for (int i = 0; i < count; ++i) {
             limiter.acquire();
