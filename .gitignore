@@ -10,3 +10,4 @@ initEnv.sh
 tassl
 # macOS
 .DS_Store
+bin/

@@ -49,6 +49,7 @@ public class DagPrecompiledDemo {
                 DagTransfer.load(
                         DAG_TRANSFER_ADDR, client, client.getCryptoSuite().getCryptoKeyPair());
         this.dagUserInfo = dagUserInfo;
+        dagTransfer.setEnableDAG(true);
         this.collector = new PerformanceCollector();
     }
 
