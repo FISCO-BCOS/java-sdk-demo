@@ -1,12 +1,10 @@
 pragma solidity ^0.6.0;
 
-import "./ParallelContract.sol";
-
 // A parallel contract example
-contract ParallelOk is ParallelContract
+contract ParallelOk
 {
     mapping (string => uint256) _balance;
-    
+
      // Just an example, overflow is ok, use 'SafeMath' if needed
     function transfer(string memory from, string memory to, uint256 num) public
     {
@@ -31,19 +29,4 @@ contract ParallelOk is ParallelContract
     {
         return _balance[name];
     }
-    
-    // Register parallel function
-    function enableParallel() public override
-    {
-        // critical number is to define how many critical params from start
-        registerParallelFunction("transfer(string,string,uint256)", 2); // critical: string string
-        registerParallelFunction("set(string,uint256)", 1); // critical: string
-    } 
-
-    // Disable register parallel function
-    function disableParallel() public override
-    {
-        unregisterParallelFunction("transfer(string,string,uint256)"); 
-        unregisterParallelFunction("set(string,uint256)");
-    } 
 }
