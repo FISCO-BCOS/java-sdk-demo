@@ -14,6 +14,9 @@
 package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URL;
@@ -48,6 +51,10 @@ public class PerformanceCpuHeavy {
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceCpuHeavy [groupId] [precompiled/solidity] [contractsNum] [count] [qps] [parallel(true/false)] [sort array size(default "
                         + DEFAULT_SORT_ARRAY_SIZE
                         + ")].");
+        System.out.println(
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceCpuHeavy generate [groupID] [contractsNum] [count] [parallel(true/false)] [sort array size(default "
+                        + DEFAULT_SORT_ARRAY_SIZE
+                        + ")].");
     }
 
     public static void main(String[] args)
@@ -59,7 +66,11 @@ public class PerformanceCpuHeavy {
                 System.out.println("The configFile " + configFileName + " doesn't exist!");
                 return;
             }
-
+            if (args.length < 5) {
+                Usage();
+                return;
+            }
+            generatePrecompiledTxs(args, configUrl);
             if (args.length < 6) {
                 Usage();
                 return;
@@ -105,6 +116,73 @@ public class PerformanceCpuHeavy {
             e.printStackTrace();
             System.exit(0);
         }
+    }
+
+    public static void generatePrecompiledTxs(String[] args, URL configUrl) throws IOException {
+        String command = args[0];
+        if (!command.equals("generate")) {
+            return;
+        }
+        String txsFile = "cpuHeavyPrecompiledTxs.txt";
+        String groupId = args[1];
+        int contractsNum = Integer.valueOf(args[2]).intValue();
+        Integer count = Integer.valueOf(args[3]).intValue();
+
+        String configFile = configUrl.getPath();
+        BcosSDK sdk = BcosSDK.build(configFile);
+        client = sdk.getClient(groupId);
+        boolean enableDAG = Boolean.valueOf(args[4]);
+        Integer sortArraySize = DEFAULT_SORT_ARRAY_SIZE;
+        if (args.length == 6) {
+            sortArraySize = Integer.valueOf(args[5]).intValue();
+        }
+        File file = new File(txsFile);
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        System.out.println(
+                "PerformanceCpuHeavy: test generateTransferTxs, count: "
+                        + count
+                        + ", txsFile: "
+                        + txsFile
+                        + ", enableDag: "
+                        + enableDAG);
+        System.out.println("===================================================================");
+
+        CpuHeavyPrecompiled[] contracts = new CpuHeavyPrecompiled[contractsNum];
+
+        final Random random = new Random();
+        random.setSeed(System.currentTimeMillis());
+        ProgressBar generateBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Generate   :")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        // precompiled
+        for (int i = 0; i < contractsNum; ++i) {
+            contracts[i] =
+                    CpuHeavyPrecompiled.load(i, client, client.getCryptoSuite().getCryptoKeyPair());
+            (contracts[i]).setEnableDAG(enableDAG);
+        }
+        FileWriter fileWriter = new FileWriter(file.getName(), true);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        for (int i = 0; i < count; ++i) {
+            final int index = i % contracts.length;
+            final long signature = i; // See ParallelCpuHeavy.sol
+            CpuHeavyPrecompiled contract = contracts[index];
+            String txData =
+                    contract.getSignedTransactionForSort(
+                            BigInteger.valueOf(sortArraySize.longValue()),
+                            BigInteger.valueOf(signature));
+            bufferedWriter.write(txData);
+            bufferedWriter.newLine();
+            generateBar.step();
+        }
+        generateBar.close();
+        bufferedWriter.close();
+        System.exit(0);
+        System.out.println("===================================================================");
     }
 
     public static void start(
