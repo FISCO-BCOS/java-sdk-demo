@@ -179,7 +179,7 @@ public class PerformanceCpuHeavy {
                 contracts[i] =
                         CpuHeavyPrecompiled.load(
                                 i, client, client.getCryptoSuite().getCryptoKeyPair());
-                (contracts[i]).setEnableDAG(true);
+                (contracts[i]).setEnableDAG(enableParallel);
             }
         }
 
