@@ -21,7 +21,7 @@ ext {
 }
 
 archivesBaseName = 'java-sdk-demo'
-version = '3.0.0-rc2-SNAPSHOT'
+version = '3.0.0-rc3-SNAPSHOT'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -121,15 +121,11 @@ task javadocJar(type: Jar) {
 }
 
 jar {
-    // destinationDir file('dist/apps')
-    // archiveName project.name + '-' + project.version + '.jar'
+    destinationDir file('dist/apps')
+    archiveName project.name + '-' + project.version + '.jar'
     exclude '**/*.xml'
     exclude '**/*.properties'
     doLast {
-        copy {
-            from destinationDir
-            into 'dist/apps'
-        }
         copy {
             from configurations.runtimeClasspath
             into 'dist/lib'
