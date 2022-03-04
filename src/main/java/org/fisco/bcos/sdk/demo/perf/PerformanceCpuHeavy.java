@@ -179,7 +179,7 @@ public class PerformanceCpuHeavy {
                 contracts[i] =
                         CpuHeavyPrecompiled.load(
                                 i, client, client.getCryptoSuite().getCryptoKeyPair());
-                (contracts[i]).setEnableDAG(true);
+                (contracts[i]).setEnableDAG(enableParallel);
             }
         }
 
@@ -193,6 +193,12 @@ public class PerformanceCpuHeavy {
         ProgressBar receivedBar =
                 new ProgressBarBuilder()
                         .setTaskName("Receive:")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        ProgressBar errorBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Errors :")
                         .setInitialMax(count)
                         .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                         .build();
@@ -229,6 +235,11 @@ public class PerformanceCpuHeavy {
                                                     collector.onMessage(receipt, cost);
 
                                                     receivedBar.step();
+                                                    if (!receipt.isStatusOK()) {
+                                                        errorBar.step();
+                                                        // System.out.println(receipt.getStatus());
+                                                    }
+
                                                     transactionLatch.countDown();
                                                     totalCost.addAndGet(
                                                             System.currentTimeMillis() - now);
@@ -245,6 +256,7 @@ public class PerformanceCpuHeavy {
 
         sendedBar.close();
         receivedBar.close();
+        errorBar.close();
         collector.report();
 
         // collector.
