@@ -20,7 +20,7 @@ import org.fisco.bcos.sdk.model.callback.TransactionCallback;
 
 @SuppressWarnings("unchecked")
 public class CpuHeavyPrecompiled extends CpuHeavyContract {
-    public static final String CONTRACT_ADDRESS_PREFIX = "0x00000000000000000000000000000000000";
+    public static final String CONTRACT_ADDRESS_PREFIX = "0x000000000000000000000000000000000000";
     public static final Integer ADDRESS_STARTER = Integer.valueOf("5200", 16);
 
     public static final String[] BINARY_ARRAY = {""};

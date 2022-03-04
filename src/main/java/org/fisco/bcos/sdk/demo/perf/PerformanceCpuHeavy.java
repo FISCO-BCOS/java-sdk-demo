@@ -196,6 +196,12 @@ public class PerformanceCpuHeavy {
                         .setInitialMax(count)
                         .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                         .build();
+        ProgressBar errorBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Errors :")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
 
         CountDownLatch transactionLatch = new CountDownLatch(count);
         AtomicLong totalCost = new AtomicLong(0);
@@ -229,6 +235,11 @@ public class PerformanceCpuHeavy {
                                                     collector.onMessage(receipt, cost);
 
                                                     receivedBar.step();
+                                                    if (!receipt.isStatusOK()) {
+                                                        errorBar.step();
+                                                        // System.out.println(receipt.getStatus());
+                                                    }
+
                                                     transactionLatch.countDown();
                                                     totalCost.addAndGet(
                                                             System.currentTimeMillis() - now);
@@ -245,6 +256,7 @@ public class PerformanceCpuHeavy {
 
         sendedBar.close();
         receivedBar.close();
+        errorBar.close();
         collector.report();
 
         // collector.
