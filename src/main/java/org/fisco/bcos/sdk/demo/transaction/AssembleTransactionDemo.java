@@ -2,12 +2,12 @@ package org.fisco.bcos.sdk.demo.transaction;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.fisco.bcos.sdk.codec.ABICodecException;
-import org.fisco.bcos.sdk.codec.wrapper.ABIDefinition;
-import org.fisco.bcos.sdk.transaction.model.dto.CallResponse;
-import org.fisco.bcos.sdk.transaction.model.dto.TransactionResponse;
-import org.fisco.bcos.sdk.transaction.model.exception.NoSuchTransactionFileException;
-import org.fisco.bcos.sdk.transaction.model.exception.TransactionBaseException;
+import org.fisco.bcos.sdk.v3.codec.ContractCodecException;
+import org.fisco.bcos.sdk.v3.codec.wrapper.ABIDefinition;
+import org.fisco.bcos.sdk.v3.transaction.model.dto.CallResponse;
+import org.fisco.bcos.sdk.v3.transaction.model.dto.TransactionResponse;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.NoSuchTransactionFileException;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.TransactionBaseException;
 
 public class AssembleTransactionDemo {
     BcosClientWrapper bcosClientWrapper;
@@ -46,7 +46,7 @@ public class AssembleTransactionDemo {
         }
     }
 
-    public void testCall() throws TransactionBaseException, ABICodecException {
+    public void testCall() throws TransactionBaseException, ContractCodecException {
         // 查询HelloWorld合约的『name』函数，合约地址为helloWorldAddress，参数为空
         String contractName = "HelloWorld";
         // contractAddress = "0x6aa57232d12f4b516cafc4919219ed56f996613e";
@@ -58,7 +58,7 @@ public class AssembleTransactionDemo {
         System.out.println(callResponse.getValues());
     }
 
-    public void testTx() throws ABICodecException, TransactionBaseException {
+    public void testTx() throws ContractCodecException, TransactionBaseException {
         String contractName = "HelloWorld";
         String contractAddress = "0x31231c2abad03b071b3440268f28194029dad743";
         List<Object> params = new ArrayList<Object>();

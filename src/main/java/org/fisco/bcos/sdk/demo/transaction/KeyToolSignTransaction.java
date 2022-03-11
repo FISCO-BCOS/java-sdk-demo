@@ -1,9 +1,9 @@
 package org.fisco.bcos.sdk.demo.transaction;
 
-import org.fisco.bcos.sdk.crypto.CryptoSuite;
-import org.fisco.bcos.sdk.crypto.keypair.CryptoKeyPair;
-import org.fisco.bcos.sdk.crypto.signature.SignatureResult;
 import org.fisco.bcos.sdk.jni.common.JniException;
+import org.fisco.bcos.sdk.v3.crypto.CryptoSuite;
+import org.fisco.bcos.sdk.v3.crypto.keypair.CryptoKeyPair;
+import org.fisco.bcos.sdk.v3.crypto.signature.SignatureResult;
 
 public class KeyToolSignTransaction implements ISignTransaction {
     public KeyToolSignTransaction(CryptoSuite cryptoSuite) {
