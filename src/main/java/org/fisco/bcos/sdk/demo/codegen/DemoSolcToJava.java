@@ -22,7 +22,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
-import org.fisco.bcos.sdk.codegen.CodeGenMain;
+import org.fisco.bcos.sdk.v3.codegen.CodeGenMain;
 import org.fisco.solc.compiler.CompilationResult;
 import org.fisco.solc.compiler.SolidityCompiler;
 import org.slf4j.Logger;
