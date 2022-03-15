@@ -14,8 +14,8 @@
 package org.fisco.bcos.sdk.demo.perf.callback;
 
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.model.callback.TransactionCallback;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

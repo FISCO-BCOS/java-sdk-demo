@@ -3,21 +3,21 @@ package org.fisco.bcos.sdk.demo.transaction;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import org.bouncycastle.util.encoders.Hex;
-import org.fisco.bcos.sdk.client.Client;
-import org.fisco.bcos.sdk.codec.ABICodecException;
-import org.fisco.bcos.sdk.crypto.signature.ECDSASignatureResult;
-import org.fisco.bcos.sdk.crypto.signature.SM2SignatureResult;
-import org.fisco.bcos.sdk.crypto.signature.SignatureResult;
 import org.fisco.bcos.sdk.jni.common.JniException;
-import org.fisco.bcos.sdk.model.CryptoType;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.model.callback.TransactionCallback;
-import org.fisco.bcos.sdk.transaction.codec.decode.TransactionDecoderInterface;
-import org.fisco.bcos.sdk.transaction.codec.decode.TransactionDecoderService;
-import org.fisco.bcos.sdk.transaction.model.dto.TransactionResponse;
-import org.fisco.bcos.sdk.transaction.model.exception.TransactionException;
-import org.fisco.bcos.sdk.transaction.pusher.TransactionPusherInterface;
-import org.fisco.bcos.sdk.transaction.pusher.TransactionPusherService;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.codec.ContractCodecException;
+import org.fisco.bcos.sdk.v3.crypto.signature.ECDSASignatureResult;
+import org.fisco.bcos.sdk.v3.crypto.signature.SM2SignatureResult;
+import org.fisco.bcos.sdk.v3.crypto.signature.SignatureResult;
+import org.fisco.bcos.sdk.v3.model.CryptoType;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
+import org.fisco.bcos.sdk.v3.transaction.codec.decode.TransactionDecoderInterface;
+import org.fisco.bcos.sdk.v3.transaction.codec.decode.TransactionDecoderService;
+import org.fisco.bcos.sdk.v3.transaction.model.dto.TransactionResponse;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.TransactionException;
+import org.fisco.bcos.sdk.v3.transaction.pusher.TransactionPusherInterface;
+import org.fisco.bcos.sdk.v3.transaction.pusher.TransactionPusherService;
 
 public class LegoTransaction {
     BcosClientWrapper bcosClientWrapper;
@@ -80,7 +80,8 @@ public class LegoTransaction {
 
     /*用ABI解析回执*/
     public TransactionResponse decodeReceipt(TransactionReceipt receipt, BasicAbiTransaction abiTx)
-            throws JsonProcessingException, TransactionException, IOException, ABICodecException {
+            throws JsonProcessingException, TransactionException, IOException,
+                    ContractCodecException {
 
         TransactionDecoderInterface transactionDecoder =
                 new TransactionDecoderService(
@@ -120,8 +121,8 @@ public class LegoTransaction {
      */
     public TransactionResponse sendTransactionAndGetResponse(
             String chainId, BasicAbiTransaction abiTx, ISignTransaction signTxImpl)
-            throws ABICodecException, JsonProcessingException, TransactionException, IOException,
-                    JniException {
+            throws ContractCodecException, JsonProcessingException, TransactionException,
+                    IOException, JniException {
         long rawTransaction =
                 abiTx.makeRawTransaction(
                         bcosClientWrapper.getClient(),
@@ -158,8 +159,8 @@ public class LegoTransaction {
             BasicAbiTransaction abiTx,
             ISignTransaction signTxImpl,
             TransactionCallback txCallback)
-            throws ABICodecException, JsonProcessingException, TransactionException, IOException,
-                    JniException {
+            throws ContractCodecException, JsonProcessingException, TransactionException,
+                    IOException, JniException {
         // 创建RawTransaction
 
         long rawTransaction =

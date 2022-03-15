@@ -13,9 +13,9 @@ import org.fisco.bcos.sdk.demo.perf.callback.ParallelOkCallback;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
 import org.fisco.bcos.sdk.demo.perf.model.DagTransferUser;
 import org.fisco.bcos.sdk.demo.perf.model.DagUserInfo;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
-import org.fisco.bcos.sdk.utils.ThreadPoolService;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
+import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

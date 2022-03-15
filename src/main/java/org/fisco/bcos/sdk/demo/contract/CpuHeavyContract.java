@@ -1,11 +1,11 @@
 package org.fisco.bcos.sdk.demo.contract;
 
 import java.math.BigInteger;
-import org.fisco.bcos.sdk.client.Client;
-import org.fisco.bcos.sdk.contract.Contract;
-import org.fisco.bcos.sdk.crypto.keypair.CryptoKeyPair;
-import org.fisco.bcos.sdk.model.callback.TransactionCallback;
-import org.fisco.bcos.sdk.transaction.manager.TransactionProcessor;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.contract.Contract;
+import org.fisco.bcos.sdk.v3.crypto.keypair.CryptoKeyPair;
+import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
+import org.fisco.bcos.sdk.v3.transaction.manager.TransactionProcessor;
 
 public abstract class CpuHeavyContract extends Contract {
     public CpuHeavyContract(

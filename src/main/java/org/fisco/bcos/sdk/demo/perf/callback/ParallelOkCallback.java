@@ -17,8 +17,8 @@ import java.math.BigInteger;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
 import org.fisco.bcos.sdk.demo.perf.model.DagTransferUser;
 import org.fisco.bcos.sdk.demo.perf.model.DagUserInfo;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.model.callback.TransactionCallback;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

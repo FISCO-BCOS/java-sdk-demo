@@ -17,14 +17,14 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URL;
 import java.util.Random;
-import org.fisco.bcos.sdk.BcosSDK;
-import org.fisco.bcos.sdk.client.Client;
 import org.fisco.bcos.sdk.demo.contract.ParallelOkLiquid;
 import org.fisco.bcos.sdk.demo.perf.model.DagUserInfo;
 import org.fisco.bcos.sdk.demo.perf.parallel.ParallelLiquidDemo;
-import org.fisco.bcos.sdk.model.ConstantConfig;
-import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
-import org.fisco.bcos.sdk.utils.ThreadPoolService;
+import org.fisco.bcos.sdk.v3.BcosSDK;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.model.ConstantConfig;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
+import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
 public class ParallelLiquidPerf {
     private static Client client;

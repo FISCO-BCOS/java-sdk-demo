@@ -1,13 +1,13 @@
 package org.fisco.bcos.sdk.demo.amop;
 
 import java.net.URL;
-import org.fisco.bcos.sdk.amop.Amop;
-import org.fisco.bcos.sdk.config.Config;
-import org.fisco.bcos.sdk.config.ConfigOption;
-import org.fisco.bcos.sdk.config.exceptions.ConfigException;
 import org.fisco.bcos.sdk.demo.perf.ParallelOkPerf;
 import org.fisco.bcos.sdk.jni.common.JniException;
-import org.fisco.bcos.sdk.model.ConstantConfig;
+import org.fisco.bcos.sdk.v3.amop.Amop;
+import org.fisco.bcos.sdk.v3.config.Config;
+import org.fisco.bcos.sdk.v3.config.ConfigOption;
+import org.fisco.bcos.sdk.v3.config.exceptions.ConfigException;
+import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
