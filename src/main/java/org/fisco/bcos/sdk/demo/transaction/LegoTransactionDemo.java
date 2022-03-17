@@ -4,17 +4,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.fisco.bcos.sdk.codec.ABICodecException;
 import org.fisco.bcos.sdk.jni.common.JniException;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.model.callback.TransactionCallback;
-import org.fisco.bcos.sdk.transaction.codec.decode.TransactionDecoderInterface;
-import org.fisco.bcos.sdk.transaction.codec.decode.TransactionDecoderService;
-import org.fisco.bcos.sdk.transaction.model.dto.CallResponse;
-import org.fisco.bcos.sdk.transaction.model.dto.TransactionResponse;
-import org.fisco.bcos.sdk.transaction.model.exception.NoSuchTransactionFileException;
-import org.fisco.bcos.sdk.transaction.model.exception.TransactionBaseException;
-import org.fisco.bcos.sdk.transaction.model.exception.TransactionException;
+import org.fisco.bcos.sdk.v3.codec.ContractCodecException;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
+import org.fisco.bcos.sdk.v3.transaction.codec.decode.TransactionDecoderInterface;
+import org.fisco.bcos.sdk.v3.transaction.codec.decode.TransactionDecoderService;
+import org.fisco.bcos.sdk.v3.transaction.model.dto.CallResponse;
+import org.fisco.bcos.sdk.v3.transaction.model.dto.TransactionResponse;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.NoSuchTransactionFileException;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.TransactionBaseException;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.TransactionException;
 
 // 演示用外部签名接口实现交易签名和发送，回调。
 public class LegoTransactionDemo {
@@ -59,7 +59,7 @@ public class LegoTransactionDemo {
 
     // 同步部署演示
     public void testDeploy()
-            throws NoSuchTransactionFileException, JsonProcessingException, ABICodecException,
+            throws NoSuchTransactionFileException, JsonProcessingException, ContractCodecException,
                     TransactionException, IOException, JniException {
         BasicAbiTransaction abiTx = makeHelloWorldDeployTest();
         ISignTransaction signTxImpl =
@@ -72,7 +72,7 @@ public class LegoTransactionDemo {
 
     // 同步交易演示
     public TransactionResponse testTx()
-            throws NoSuchTransactionFileException, JsonProcessingException, ABICodecException,
+            throws NoSuchTransactionFileException, JsonProcessingException, ContractCodecException,
                     TransactionException, IOException, JniException {
         // 构建一个调用接口的测试交易
         BasicAbiTransaction abiTx = makeHelloWorldSetTest();
@@ -87,7 +87,7 @@ public class LegoTransactionDemo {
 
     // 异步交易演示
     public void testTxAsyn()
-            throws NoSuchTransactionFileException, ABICodecException, JsonProcessingException,
+            throws NoSuchTransactionFileException, ContractCodecException, JsonProcessingException,
                     TransactionException, IOException, JniException {
         // 构建一个调用接口的测试交易
         BasicAbiTransaction abiTx = makeHelloWorldSetTest();
@@ -119,14 +119,14 @@ public class LegoTransactionDemo {
                         transactionDecoder.decodeReceiptWithValues(
                                 abiTx.abiContent, abiTx.methodName, receipt);
                 System.out.println("5:[in TxCallback]response decode: " + response.getEvents());
-            } catch (TransactionException | IOException | ABICodecException e) {
+            } catch (TransactionException | IOException | ContractCodecException e) {
                 e.printStackTrace();
             }
         }
     }
 
     // 同步调用call，call无需签名，直接用transactionProcessor封装的接口即可
-    public CallResponse testCall() throws ABICodecException, TransactionBaseException {
+    public CallResponse testCall() throws ContractCodecException, TransactionBaseException {
         int chainId = 1;
         BasicAbiTransaction abiTx =
                 new BasicAbiTransaction(
