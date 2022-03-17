@@ -1,13 +1,13 @@
 package org.fisco.bcos.sdk.demo.transaction;
 
 import java.net.URL;
-import org.fisco.bcos.sdk.BcosSDK;
-import org.fisco.bcos.sdk.client.Client;
 import org.fisco.bcos.sdk.demo.contract.HelloWorldLiquid;
 import org.fisco.bcos.sdk.demo.perf.ParallelLiquidPerf;
-import org.fisco.bcos.sdk.model.ConstantConfig;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
+import org.fisco.bcos.sdk.v3.BcosSDK;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.model.ConstantConfig;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 
 public class HelloWorldLiquidDemo {
     private static Client client;

@@ -27,16 +27,16 @@ import java.util.concurrent.atomic.AtomicLong;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
-import org.fisco.bcos.sdk.BcosSDK;
-import org.fisco.bcos.sdk.client.Client;
 import org.fisco.bcos.sdk.demo.contract.CpuHeavyContract;
 import org.fisco.bcos.sdk.demo.contract.CpuHeavyPrecompiled;
 import org.fisco.bcos.sdk.demo.contract.ParallelCpuHeavy;
-import org.fisco.bcos.sdk.model.ConstantConfig;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.model.callback.TransactionCallback;
-import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
-import org.fisco.bcos.sdk.utils.ThreadPoolService;
+import org.fisco.bcos.sdk.v3.BcosSDK;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.model.ConstantConfig;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
+import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
 public class PerformanceCpuHeavy {
     private static final int DEFAULT_SORT_ARRAY_SIZE = 100000;

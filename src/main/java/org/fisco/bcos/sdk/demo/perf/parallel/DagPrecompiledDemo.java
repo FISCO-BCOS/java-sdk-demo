@@ -24,15 +24,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.fisco.bcos.sdk.client.Client;
-import org.fisco.bcos.sdk.codec.datatypes.generated.tuples.generated.Tuple2;
 import org.fisco.bcos.sdk.demo.contract.DagTransfer;
 import org.fisco.bcos.sdk.demo.perf.callback.ParallelOkCallback;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
 import org.fisco.bcos.sdk.demo.perf.model.DagTransferUser;
 import org.fisco.bcos.sdk.demo.perf.model.DagUserInfo;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.utils.ThreadPoolService;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.codec.datatypes.generated.tuples.generated.Tuple2;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +53,7 @@ public class DagPrecompiledDemo {
                         DAG_TRANSFER_ADDR, client, client.getCryptoSuite().getCryptoKeyPair());
         this.dagTransfer.setEnableDAG(true);
         this.dagUserInfo = dagUserInfo;
+        dagTransfer.setEnableDAG(true);
         this.collector = new PerformanceCollector();
     }
 

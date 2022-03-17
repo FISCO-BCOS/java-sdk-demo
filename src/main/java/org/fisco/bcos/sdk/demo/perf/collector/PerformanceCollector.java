@@ -15,8 +15,8 @@ package org.fisco.bcos.sdk.demo.perf.collector;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import org.fisco.bcos.sdk.model.JsonRpcResponse;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.JsonRpcResponse;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
