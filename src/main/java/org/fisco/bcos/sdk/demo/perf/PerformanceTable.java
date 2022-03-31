@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.fisco.bcos.sdk.demo.contract.TableTest;
 import org.fisco.bcos.sdk.demo.perf.callback.PerformanceCallback;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,25 +1,25 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.6.0;
 
-contract ParallelConfigPrecompiled
+interface ParallelConfigPrecompiled
 {
-    function registerParallelFunctionInternal(address, string, uint256) public returns (int);
-    function unregisterParallelFunctionInternal(address, string) public returns (int);    
+    function registerParallelFunctionInternal(address, string memory, uint256) public virtual returns (int);
+    function unregisterParallelFunctionInternal(address, string memory) public virtual returns (int);
 }
 
-contract ParallelContract
+interface ParallelContract
 {
     ParallelConfigPrecompiled precompiled = ParallelConfigPrecompiled(0x1006);
     
-    function registerParallelFunction(string functionName, uint256 criticalSize) public 
+    function registerParallelFunction(string memory functionName, uint256 criticalSize) public
     {
         precompiled.registerParallelFunctionInternal(address(this), functionName, criticalSize);
     }
     
-    function unregisterParallelFunction(string functionName) public
+    function unregisterParallelFunction(string memory functionName) public
     {
         precompiled.unregisterParallelFunctionInternal(address(this), functionName);
     }
     
-    function enableParallel() public;
-    function disableParallel() public;
+    function enableParallel() public virtual;
+    function disableParallel() public virtual;
 }
