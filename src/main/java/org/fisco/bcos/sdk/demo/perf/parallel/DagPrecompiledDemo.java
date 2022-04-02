@@ -178,7 +178,8 @@ public class DagPrecompiledDemo {
         }
     }
 
-    public void generateTransferTxs(BigInteger count, String txsFile, BigInteger qps)
+    public void generateTransferTxs(
+            BigInteger count, String txsFile, BigInteger qps, BigInteger conflictPercent)
             throws InterruptedException, IOException {
         File file = new File(txsFile);
         if (!file.exists()) {
@@ -205,6 +206,10 @@ public class DagPrecompiledDemo {
 
             DagTransferUser from = dagUserInfo.getFrom(index);
             DagTransferUser to = dagUserInfo.getTo(index);
+            if ((conflictPercent.intValue() > 0)
+                    && (index <= (conflictPercent.intValue() * count.intValue()) / 100)) {
+                to = dagUserInfo.getNext(index);
+            }
             Random random = new Random();
             int r = random.nextInt(100) + 1;
             BigInteger amount = BigInteger.valueOf(r);
