@@ -50,7 +50,7 @@ public class PerformanceTiger {
         System.out.println(" Usage:");
         System.out.println("===== PerformanceDMC test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTiger [groupId] [count] [qps].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTiger [groupId] [count] [qps] [isParallel].");
     }
 
     public static void main(String[] args)
@@ -62,10 +62,14 @@ public class PerformanceTiger {
                 System.out.println("The configFile " + configFileName + " doesn't exist!");
                 return;
             }
-
+            boolean isParallel = true;
             if (args.length < 3) {
                 Usage();
                 return;
+            } else {
+                if (args.length == 4) {
+                    isParallel = Boolean.parseBoolean(args[3]);
+                }
             }
             String groupId = args[0];
             Integer count = Integer.valueOf(args[1]).intValue();
@@ -78,7 +82,7 @@ public class PerformanceTiger {
                     Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
             limiter = RateLimiter.create(qps.intValue());
 
-            start(groupId, count, qps, executor);
+            start(groupId, count, qps, executor, isParallel);
 
             System.exit(0);
         } catch (Exception e) {
@@ -128,8 +132,6 @@ public class PerformanceTiger {
                             String randomStr2 = RandomStringUtils.random(32);
 
                             long now = System.currentTimeMillis();
-
-                            List<BigInteger> tigerIDs = new ArrayList<BigInteger>();
 
                             tigerHole.tradeTiger(
                                     openID,
@@ -227,8 +229,6 @@ public class PerformanceTiger {
                             int tigerID = tigerIDStart.addAndGet(1);
 
                             long now = System.currentTimeMillis();
-
-                            List<BigInteger> tigerIDs = new ArrayList<BigInteger>();
 
                             tigerHole.tradeTiger(
                                     toOpenID,
@@ -468,20 +468,28 @@ public class PerformanceTiger {
         receivedBar.close();
         collector.report();
 
-        System.out.println("Publish card finished!");
+        System.out.println("mergeTigers finished!");
     }
 
-    public static void start(String groupId, int count, Integer qps, ExecutorService executor)
+    public static void start(
+            String groupId, int count, Integer qps, ExecutorService executor, boolean isParallel)
             throws IOException, InterruptedException, ContractException {
         System.out.println(
-                "====== Start test, count: " + count + ", qps:" + qps + ", groupId: " + groupId);
+                "====== Start test, count: "
+                        + count
+                        + ", qps:"
+                        + qps
+                        + ", groupId: "
+                        + groupId
+                        + ", isParallel: "
+                        + isParallel);
 
         final Random random = new Random();
         random.setSeed(System.currentTimeMillis());
 
         System.out.println("Create tiger hole...");
         TigerHoleV2 tigerHole =
-                TigerHoleV2.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
+                TigerHoleV2.deploy(client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
         tigerHole.enableParallel();
         System.out.println("Create tiger v2 hole finished!");
 
