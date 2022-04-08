@@ -236,7 +236,6 @@ public class ParallelOkDemo {
                         + ", txsFile: "
                         + txsFile);
         System.out.println("===================================================================");
-        queryAccount(qps);
         FileWriter fileWriter = new FileWriter(file.getName(), true);
         BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
         System.out.println(

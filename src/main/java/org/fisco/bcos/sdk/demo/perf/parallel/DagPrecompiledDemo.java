@@ -46,14 +46,17 @@ public class DagPrecompiledDemo {
     private static final String DAG_TRANSFER_ADDR = "0x000000000000000000000000000000000000100c";
 
     public DagPrecompiledDemo(
-            Client client, DagUserInfo dagUserInfo, ThreadPoolService threadPoolService) {
+            Client client,
+            DagUserInfo dagUserInfo,
+            ThreadPoolService threadPoolService,
+            boolean enableDag) {
         this.threadPoolService = threadPoolService;
         this.dagTransfer =
                 DagTransfer.load(
                         DAG_TRANSFER_ADDR, client, client.getCryptoSuite().getCryptoKeyPair());
-        this.dagTransfer.setEnableDAG(true);
+        this.dagTransfer.setEnableDAG(enableDag);
         this.dagUserInfo = dagUserInfo;
-        dagTransfer.setEnableDAG(true);
+        dagTransfer.setEnableDAG(enableDag);
         this.collector = new PerformanceCollector();
     }
 
@@ -191,7 +194,6 @@ public class DagPrecompiledDemo {
                         + ", txsFile: "
                         + txsFile);
         System.out.println("===================================================================");
-        queryAccountInfo(qps);
         FileWriter fileWriter = new FileWriter(file.getName(), true);
         BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
         System.out.println(

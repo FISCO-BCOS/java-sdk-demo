@@ -69,8 +69,12 @@ public class ParallelOkPerf {
             Integer qps = Integer.valueOf(args[4]);
             String userFile = args[5];
             Integer conflictPercent = 0;
-            if (args.length == 7) {
+            if (args.length >= 7) {
                 conflictPercent = Integer.valueOf(args[6]);
+            }
+            boolean enableDag = false;
+            if (args.length >= 8) {
+                enableDag = Boolean.valueOf(args[7]);
             }
 
             String configFile = configUrl.getPath();
@@ -85,7 +89,14 @@ public class ParallelOkPerf {
             if (perfType.compareToIgnoreCase("parallelok") == 0) {
                 parallelOkPerf(groupId, command, count, qps, conflictPercent, threadPoolService);
             } else if (perfType.compareToIgnoreCase("precompiled") == 0) {
-                dagTransferPerf(groupId, command, count, qps, conflictPercent, threadPoolService);
+                dagTransferPerf(
+                        groupId,
+                        command,
+                        count,
+                        qps,
+                        conflictPercent,
+                        threadPoolService,
+                        enableDag);
             } else {
                 System.out.println(
                         "invalid perf option: "
@@ -171,7 +182,8 @@ public class ParallelOkPerf {
             Integer count,
             Integer qps,
             Integer conflictPercent,
-            ThreadPoolService threadPoolService)
+            ThreadPoolService threadPoolService,
+            boolean enableDAG)
             throws IOException, InterruptedException, ContractException {
         System.out.println(
                 "====== DagTransfer trans, count: "
@@ -181,22 +193,27 @@ public class ParallelOkPerf {
                         + ", groupId: "
                         + groupId
                         + ", conflictPercent: "
-                        + conflictPercent);
+                        + conflictPercent
+                        + ", enableDag"
+                        + enableDAG);
 
         DagPrecompiledDemo dagPrecompiledDemo;
         switch (command) {
             case "add":
-                dagPrecompiledDemo = new DagPrecompiledDemo(client, dagUserInfo, threadPoolService);
+                dagPrecompiledDemo =
+                        new DagPrecompiledDemo(client, dagUserInfo, threadPoolService, enableDAG);
                 dagPrecompiledDemo.userAdd(BigInteger.valueOf(count), BigInteger.valueOf(qps));
                 break;
             case "transfer":
                 dagUserInfo.loadDagTransferUser();
-                dagPrecompiledDemo = new DagPrecompiledDemo(client, dagUserInfo, threadPoolService);
+                dagPrecompiledDemo =
+                        new DagPrecompiledDemo(client, dagUserInfo, threadPoolService, enableDAG);
                 dagPrecompiledDemo.userTransfer(BigInteger.valueOf(count), BigInteger.valueOf(qps));
                 break;
             case "generate":
                 dagUserInfo.loadDagTransferUser();
-                dagPrecompiledDemo = new DagPrecompiledDemo(client, dagUserInfo, threadPoolService);
+                dagPrecompiledDemo =
+                        new DagPrecompiledDemo(client, dagUserInfo, threadPoolService, enableDAG);
                 dagPrecompiledDemo.generateTransferTxs(
                         BigInteger.valueOf(count),
                         "dagTxs.txt",
