@@ -197,7 +197,7 @@ public class PerformanceCpuHeavy {
         for (int i = 0; i < count; ++i) {
             final int index = i % contracts.length;
             String txData;
-            if (i <= undeterministicTxs) {
+            if (i < undeterministicTxs) {
                 txData = randomPrecompiledContract.getSignedTransactionForGenerateRandomValue();
             } else {
                 final long signature = i; // See ParallelCpuHeavy.sol
