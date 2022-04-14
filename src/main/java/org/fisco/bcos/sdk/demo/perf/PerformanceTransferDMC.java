@@ -45,6 +45,8 @@ public class PerformanceTransferDMC {
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTransferDMC [groupId] [userCount] [count] [qps].");
     }
 
+    private static final Long INIT_BALANCE = 10000000000000000L;
+
     public static void main(String[] args)
             throws ContractException, IOException, InterruptedException {
         try {
@@ -116,7 +118,7 @@ public class PerformanceTransferDMC {
                                 public void run() {
                                     Account account;
                                     try {
-                                        long initBalance = Math.abs(random.nextLong());
+                                        long initBalance = INIT_BALANCE;
 
                                         limiter.acquire();
                                         account =
@@ -161,6 +163,7 @@ public class PerformanceTransferDMC {
 
             final int fromIndex = Math.abs(random.nextInt()) % accounts.length;
             final int toIndex = Math.abs(random.nextInt()) % accounts.length;
+            // final int toIndex = (fromIndex + 1) % accounts.length;
             threadPoolService
                     .getThreadPool()
                     .execute(
@@ -208,7 +211,9 @@ public class PerformanceTransferDMC {
         System.out.println("Sending transactions finished!");
 
         System.out.println("Checking result...");
-        CountDownLatch checkLatch = new CountDownLatch(count);
+        CountDownLatch checkLatch = new CountDownLatch(summary.size());
+        AtomicLong totalBalance = new AtomicLong(0);
+
         for (Map.Entry<Integer, AtomicLong> entry : summary.entrySet()) {
             limiter.acquire();
             final int index = entry.getKey().intValue();
@@ -222,9 +227,10 @@ public class PerformanceTransferDMC {
                                     try {
                                         limiter.acquire();
                                         BigInteger balance = accounts[index].balance();
+                                        totalBalance.addAndGet(balance.longValue());
                                         if (balance.longValue() != expectBalance) {
                                             System.out.println(
-                                                    "Check failed! Account["
+                                                    "[x] Check failed! Account["
                                                             + index
                                                             + "] balance: "
                                                             + balance
@@ -239,8 +245,17 @@ public class PerformanceTransferDMC {
                                 }
                             });
         }
+        checkLatch.await();
         System.out.println("Checking finished!");
+        for (int i = 0; i < accounts.length; i++) {
+            System.out.println(
+                    "Account: " + accounts[i].getContractAddress() + " | " + accounts[i].balance());
+        }
+        Long expect = userCount * INIT_BALANCE;
 
+        System.out.println( "Total balance: " + totalBalance + " expect: " + expect);
+        System.out.println("Check " + (totalBalance.get() == expect.longValue() ? "OK!" : "Failed."));
+        // System.exit(0);
         // collector.
         // System.out.println("Total elapsed: " + elapsed);
         // System.out.println("TPS: " + (double) count / ((double) elapsed / 1000));

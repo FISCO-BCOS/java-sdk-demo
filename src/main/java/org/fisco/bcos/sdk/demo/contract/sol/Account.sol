@@ -21,10 +21,19 @@ contract Account
     
     function transfer(address to, uint256 num) public
     {
-        subBalance(num);
-        
-        Account toAccount = Account(to);
-        toAccount.addBalance(num);
+        if (to != address(this)) {
+            uint256 _balance = m_balance;
+
+            Account toAccount = Account(to); // DMC out
+            toAccount.addBalance(num);
+
+            // To check the _balance is the same after DMC scheduling out
+            m_balance = _balance - num;
+        } else {
+            subBalance(num);
+            Account toAccount = Account(to); // DMC out
+            toAccount.addBalance(num);
+        }
     }
     
     uint256 m_balance;
