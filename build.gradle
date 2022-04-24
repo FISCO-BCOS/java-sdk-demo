@@ -4,7 +4,7 @@ plugins {
     id 'idea'
     id 'java-library'
     id 'jacoco'
-//    id 'com.github.sherter.google-java-format' version '0.8'
+    id 'com.github.sherter.google-java-format' version '0.8'
     id 'maven-publish'
 }
 println("Notice: current gradle version is " + gradle.gradleVersion)
@@ -30,7 +30,7 @@ targetCompatibility = 1.8
 // In this section you declare where to find the dependencies of your project
 repositories {
     mavenCentral()
-//    maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+    maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
     maven { url "https://oss.sonatype.org/service/local/staging/deploy/maven2"}
     maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
@@ -55,11 +55,11 @@ sourceSets {
     }
 }
 
-//googleJavaFormat {
-//    options style: 'AOSP'
-//    source = sourceSets*.allJava
-//    include '**/*.java'
-//}
+googleJavaFormat {
+    options style: 'AOSP'
+    source = sourceSets*.allJava
+    include '**/*.java'
+}
 
 configurations {
     integrationTestCompile.extendsFrom testCompile
@@ -93,9 +93,6 @@ List logger = [
 
 dependencies {
     implementation ("org.fisco-bcos.java-sdk:fisco-bcos-java-sdk:${javaSDKVersion}")
-//    implementation fileTree(dir:'lib',include:['*.jar'])
-//    implementation files("lib/fisco-bcos-java-sdk-3.0.0-adapteBoostssl-SNAPSHOT.jar")
-
     implementation ("org.fisco-bcos:solcJ:${solcJVersion}")
     implementation ("com.google.guava:guava:${guavaVersion}")
     implementation ("org.apache.commons:commons-collections4:${commonsCollections4Version}")
