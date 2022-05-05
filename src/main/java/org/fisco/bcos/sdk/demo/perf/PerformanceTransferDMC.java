@@ -321,6 +321,7 @@ public class PerformanceTransferDMC {
 
             Long expect = userCount * INIT_BALANCE;
 
+            System.out.println("Reverted transactions: " + collector.getError());
             System.out.println("Total balance: " + totalBalance + " expect: " + expect);
             System.out.println(
                     "Check " + (totalBalance.get() == expect.longValue() ? "OK!" : "Failed."));
