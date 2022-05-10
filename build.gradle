@@ -13,9 +13,9 @@ println("Notice: current gradle version is " + gradle.gradleVersion)
 ext {
     // jackson version
     javaSDKVersion="2.9.0-SNAPSHOT"
-    solcJVersion = "0.4.25.1"
-    //solcJVersion = "0.5.2.0"
-    //solcJVersion = "0.6.10.0"
+    solcJVersion = "0.4.25.2"
+    //solcJVersion = "0.5.2.2"
+    //solcJVersion = "0.6.10.2"
     guavaVersion = "29.0-jre"
     commonsCollections4Version = "4.4"
     springVersion = "4.3.27.RELEASE"
