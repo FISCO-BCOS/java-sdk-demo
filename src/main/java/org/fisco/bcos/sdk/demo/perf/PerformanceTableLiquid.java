@@ -13,17 +13,25 @@
  */
 package org.fisco.bcos.sdk.demo.perf;
 
+import com.google.common.util.concurrent.RateLimiter;
+import java.net.URL;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.fisco.bcos.sdk.demo.contract.TableTestLiquid;
 import org.fisco.bcos.sdk.demo.perf.callback.PerformanceCallback;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
+import org.fisco.bcos.sdk.v3.BcosSDK;
+import org.fisco.bcos.sdk.v3.BcosSDKException;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
+import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Deprecated
 public class PerformanceTableLiquid {
     private static final Logger logger = LoggerFactory.getLogger(PerformanceTableLiquid.class);
     private static AtomicInteger sentTransactions = new AtomicInteger(0);
@@ -43,7 +51,6 @@ public class PerformanceTableLiquid {
     }
 
     public static void main(String[] args) {
-        /*
         try {
             String configFileName = ConstantConfig.CONFIG_FILE_NAME;
             URL configUrl =
@@ -80,7 +87,7 @@ public class PerformanceTableLiquid {
                 return;
             }
 
-            // deploy the HelloWorld
+            // deploy the TableTest
             System.out.println("====== Deploy TableTest ====== ");
             String tableTestPath = "table_test" + new Random().nextInt(1000);
             TableTestLiquid tableTestLiquid =
@@ -111,7 +118,7 @@ public class PerformanceTableLiquid {
                                     int current = sentTransactions.incrementAndGet();
                                     if (current >= area && ((current % area) == 0)) {
                                         System.out.println(
-                                                "Already sended: "
+                                                "Already sent: "
                                                         + current
                                                         + "/"
                                                         + total
@@ -130,7 +137,6 @@ public class PerformanceTableLiquid {
                     "====== PerformanceTableLiquid test failed, error message: " + e.getMessage());
             System.exit(0);
         }
-         */
     }
 
     private static void callTableOperation(
