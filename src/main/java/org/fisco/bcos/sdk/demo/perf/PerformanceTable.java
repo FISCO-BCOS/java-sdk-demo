@@ -13,17 +13,24 @@
  */
 package org.fisco.bcos.sdk.demo.perf;
 
+import com.google.common.util.concurrent.RateLimiter;
+import java.net.URL;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.fisco.bcos.sdk.demo.contract.TableTest;
 import org.fisco.bcos.sdk.demo.perf.callback.PerformanceCallback;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
+import org.fisco.bcos.sdk.v3.BcosSDK;
+import org.fisco.bcos.sdk.v3.BcosSDKException;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
+import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Deprecated
 public class PerformanceTable {
     private static Logger logger = LoggerFactory.getLogger(PerformanceTable.class);
     private static AtomicInteger sendedTransactions = new AtomicInteger(0);
@@ -43,7 +50,7 @@ public class PerformanceTable {
     }
 
     public static void main(String[] args) {
-        /*
+
         try {
             String configFileName = ConstantConfig.CONFIG_FILE_NAME;
             URL configUrl = PerformanceTable.class.getClassLoader().getResource(configFileName);
@@ -76,14 +83,13 @@ public class PerformanceTable {
             Client client = sdk.getClient(groupId);
             if (client == null) {
                 System.out.println("client is null");
+                return;
             }
 
-            // deploy the HelloWorld
+            // deploy the TableTest
             System.out.println("====== Deploy TableTest ====== ");
             TableTest tableTest =
                     TableTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
-            // create table
-            // tableTest.create();
             System.out.println(
                     "====== Deploy TableTest success, address: "
                             + tableTest.getContractAddress()
@@ -98,24 +104,21 @@ public class PerformanceTable {
             System.out.println("====== PerformanceTable " + command + " start ======");
             ThreadPoolService threadPoolService =
                     new ThreadPoolService("PerformanceTable", 1000000);
-            for (Integer i = 0; i < count; ++i) {
+            for (int i = 0; i < count; ++i) {
                 limiter.acquire();
                 threadPoolService
                         .getThreadPool()
                         .execute(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        callTableOperation(command, tableTest, collector);
-                                        int current = sendedTransactions.incrementAndGet();
-                                        if (current >= area && ((current % area) == 0)) {
-                                            System.out.println(
-                                                    "Already sended: "
-                                                            + current
-                                                            + "/"
-                                                            + total
-                                                            + " transactions");
-                                        }
+                                () -> {
+                                    callTableOperation(command, tableTest, collector);
+                                    int current = sendedTransactions.incrementAndGet();
+                                    if (current >= area && ((current % area) == 0)) {
+                                        System.out.println(
+                                                "Already sent: "
+                                                        + current
+                                                        + "/"
+                                                        + total
+                                                        + " transactions");
                                     }
                                 });
             }
@@ -130,7 +133,6 @@ public class PerformanceTable {
                     "====== PerformanceTable test failed, error message: " + e.getMessage());
             System.exit(0);
         }
-         */
     }
 
     private static void callTableOperation(
@@ -138,7 +140,6 @@ public class PerformanceTable {
         if (command.compareToIgnoreCase("insert") == 0) {
             insert(tableTest, collector);
         }
-
         if (command.compareToIgnoreCase("update") == 0) {
             update(tableTest, collector);
         }
@@ -207,18 +208,18 @@ public class PerformanceTable {
 
     private static void query(TableTest tableTest, PerformanceCollector collector) {
         try {
-            Long time_before = System.currentTimeMillis();
+            Long timeBefore = System.currentTimeMillis();
             long id = getNextID();
             tableTest.select("fruit" + id);
-            Long time_after = System.currentTimeMillis();
+            Long timeAfter = System.currentTimeMillis();
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setStatus(0x0);
-            collector.onMessage(receipt, time_after - time_before);
+            collector.onMessage(receipt, timeAfter - timeBefore);
         } catch (Exception e) {
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setStatus(-1);
             collector.onMessage(receipt, (long) (0));
-            logger.error("query error: {}", e);
+            logger.error("query error: ", e);
         }
     }
 }
