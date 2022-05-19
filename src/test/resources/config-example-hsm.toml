@@ -16,9 +16,10 @@ certPath = "conf"                           # The certification path
 
 # enSslKey = "conf/gm/gmensdk.key"          # GM ssl cert file path
                                             # default load the GM SSL encryption privateKey from ${certPath}/gm/gmensdk.key
+cryptoProvider = "hsm"                      # use hardware secure module
+sslKeyIndex = "53"                          # sign key index
+enSslKeyIndex = "54"                        # encrypt key index
 
-[cryptoProvider]
-type = "hsm"                                # ssm: soft ware crypto
                                             # hsm: hard ware crypto device, by default sm algorithms use sdf standard, others use pkcs11 stantdard
                                             # server: crypto server
 
