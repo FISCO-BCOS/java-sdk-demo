@@ -26,6 +26,7 @@ import org.fisco.bcos.sdk.v3.BcosSDKException;
 import org.fisco.bcos.sdk.v3.client.Client;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.TransactionReceiptStatus;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 import org.slf4j.Logger;
@@ -85,6 +86,11 @@ public class PerformanceKVTable {
             System.out.println("====== Deploy KVTableTest ====== ");
             KVTableTest kvTableTest =
                     KVTableTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
+            if (kvTableTest.getDeployReceipt().getStatus()
+                    != TransactionReceiptStatus.Success.getCode()) {
+                throw new ContractException(
+                        "deploy failed: " + kvTableTest.getDeployReceipt().getMessage());
+            }
             System.out.println(
                     "====== Deploy KVTableTest success, address: "
                             + kvTableTest.getContractAddress()
