@@ -26,6 +26,7 @@ import org.fisco.bcos.sdk.v3.BcosSDKException;
 import org.fisco.bcos.sdk.v3.client.Client;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.TransactionReceiptStatus;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 import org.slf4j.Logger;
@@ -90,6 +91,11 @@ public class PerformanceTable {
             System.out.println("====== Deploy TableTest ====== ");
             TableTest tableTest =
                     TableTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
+            if (tableTest.getDeployReceipt().getStatus()
+                    != TransactionReceiptStatus.Success.getCode()) {
+                throw new ContractException(
+                        "deploy failed: " + tableTest.getDeployReceipt().getMessage());
+            }
             System.out.println(
                     "====== Deploy TableTest success, address: "
                             + tableTest.getContractAddress()
