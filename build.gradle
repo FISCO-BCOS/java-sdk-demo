@@ -1,4 +1,3 @@
-// Apply the java-library plugin to add support for Java Library
 plugins {
     id 'java'
     id 'idea'
@@ -11,18 +10,18 @@ println("Notice: current gradle version is " + gradle.gradleVersion)
 // Additional attribute definition
 ext {
     // jackson version
-    javaSDKVersion="3.0.0-rc3"
+    javaSDKVersion="3.0.0-rc4-SNAPSHOT"
     //solcJVersion = "0.4.25.1"
     //solcJVersion = "0.5.2.1"
     //solcJVersion = "0.6.10.1"
-    solcJVersion = "0.8.11.0"
+    solcJVersion = "0.8.11.0-SNAPSHOT"
     guavaVersion = "29.0-jre"
     commonsCollections4Version = "4.4"
     springVersion = "4.3.27.RELEASE"
 }
 
 archivesBaseName = 'java-sdk-demo'
-version = '3.0.0-rc3'
+version = '3.0.0-rc4'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -144,3 +143,5 @@ jacocoTestReport {
     }
 }
 check.dependsOn jacocoTestReport
+
+
