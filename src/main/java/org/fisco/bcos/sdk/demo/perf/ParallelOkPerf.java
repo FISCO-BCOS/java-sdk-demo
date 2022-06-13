@@ -34,11 +34,11 @@ public class ParallelOkPerf {
         System.out.println(" Usage:");
         System.out.println("===== ParallelOk test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [add] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [add] [count] [tps] [file] [isParallel].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [transfer] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [transfer] [count] [tps] [file] [isParallel].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [generate] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [generate] [count] [tps] [file] [isParallel].");
 
         System.out.println("===== DagTransafer test===========");
         System.out.println(
@@ -58,9 +58,12 @@ public class ParallelOkPerf {
                 System.out.println("The configFile " + configFileName + " doesn't exist!");
                 return;
             }
+            boolean isParallel = true;
             if (args.length < 6) {
                 Usage();
                 return;
+            } else if (args.length == 7) {
+                isParallel = Boolean.parseBoolean(args[6]);
             }
             String perfType = args[0];
             String groupId = args[1];
@@ -83,7 +86,14 @@ public class ParallelOkPerf {
                             "ParallelOkPerf", Runtime.getRuntime().availableProcessors());
 
             if (perfType.compareToIgnoreCase("parallelok") == 0) {
-                parallelOkPerf(groupId, command, count, qps, conflictPercent, threadPoolService);
+                parallelOkPerf(
+                        groupId,
+                        command,
+                        count,
+                        qps,
+                        conflictPercent,
+                        threadPoolService,
+                        isParallel);
             } else if (perfType.compareToIgnoreCase("precompiled") == 0) {
                 dagTransferPerf(groupId, command, count, qps, conflictPercent, threadPoolService);
             } else {
@@ -105,7 +115,8 @@ public class ParallelOkPerf {
             Integer count,
             Integer qps,
             Integer conflictPercent,
-            ThreadPoolService threadPoolService)
+            ThreadPoolService threadPoolService,
+            boolean isParallel)
             throws IOException, InterruptedException, ContractException {
         System.out.println(
                 "====== ParallelOk trans, count: "
@@ -115,13 +126,17 @@ public class ParallelOkPerf {
                         + ", groupId: "
                         + groupId
                         + ", conflictPercent: "
-                        + conflictPercent);
+                        + conflictPercent
+                        + ", isParallel: "
+                        + isParallel);
         ParallelOk parallelOk;
         ParallelOkDemo parallelOkDemo;
         switch (command) {
             case "add":
                 // deploy ParallelOk
-                parallelOk = ParallelOk.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
+                parallelOk =
+                        ParallelOk.deploy(
+                                client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
 
                 System.out.println(
                         "====== ParallelOk userAdd, deploy success, address: "

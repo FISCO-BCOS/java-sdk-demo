@@ -52,7 +52,13 @@ public class TigerHoleV2 extends Contract {
         "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"cardSendedLog\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"fromUserSendedLog\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"name\":\"tigerIDReceivedLog\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"toUserOwnedLog\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"enableParallel\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"cardID\",\"type\":\"string\"}],\"name\":\"getCard\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"},{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"int256\",\"name\":\"tigerID\",\"type\":\"int256\"}],\"name\":\"getTiger\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"},{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"int256[]\",\"name\":\"tigerIds\",\"type\":\"int256[]\"}],\"name\":\"getTigerMergeStatus\",\"outputs\":[{\"internalType\":\"bool[]\",\"name\":\"tigersMergeStatus\",\"type\":\"bool[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"openID\",\"type\":\"string\"}],\"name\":\"getUser\",\"outputs\":[{\"internalType\":\"int256[]\",\"name\":\"\",\"type\":\"int256[]\"},{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"},{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tigerOwnLimit\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"tigerSendLimit\",\"type\":\"uint256\"}],\"name\":\"setLimit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"toOpenID\",\"type\":\"string\"},{\"internalType\":\"int256\",\"name\":\"tigerID\",\"type\":\"int256\"},{\"internalType\":\"string\",\"name\":\"fromOpenID\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"cardID\",\"type\":\"string\"},{\"internalType\":\"int256\",\"name\":\"tradeType\",\"type\":\"int256\"},{\"internalType\":\"uint256\",\"name\":\"cardLimit\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"tigerMemo\",\"type\":\"string\"}],\"name\":\"tradeTiger\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
     };
 
+    public static final String[] ABI_ARRAY_PARALLEL = {
+        "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"cardSendedLog\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"fromUserSendedLog\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"name\":\"tigerIDReceivedLog\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"toUserOwnedLog\",\"type\":\"event\"},{\"conflictFields\":[{\"kind\":0}],\"inputs\":[],\"name\":\"enableParallel\",\"outputs\":[],\"selector\":[3165202095,2489421388],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"conflictFields\":[{\"kind\":3,\"slot\":1,\"value\":[0]}],\"inputs\":[{\"internalType\":\"string\",\"name\":\"cardID\",\"type\":\"string\"}],\"name\":\"getCard\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"},{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"}],\"selector\":[4082159391,3757247424],\"stateMutability\":\"view\",\"type\":\"function\"},{\"conflictFields\":[{\"kind\":3,\"slot\":2,\"value\":[0]}],\"inputs\":[{\"internalType\":\"int256\",\"name\":\"tigerID\",\"type\":\"int256\"}],\"name\":\"getTiger\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"},{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"selector\":[242642126,685277922],\"stateMutability\":\"view\",\"type\":\"function\"},{\"conflictFields\":[{\"kind\":3,\"slot\":2,\"value\":[0]}],\"inputs\":[{\"internalType\":\"int256[]\",\"name\":\"tigerIds\",\"type\":\"int256[]\"}],\"name\":\"getTigerMergeStatus\",\"outputs\":[{\"internalType\":\"bool[]\",\"name\":\"tigersMergeStatus\",\"type\":\"bool[]\"}],\"selector\":[1622409895,296275592],\"stateMutability\":\"view\",\"type\":\"function\"},{\"conflictFields\":[{\"kind\":3,\"slot\":0,\"value\":[0]}],\"inputs\":[{\"internalType\":\"string\",\"name\":\"openID\",\"type\":\"string\"}],\"name\":\"getUser\",\"outputs\":[{\"internalType\":\"int256[]\",\"name\":\"\",\"type\":\"int256[]\"},{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"},{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"selector\":[838776433,3094979783],\"stateMutability\":\"view\",\"type\":\"function\"},{\"conflictFields\":[{\"kind\":3,\"slot\":0,\"value\":[0]},{\"kind\":3,\"slot\":0,\"value\":[2]},{\"kind\":3,\"slot\":1,\"value\":[3]},{\"kind\":3,\"slot\":2,\"value\":[1]}],\"inputs\":[{\"internalType\":\"string\",\"name\":\"toOpenID\",\"type\":\"string\"},{\"internalType\":\"int256\",\"name\":\"tigerID\",\"type\":\"int256\"},{\"internalType\":\"string\",\"name\":\"fromOpenID\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"cardID\",\"type\":\"string\"},{\"internalType\":\"int256\",\"name\":\"tradeType\",\"type\":\"int256\"},{\"internalType\":\"uint256\",\"name\":\"cardLimit\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"tigerMemo\",\"type\":\"string\"}],\"name\":\"tradeTiger\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"selector\":[1565119943,2581281395],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+    };
+
     public static final String ABI = org.fisco.bcos.sdk.v3.utils.StringUtils.joinAll("", ABI_ARRAY);
+    public static final String PARALLEL_ABI =
+            org.fisco.bcos.sdk.v3.utils.StringUtils.joinAll("", ABI_ARRAY_PARALLEL);
 
     public static final String FUNC_ENABLEPARALLEL = "enableParallel";
 
@@ -96,8 +102,8 @@ public class TigerHoleV2 extends Contract {
         return (cryptoSuite.getCryptoTypeConfig() == CryptoType.ECDSA_TYPE ? BINARY : SM_BINARY);
     }
 
-    public static String getABI() {
-        return ABI;
+    public static String getABI(boolean isParallel) {
+        return isParallel ? PARALLEL_ABI : ABI;
     }
 
     public List<CardSendedLogEventResponse> getCardSendedLogEvents(
@@ -337,7 +343,8 @@ public class TigerHoleV2 extends Contract {
                                 new Int256(tradeType),
                                 new Uint256(cardLimit),
                                 new Utf8String(tigerMemo)),
-                        Collections.<TypeReference<?>>emptyList());
+                        Collections.<TypeReference<?>>emptyList(),
+                        4);
         return executeTransaction(function);
     }
 
@@ -361,7 +368,8 @@ public class TigerHoleV2 extends Contract {
                                 new Int256(tradeType),
                                 new Uint256(cardLimit),
                                 new Utf8String(tigerMemo)),
-                        Collections.<TypeReference<?>>emptyList());
+                        Collections.<TypeReference<?>>emptyList(),
+                        4);
         asyncExecuteTransaction(function, callback);
     }
 
@@ -384,7 +392,8 @@ public class TigerHoleV2 extends Contract {
                                 new Int256(tradeType),
                                 new Uint256(cardLimit),
                                 new Utf8String(tigerMemo)),
-                        Collections.<TypeReference<?>>emptyList());
+                        Collections.<TypeReference<?>>emptyList(),
+                        4);
         return createSignedTransaction(function);
     }
 
@@ -432,14 +441,14 @@ public class TigerHoleV2 extends Contract {
         return new TigerHoleV2(contractAddress, client, credential);
     }
 
-    public static TigerHoleV2 deploy(Client client, CryptoKeyPair credential)
+    public static TigerHoleV2 deploy(Client client, CryptoKeyPair credential, boolean isParallel)
             throws ContractException {
         return deploy(
                 TigerHoleV2.class,
                 client,
                 credential,
                 getBinary(client.getCryptoSuite()),
-                null,
+                getABI(isParallel),
                 null,
                 null);
     }
