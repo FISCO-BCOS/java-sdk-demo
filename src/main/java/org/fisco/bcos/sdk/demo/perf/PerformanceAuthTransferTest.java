@@ -32,8 +32,8 @@ import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
 public class PerformanceAuthTransferTest {
-    private static final int DEFAULT_LIMIT = 100;
-    private static final int DEFAULT_ADDRESS_COUNT = 10;
+    private static final int DEFAULT_LIMIT = 1000;
+    private static final int DEFAULT_ADDRESS_COUNT = 5;
     private static Client client;
     private static final Random random = new Random();
     private static final List<CryptoKeyPair> addressList = new ArrayList<>();
@@ -411,7 +411,6 @@ public class PerformanceAuthTransferTest {
                     .execute(
                             () -> {
                                 try {
-                                    limiter.acquire();
                                     BigInteger balance = contracts.get(index).balance();
                                     if (balance.longValue() != expectBalance) {
                                         System.out.println(
