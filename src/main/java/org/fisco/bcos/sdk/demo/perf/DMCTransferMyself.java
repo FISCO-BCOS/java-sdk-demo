@@ -268,12 +268,6 @@ public class DMCTransferMyself {
                             + ", expectBalance is "
                             + expectBalance.intValue());
         }
-        System.out.println(
-                "check finished! first contract balance is "
-                        + contracts[0].balance()
-                        + ", the middle contract balance is"
-                        + contracts[(contractsNum - 1) / 2].balance()
-                        + ", the last contract balance is "
-                        + contracts[contractsNum - 1].balance());
+        System.out.println("check finished! check finished, total balance equal expectBalance! ");
     }
 }
