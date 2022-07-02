@@ -362,12 +362,6 @@ public class DMCTransferRing {
                             + expectBalance);
         }
         System.out.println(
-                "check finished, balance is "
-                        + contracts[0].balance().toString()
-                        + " , "
-                        + contracts[1].balance().toString()
-                        + " , "
-                        + contracts[2].balance().toString()
-                        + " . ");
+                "check finished, total balance equal expectBalance! ");
     }
 }

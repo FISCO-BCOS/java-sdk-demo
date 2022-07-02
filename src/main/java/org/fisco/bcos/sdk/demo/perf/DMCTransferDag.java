@@ -305,23 +305,6 @@ public class DMCTransferDag {
                             + ", expectBalance is "
                             + expectBalance.toString());
         }
-        System.out.println(
-                "check finished, balance is "
-                        + contracts[0].balance().toString()
-                        + " , "
-                        + contracts[1].balance().toString()
-                        + " , "
-                        + contracts[2].balance().toString()
-                        + " , "
-                        + contracts[3].balance().toString()
-                        + " , "
-                        + contracts[4].balance().toString()
-                        + " , "
-                        + contracts[5].balance().toString()
-                        + " , "
-                        + contracts[6].balance().toString()
-                        + " , "
-                        + contracts[7].balance().toString()
-                        + " ! ");
+        System.out.println("check finished, total balance equal expectBalance!");
     }
 }

@@ -274,7 +274,6 @@ public class DMCTransferStar {
                             + ", expectBalance is "
                             + expectBalance.intValue());
         }
-        System.out.println(
-                "check finished, starCenter balance is " + contracts[0].balance() + " !");
+        System.out.println("check finished, total balance equal expectBalance !");
     }
 }
