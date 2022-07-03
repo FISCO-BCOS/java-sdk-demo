@@ -1,5 +1,6 @@
 package org.fisco.bcos.sdk.demo.perf;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -20,6 +21,7 @@ import org.fisco.bcos.sdk.demo.contract.Account;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
 import org.fisco.bcos.sdk.v3.codec.ContractCodecException;
+import org.fisco.bcos.sdk.v3.codec.datatypes.generated.tuples.generated.Tuple2;
 import org.fisco.bcos.sdk.v3.contract.auth.manager.AuthManager;
 import org.fisco.bcos.sdk.v3.contract.auth.po.AuthType;
 import org.fisco.bcos.sdk.v3.crypto.keypair.CryptoKeyPair;
@@ -33,11 +35,12 @@ import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
 public class PerformanceAuthTransferTest {
     private static final int DEFAULT_LIMIT = 1000;
-    private static final int DEFAULT_ADDRESS_COUNT = 5;
+    private static final int DEFAULT_ADDRESS_COUNT = 4;
     private static Client client;
     private static final Random random = new Random();
     private static final List<CryptoKeyPair> addressList = new ArrayList<>();
-    private static final Map<Integer, AtomicLong> accountLedger = new ConcurrentHashMap<>();
+    private static List<Account> contractList = new ArrayList<>();
+    private static final Map<String, AtomicLong> accountLedger = new ConcurrentHashMap<>();
     private static final Map<String, List<CryptoKeyPair>> contractAclMap =
             new ConcurrentHashMap<>();
 
@@ -83,17 +86,17 @@ public class PerformanceAuthTransferTest {
                     "Build account address finished, address size: " + addressList.size());
 
             // new contracts, write to a list
-            List<Account> contracts = deployContracts(contractCount, threadPoolService);
+            contractList = deployContracts(contractCount, threadPoolService);
 
             if (client.isAuthCheck()) {
                 // set acl type to all new contract, random to white/black_list
-                setContractAcl(contracts, threadPoolService);
+                setContractAcl(threadPoolService);
             }
             // setMethod acl to all new contract,
             // random to accounts, random to open/close, write it to a map
-            setContractMethodAcl(contracts, threadPoolService);
+            setContractMethodAcl(threadPoolService);
             // start send transaction
-            start(contracts, txCount, qps, threadPoolService);
+            start(txCount, qps, threadPoolService);
 
             threadPoolService.getThreadPool().awaitTermination(0, TimeUnit.SECONDS);
             System.exit(0);
@@ -153,11 +156,6 @@ public class PerformanceAuthTransferTest {
                                                 @Override
                                                 public void onResponse(TransactionReceipt receipt) {
                                                     long initBalance = Math.abs(random.nextLong());
-                                                    if (receipt.getStatus() != 0) {
-                                                        countDownLatch.countDown();
-                                                        receivedBar.step();
-                                                        return;
-                                                    }
                                                     contractAclMap.put(
                                                             receipt.getContractAddress(),
                                                             new ArrayList<>());
@@ -175,13 +173,9 @@ public class PerformanceAuthTransferTest {
                                                                 public void onResponse(
                                                                         TransactionReceipt
                                                                                 receipt) {
-                                                                    if (receipt.getStatus() != 0) {
-                                                                        countDownLatch.countDown();
-                                                                        receivedBar.step();
-                                                                        return;
-                                                                    }
                                                                     accountLedger.put(
-                                                                            index,
+                                                                            receipt
+                                                                                    .getContractAddress(),
                                                                             new AtomicLong(
                                                                                     initBalance));
                                                                     countDownLatch.countDown();
@@ -197,16 +191,16 @@ public class PerformanceAuthTransferTest {
                             });
         }
         countDownLatch.await();
-        System.out.println("Create account finished!");
         sentBar.close();
         receivedBar.close();
+        System.out.println("Create account finished!");
 
         return Arrays.asList(accounts);
     }
 
-    private static void setContractAcl(List<Account> accounts, ThreadPoolService threadPoolService)
+    private static void setContractAcl(ThreadPoolService threadPoolService)
             throws InterruptedException {
-        System.out.println("====== setContractACL, contractCount: " + accounts.size());
+        System.out.println("====== setContractACL, contractCount: " + contractList.size());
         AuthManager authManager =
                 new AuthManager(client, client.getCryptoSuite().getCryptoKeyPair());
         byte[] hash = client.getCryptoSuite().hash("addBalance(uint256)".getBytes());
@@ -216,19 +210,19 @@ public class PerformanceAuthTransferTest {
         ProgressBar sentBar =
                 new ProgressBarBuilder()
                         .setTaskName("Send   :")
-                        .setInitialMax(accounts.size())
+                        .setInitialMax(contractList.size())
                         .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                         .build();
         ProgressBar receivedBar =
                 new ProgressBarBuilder()
                         .setTaskName("Receive:")
-                        .setInitialMax(accounts.size())
+                        .setInitialMax(contractList.size())
                         .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                         .build();
 
-        CountDownLatch countDownLatch = new CountDownLatch(accounts.size());
+        CountDownLatch countDownLatch = new CountDownLatch(contractList.size());
 
-        for (Account account : accounts) {
+        for (Account account : contractList) {
             limiter.acquire();
             threadPoolService
                     .getThreadPool()
@@ -242,6 +236,7 @@ public class PerformanceAuthTransferTest {
                                                 : AuthType.WHITE_LIST,
                                         retCode -> {
                                             receivedBar.step();
+
                                             countDownLatch.countDown();
                                         });
                                 sentBar.step();
@@ -253,10 +248,13 @@ public class PerformanceAuthTransferTest {
         System.out.println("Set contract acl finished!");
     }
 
-    private static void setContractMethodAcl(
-            List<Account> accounts, ThreadPoolService threadPoolService)
+    private static void setContractMethodAcl(ThreadPoolService threadPoolService)
             throws InterruptedException {
-        System.out.println("====== setContractMethodAcl, contracts size: " + accounts.size());
+        System.out.println(
+                "====== setContractMethodAcl, contracts size: "
+                        + contractList.size()
+                        + ", account per contract: "
+                        + DEFAULT_ADDRESS_COUNT);
 
         AuthManager authManager =
                 new AuthManager(client, client.getCryptoSuite().getCryptoKeyPair());
@@ -267,24 +265,26 @@ public class PerformanceAuthTransferTest {
         ProgressBar sentBar =
                 new ProgressBarBuilder()
                         .setTaskName("Send   :")
-                        .setInitialMax((long) accounts.size() * DEFAULT_ADDRESS_COUNT)
+                        .setInitialMax((long) contractList.size() * DEFAULT_ADDRESS_COUNT)
                         .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                         .build();
         ProgressBar receivedBar =
                 new ProgressBarBuilder()
                         .setTaskName("Receive:")
-                        .setInitialMax((long) accounts.size() * DEFAULT_ADDRESS_COUNT)
+                        .setInitialMax((long) contractList.size() * DEFAULT_ADDRESS_COUNT)
                         .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                         .build();
 
-        CountDownLatch countDownLatch = new CountDownLatch(accounts.size() * DEFAULT_ADDRESS_COUNT);
+        CountDownLatch countDownLatch =
+                new CountDownLatch(contractList.size() * DEFAULT_ADDRESS_COUNT);
 
         List<CryptoKeyPair> authAddressList = new ArrayList<>(DEFAULT_ADDRESS_COUNT);
         for (int i = 0; i < DEFAULT_ADDRESS_COUNT; i++) {
             authAddressList.add(addressList.get(random.nextInt(addressList.size())));
         }
 
-        for (Account account : accounts) {
+        for (Account account : contractList) {
+            contractAclMap.get(account.getContractAddress()).addAll(authAddressList);
             for (CryptoKeyPair address : authAddressList) {
                 limiter.acquire();
                 if (client.isAuthCheck()) {
@@ -299,9 +299,6 @@ public class PerformanceAuthTransferTest {
                                                 address.getAddress(),
                                                 isOpen,
                                                 retCode -> {
-                                                    contractAclMap
-                                                            .get(account.getContractAddress())
-                                                            .add(address);
                                                     receivedBar.step();
                                                     countDownLatch.countDown();
                                                 });
@@ -309,7 +306,6 @@ public class PerformanceAuthTransferTest {
                                     });
                 } else {
                     sentBar.step();
-                    contractAclMap.get(account.getContractAddress()).add(address);
                     receivedBar.step();
                     countDownLatch.countDown();
                 }
@@ -321,8 +317,7 @@ public class PerformanceAuthTransferTest {
         System.out.println("Set contract acl method finished!");
     }
 
-    public static void start(
-            List<Account> contracts, int count, int qps, ThreadPoolService threadPoolService)
+    public static void start(int count, int qps, ThreadPoolService threadPoolService)
             throws IOException, InterruptedException, ContractException {
 
         RateLimiter limiter = RateLimiter.create(qps);
@@ -351,47 +346,116 @@ public class PerformanceAuthTransferTest {
                         + ", sendContractCount: "
                         + sendContractCount);
         CountDownLatch transactionLatch = new CountDownLatch(count);
-        Collector collector = new Collector();
-        collector.setTotal(count);
+        // prepare contract list
 
-        for (int i = 0; i < sendContractCount; ++i) {
-            final int index = i % contracts.size();
-            Account account = contracts.get(index);
+        List<Tuple2<AssembleTransactionProcessor, String>> assembleTransactionProcessors =
+                new ArrayList<>(count);
+        String binary = Account.getBinary(client.getCryptoSuite());
+        String abi = Account.getABI();
+        for (int i = 0; i < sendContractCount; i++) {
+            final int index = i % contractList.size();
+            Account account = contractList.get(index);
             List<CryptoKeyPair> cryptoKeyPairs = contractAclMap.get(account.getContractAddress());
             assert cryptoKeyPairs.size() == DEFAULT_ADDRESS_COUNT;
             for (CryptoKeyPair cryptoKeyPair : cryptoKeyPairs) {
-                limiter.acquire();
-                // TODO: check this client set will access Account
-                client.getCryptoSuite().setCryptoKeyPair(cryptoKeyPair);
-                threadPoolService
-                        .getThreadPool()
-                        .execute(
-                                () -> {
-                                    long now = System.currentTimeMillis();
+                AssembleTransactionProcessor assembleTransactionProcessor =
+                        new AssembleTransactionProcessor(
+                                client,
+                                cryptoKeyPair,
+                                client.getGroup(),
+                                client.getChainId(),
+                                "Account",
+                                abi,
+                                binary);
+                assembleTransactionProcessors.add(
+                        new Tuple2<>(assembleTransactionProcessor, account.getContractAddress()));
+            }
+        }
 
-                                    final long value = Math.abs(random.nextLong() % 1000);
+        Collector collector = new Collector();
+        collector.setTotal(count);
 
-                                    account.addBalance(
-                                            BigInteger.valueOf(value),
+        for (int i = 0; i < count; i++) {
+            Tuple2<AssembleTransactionProcessor, String> assembleTransactionProcessorTuple =
+                    assembleTransactionProcessors.get(i);
+            AssembleTransactionProcessor assembleTransactionProcessor =
+                    assembleTransactionProcessorTuple.getValue1();
+            String address = assembleTransactionProcessorTuple.getValue2();
+            limiter.acquire();
+            threadPoolService
+                    .getThreadPool()
+                    .execute(
+                            () -> {
+                                long now = System.currentTimeMillis();
+
+                                final long value = Math.abs(random.nextLong() % 1000);
+                                try {
+                                    assembleTransactionProcessor.sendTransactionAsync(
+                                            address,
+                                            abi,
+                                            Account.FUNC_ADDBALANCE,
+                                            Lists.newArrayList(BigInteger.valueOf(value)),
                                             new TransactionCallback() {
                                                 @Override
                                                 public void onResponse(TransactionReceipt receipt) {
                                                     long cost = System.currentTimeMillis() - now;
-                                                    collector.onMessage(receipt, cost);
-                                                    if (receipt.isStatusOK()) {
-                                                        AtomicLong count1 =
-                                                                accountLedger.get(index);
-                                                        count1.addAndGet(value);
-                                                    }
-
+                                                    collector.onAuthCheckMessage(receipt, cost);
                                                     receivedBar.step();
                                                     transactionLatch.countDown();
+                                                    if (receipt.isStatusOK()) {
+                                                        accountLedger.get(address).addAndGet(value);
+                                                    }
                                                 }
                                             });
-                                    sentBar.step();
-                                });
-            }
+                                } catch (ContractCodecException e) {
+                                    e.printStackTrace();
+                                    receivedBar.step();
+                                    transactionLatch.countDown();
+                                }
+                                sentBar.step();
+                            });
         }
+
+        //        for (int i = 0; i < sendContractCount; ++i) {
+        //            final int index = i % contractList.size();
+        //            Account account = contractList.get(index);
+        //            List<CryptoKeyPair> cryptoKeyPairs =
+        // contractAclMap.get(account.getContractAddress());
+        //            assert cryptoKeyPairs.size() == DEFAULT_ADDRESS_COUNT;
+        //            for (CryptoKeyPair cryptoKeyPair : cryptoKeyPairs) {
+        //                limiter.acquire();
+        //                assert cryptoKeyPair != null;
+        //                client.getCryptoSuite().setCryptoKeyPair(cryptoKeyPair);
+        //                threadPoolService
+        //                        .getThreadPool()
+        //                        .execute(
+        //                                () -> {
+        //                                    long now = System.currentTimeMillis();
+        //
+        //                                    final long value = Math.abs(random.nextLong() % 1000);
+        //
+        //                                    account.addBalance(
+        //                                            BigInteger.valueOf(value),
+        //                                            new TransactionCallback() {
+        //                                                @Override
+        //                                                public void onResponse(TransactionReceipt
+        // receipt) {
+        //                                                    long cost = System.currentTimeMillis()
+        // - now;
+        //                                                    collector.onMessage(receipt, cost);
+        //                                                    if (receipt.isStatusOK()) {
+        //
+        // accountLedger.get(index).addAndGet(value);
+        //                                                    }
+        //
+        //                                                    receivedBar.step();
+        //                                                    transactionLatch.countDown();
+        //                                                }
+        //                                            });
+        //                                    sentBar.step();
+        //                                });
+        //            }
+        //        }
         transactionLatch.await();
 
         sentBar.close();
@@ -400,22 +464,30 @@ public class PerformanceAuthTransferTest {
 
         System.out.println("Sending transactions finished!");
 
+        checkResult(count, threadPoolService);
+    }
+
+    private static void checkResult(int count, ThreadPoolService threadPoolService) {
         System.out.println("Checking result...");
         CountDownLatch checkLatch = new CountDownLatch(count);
-        for (Map.Entry<Integer, AtomicLong> entry : accountLedger.entrySet()) {
-            limiter.acquire();
-            final int index = entry.getKey();
+        for (Map.Entry<String, AtomicLong> entry : accountLedger.entrySet()) {
+            final String accountAddress = entry.getKey();
             final long expectBalance = entry.getValue().longValue();
             threadPoolService
                     .getThreadPool()
                     .execute(
                             () -> {
                                 try {
-                                    BigInteger balance = contracts.get(index).balance();
+                                    Account account =
+                                            Account.load(
+                                                    accountAddress,
+                                                    client,
+                                                    client.getCryptoSuite().getCryptoKeyPair());
+                                    BigInteger balance = account.balance();
                                     if (balance.longValue() != expectBalance) {
                                         System.out.println(
                                                 "Check failed! Account["
-                                                        + index
+                                                        + accountAddress
                                                         + "] balance: "
                                                         + balance
                                                         + " not equal to expected: "

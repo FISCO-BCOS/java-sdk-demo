@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.fisco.bcos.sdk.v3.model.JsonRpcResponse;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.TransactionReceiptStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,6 +75,26 @@ public class Collector {
         try {
             boolean errorMessage = false;
             if (!receipt.isStatusOK()) {
+                logger.error(
+                        "error receipt, status: {}, output: {}, message: {}",
+                        receipt.getStatus(),
+                        receipt.getOutput(),
+                        receipt.getMessage());
+                errorMessage = true;
+            }
+            stat(errorMessage, cost);
+        } catch (Exception e) {
+            logger.error("error:", e);
+        }
+    }
+
+    public void onAuthCheckMessage(TransactionReceipt receipt, Long cost) {
+        try {
+            boolean errorMessage = false;
+            if (!receipt.isStatusOK()) {
+                if (receipt.getStatus() == TransactionReceiptStatus.PermissionDenied.code) {
+                    stat(false, cost);
+                }
                 logger.error(
                         "error receipt, status: {}, output: {}, message: {}",
                         receipt.getStatus(),
