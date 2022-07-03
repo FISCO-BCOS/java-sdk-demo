@@ -4,11 +4,9 @@ import com.google.common.util.concurrent.RateLimiter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
@@ -76,9 +74,8 @@ public class PerformanceDeployTest {
         System.out.println(
                 "====== Start test, count: " + count + ", qps:" + qps + ", groupId: " + groupId);
 
-        RateLimiter limiter = RateLimiter.create(qps.intValue());
+        RateLimiter limiter = RateLimiter.create(qps);
 
-        HelloWorld[] helloWorlds = new HelloWorld[count];
         String abi = HelloWorld.getABI();
         String binary = HelloWorld.getBinary(client.getCryptoSuite());
         AssembleTransactionProcessor assembleTransactionProcessor =
@@ -90,10 +87,6 @@ public class PerformanceDeployTest {
                         binary);
 
         random.setSeed(System.currentTimeMillis());
-
-        AtomicLong totalCost = new AtomicLong(0);
-        Collector collector = new Collector();
-        collector.setTotal(count);
 
         System.out.println("Sending transactions...");
         ProgressBar sentBar =
@@ -110,15 +103,17 @@ public class PerformanceDeployTest {
                         .build();
 
         CountDownLatch countDownLatch = new CountDownLatch(count);
+        Collector collector = new Collector();
+        collector.setTotal(count);
+
         for (int i = 0; i < count; ++i) {
-            final int index = i;
+            limiter.acquire();
             threadPoolService
                     .getThreadPool()
                     .execute(
                             () -> {
                                 long now = System.currentTimeMillis();
                                 try {
-                                    limiter.acquire();
                                     assembleTransactionProcessor.deployAsync(
                                             HelloWorld.getABI(),
                                             binary,
@@ -128,17 +123,8 @@ public class PerformanceDeployTest {
                                                 public void onResponse(TransactionReceipt receipt) {
                                                     long cost = System.currentTimeMillis() - now;
                                                     collector.onMessage(receipt, cost);
-
                                                     receivedBar.step();
                                                     countDownLatch.countDown();
-                                                    totalCost.addAndGet(cost);
-                                                    receipt.getContractAddress();
-                                                    helloWorlds[index] =
-                                                            HelloWorld.load(
-                                                                    receipt.getContractAddress(),
-                                                                    client,
-                                                                    client.getCryptoSuite()
-                                                                            .getCryptoKeyPair());
                                                 }
                                             });
                                     sentBar.step();
@@ -153,32 +139,5 @@ public class PerformanceDeployTest {
         collector.report();
 
         System.out.println("Create contracts finished!");
-
-        System.out.println("Checking result...");
-        CountDownLatch checkLatch = new CountDownLatch(count);
-        for (HelloWorld helloWorld : helloWorlds) {
-            limiter.acquire();
-            threadPoolService
-                    .getThreadPool()
-                    .execute(
-                            () -> {
-                                try {
-                                    limiter.acquire();
-                                    String hello = helloWorld.get();
-                                    if (!Objects.equals(hello, "Hello World!")) {
-                                        System.out.println(
-                                                "Check failed! address: "
-                                                        + helloWorld.getContractAddress());
-                                    }
-
-                                    checkLatch.countDown();
-                                } catch (ContractException e) {
-                                    e.printStackTrace();
-                                }
-                            });
-        }
-
-        checkLatch.await();
-        System.out.println("Checking finished!");
     }
 }
