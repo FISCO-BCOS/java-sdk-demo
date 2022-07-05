@@ -15,6 +15,9 @@ package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,6 +39,7 @@ public class PerformanceKVTable {
     private static Logger logger = LoggerFactory.getLogger(PerformanceKVTable.class);
     private static AtomicInteger sendedTransactions = new AtomicInteger(0);
     private static AtomicLong uniqueID = new AtomicLong(0);
+    private static final Set<String> supportCommands = new HashSet<>(Arrays.asList("set", "get"));
 
     private static void Usage() {
         System.out.println(" Usage:");
@@ -71,6 +75,12 @@ public class PerformanceKVTable {
                             + qps
                             + ", groupId: "
                             + groupId);
+
+            if (!supportCommands.contains(command)) {
+                System.out.println("Command " + command + " not supported!");
+                Usage();
+                return;
+            }
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);

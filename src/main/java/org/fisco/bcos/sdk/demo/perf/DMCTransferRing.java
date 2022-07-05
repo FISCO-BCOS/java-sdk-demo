@@ -361,7 +361,6 @@ public class DMCTransferRing {
                             + ", expectBalance is "
                             + expectBalance);
         }
-        System.out.println(
-                "check finished, total balance equal expectBalance! ");
+        System.out.println("check finished, total balance equal expectBalance! ");
     }
 }
