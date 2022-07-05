@@ -16,6 +16,8 @@ package org.fisco.bcos.sdk.demo.perf;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.fisco.bcos.sdk.v3.model.JsonRpcResponse;
+import org.fisco.bcos.sdk.v3.model.PrecompiledRetCode;
+import org.fisco.bcos.sdk.v3.model.RetCode;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.fisco.bcos.sdk.v3.model.TransactionReceiptStatus;
 import org.slf4j.Logger;
@@ -88,12 +90,27 @@ public class Collector {
         }
     }
 
+    public void onPrecompiledMessage(RetCode retCode, Long cost) {
+        try {
+            boolean errorMessage = false;
+            if (retCode.getCode() != PrecompiledRetCode.CODE_SUCCESS.code) {
+                logger.error(
+                        "error retCode, code: {}, message: {}", retCode.code, retCode.getMessage());
+                errorMessage = true;
+            }
+            stat(errorMessage, cost);
+        } catch (Exception e) {
+            logger.error("error:", e);
+        }
+    }
+
     public void onAuthCheckMessage(TransactionReceipt receipt, Long cost) {
         try {
             boolean errorMessage = false;
             if (!receipt.isStatusOK()) {
                 if (receipt.getStatus() == TransactionReceiptStatus.PermissionDenied.code) {
                     stat(false, cost);
+                    return;
                 }
                 logger.error(
                         "error receipt, status: {}, output: {}, message: {}",

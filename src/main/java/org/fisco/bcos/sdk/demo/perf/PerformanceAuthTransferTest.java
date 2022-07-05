@@ -34,7 +34,7 @@ import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
 public class PerformanceAuthTransferTest {
-    private static final int DEFAULT_LIMIT = 1000;
+    private static int DEFAULT_QPS_LIMIT = 1000;
     private static int addressPerContract;
     private static Client client;
     private static final Random random = new Random();
@@ -46,7 +46,7 @@ public class PerformanceAuthTransferTest {
         System.out.println(" Usage:");
         System.out.println("===== PerformanceAuthTransferTest test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceAuthTransferTest [groupId] [userCount] [contractCount] [txCount] [qps].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceAuthTransferTest [groupId] [userCount] [contractCount] [txCount] [qps] [onlySetAcl].");
     }
 
     public static void main(String[] args)
@@ -68,6 +68,11 @@ public class PerformanceAuthTransferTest {
             int contractCount = Integer.parseInt(args[2]);
             int txCount = Integer.parseInt(args[3]);
             int qps = Integer.parseInt(args[4]);
+            boolean isOnlySetAcl = false;
+            if (args.length == 6) {
+                isOnlySetAcl = Boolean.parseBoolean(args[5]);
+                DEFAULT_QPS_LIMIT = isOnlySetAcl ? qps : DEFAULT_QPS_LIMIT;
+            }
 
             accountLedger = new ConcurrentHashMap<>(contractCount);
             contractAclMap = new ConcurrentHashMap<>(contractCount);
@@ -93,7 +98,9 @@ public class PerformanceAuthTransferTest {
                 setContractMethodAcl(threadPoolService);
             }
             // start send transaction
-            start(txCount, qps, threadPoolService);
+            if (!isOnlySetAcl) {
+                start(txCount, qps, threadPoolService);
+            }
 
             threadPoolService.getThreadPool().awaitTermination(0, TimeUnit.SECONDS);
             System.exit(0);
@@ -113,7 +120,7 @@ public class PerformanceAuthTransferTest {
         AssembleTransactionProcessor assembleTransactionProcessor =
                 TransactionProcessorFactory.createAssembleTransactionProcessor(
                         client, client.getCryptoSuite().getCryptoKeyPair(), "Account", abi, binary);
-        RateLimiter limiter = RateLimiter.create(DEFAULT_LIMIT);
+        RateLimiter limiter = RateLimiter.create(DEFAULT_QPS_LIMIT);
 
         System.out.println("Deploy contracts...");
         ProgressBar sentBar =
@@ -206,7 +213,7 @@ public class PerformanceAuthTransferTest {
                 new AuthManager(client, client.getCryptoSuite().getCryptoKeyPair());
         byte[] hash = client.getCryptoSuite().hash("addBalance(uint256)".getBytes());
         byte[] func = Arrays.copyOfRange(hash, 0, 4);
-        RateLimiter limiter = RateLimiter.create(DEFAULT_LIMIT);
+        RateLimiter limiter = RateLimiter.create(DEFAULT_QPS_LIMIT);
 
         ProgressBar sentBar =
                 new ProgressBarBuilder()
@@ -222,6 +229,8 @@ public class PerformanceAuthTransferTest {
                         .build();
 
         CountDownLatch countDownLatch = new CountDownLatch(contractList.size());
+        Collector collector = new Collector();
+        collector.setTotal(contractList.size());
 
         for (String account : contractList) {
             limiter.acquire();
@@ -229,6 +238,7 @@ public class PerformanceAuthTransferTest {
                     .getThreadPool()
                     .execute(
                             () -> {
+                                long now = System.currentTimeMillis();
                                 authManager.asyncSetMethodAuthType(
                                         account,
                                         func,
@@ -236,6 +246,8 @@ public class PerformanceAuthTransferTest {
                                                 ? AuthType.BLACK_LIST
                                                 : AuthType.WHITE_LIST,
                                         retCode -> {
+                                            long cost = System.currentTimeMillis() - now;
+                                            collector.onPrecompiledMessage(retCode, cost);
                                             receivedBar.step();
 
                                             countDownLatch.countDown();
@@ -246,6 +258,7 @@ public class PerformanceAuthTransferTest {
         countDownLatch.await();
         sentBar.close();
         receivedBar.close();
+        collector.report();
         System.out.println("Set contract acl finished!");
     }
 
@@ -261,7 +274,7 @@ public class PerformanceAuthTransferTest {
                 new AuthManager(client, client.getCryptoSuite().getCryptoKeyPair());
         byte[] hash = client.getCryptoSuite().hash("addBalance(uint256)".getBytes());
         byte[] func = Arrays.copyOfRange(hash, 0, 4);
-        RateLimiter limiter = RateLimiter.create(DEFAULT_LIMIT);
+        RateLimiter limiter = RateLimiter.create(DEFAULT_QPS_LIMIT);
 
         ProgressBar sentBar =
                 new ProgressBarBuilder()
