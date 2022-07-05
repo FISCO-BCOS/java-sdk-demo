@@ -15,28 +15,30 @@ package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
+import me.tongfei.progressbar.ProgressBar;
+import me.tongfei.progressbar.ProgressBarBuilder;
+import me.tongfei.progressbar.ProgressBarStyle;
 import org.fisco.bcos.sdk.demo.contract.TableTestLiquid;
-import org.fisco.bcos.sdk.demo.perf.callback.PerformanceCallback;
-import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
 import org.fisco.bcos.sdk.v3.BcosSDK;
-import org.fisco.bcos.sdk.v3.BcosSDKException;
 import org.fisco.bcos.sdk.v3.client.Client;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.fisco.bcos.sdk.v3.model.TransactionReceiptStatus;
+import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PerformanceTableLiquid {
-    private static final Logger logger = LoggerFactory.getLogger(PerformanceTableLiquid.class);
-    private static AtomicInteger sentTransactions = new AtomicInteger(0);
     private static AtomicLong uniqueID = new AtomicLong(0);
+    private static final Set<String> supportCommands =
+            new HashSet<>(Arrays.asList("insert", "update", "remove", "select"));
 
     private static void Usage() {
         System.out.println(" Usage:");
@@ -48,7 +50,7 @@ public class PerformanceTableLiquid {
         System.out.println(
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTableLiquid [remove] [count] [tps] [groupId].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTableLiquid [query] [count] [tps] [groupId].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTableLiquid [select] [count] [tps] [groupId].");
     }
 
     public static void main(String[] args) {
@@ -65,8 +67,8 @@ public class PerformanceTableLiquid {
                 return;
             }
             String command = args[0];
-            Integer count = Integer.valueOf(args[1]);
-            Integer qps = Integer.valueOf(args[2]);
+            int count = Integer.parseInt(args[1]);
+            int qps = Integer.parseInt(args[2]);
             String groupId = args[3];
             System.out.println(
                     "====== PerformanceTableLiquid "
@@ -77,6 +79,12 @@ public class PerformanceTableLiquid {
                             + qps
                             + ", groupId: "
                             + groupId);
+
+            if (!supportCommands.contains(command)) {
+                System.out.println("Command " + command + " not supported!");
+                Usage();
+                return;
+            }
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
@@ -105,60 +113,78 @@ public class PerformanceTableLiquid {
                             + tableTestLiquid.getContractAddress()
                             + " ====== ");
 
-            PerformanceCollector collector = new PerformanceCollector();
-            collector.setTotal(count);
+            CountDownLatch countDownLatch = new CountDownLatch(count);
             RateLimiter limiter = RateLimiter.create(qps);
-            int area = count / 10;
-            final Integer total = count;
+            ProgressBar sentBar =
+                    new ProgressBarBuilder()
+                            .setTaskName("Send   :")
+                            .setInitialMax(count)
+                            .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                            .build();
+            ProgressBar receivedBar =
+                    new ProgressBarBuilder()
+                            .setTaskName("Receive:")
+                            .setInitialMax(count)
+                            .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                            .build();
 
             System.out.println("====== PerformanceTableLiquid " + command + " start ======");
             ThreadPoolService threadPoolService =
-                    new ThreadPoolService("PerformanceTableLiquid", 1000000);
+                    new ThreadPoolService(
+                            "PerformanceTableLiquid", Runtime.getRuntime().availableProcessors());
+
+            Collector collector = new Collector();
+            collector.setTotal(count);
             for (int i = 0; i < count; ++i) {
                 limiter.acquire();
                 threadPoolService
                         .getThreadPool()
                         .execute(
                                 () -> {
-                                    callTableOperation(command, tableTestLiquid, collector);
-                                    int current = sentTransactions.incrementAndGet();
-                                    if (current >= area && ((current % area) == 0)) {
-                                        System.out.println(
-                                                "Already sent: "
-                                                        + current
-                                                        + "/"
-                                                        + total
-                                                        + " transactions");
-                                    }
+                                    long now = System.currentTimeMillis();
+                                    callTableOperation(
+                                            command,
+                                            tableTestLiquid,
+                                            new TransactionCallback() {
+                                                @Override
+                                                public void onResponse(TransactionReceipt receipt) {
+                                                    long cost = System.currentTimeMillis() - now;
+                                                    collector.onMessage(receipt, cost);
+                                                    receivedBar.step();
+                                                    countDownLatch.countDown();
+                                                }
+                                            });
+                                    sentBar.step();
                                 });
             }
             // wait to collect all the receipts
-            while (!collector.getReceived().equals(count)) {
-                Thread.sleep(1000);
-            }
+            countDownLatch.await();
+            receivedBar.close();
+            sentBar.close();
+            collector.report();
             threadPoolService.stop();
             System.exit(0);
-        } catch (BcosSDKException | ContractException | InterruptedException e) {
+        } catch (Exception e) {
             System.out.println(
                     "====== PerformanceTableLiquid test failed, error message: " + e.getMessage());
+            e.printStackTrace();
             System.exit(0);
         }
     }
 
     private static void callTableOperation(
-            String command, TableTestLiquid tableTest, PerformanceCollector collector) {
+            String command, TableTestLiquid tableTest, TransactionCallback callback) {
         if (command.compareToIgnoreCase("insert") == 0) {
-            insert(tableTest, collector);
+            insert(tableTest, callback);
         }
-
         if (command.compareToIgnoreCase("update") == 0) {
-            update(tableTest, collector);
+            update(tableTest, callback);
         }
         if (command.compareToIgnoreCase("remove") == 0) {
-            remove(tableTest, collector);
+            remove(tableTest, callback);
         }
-        if (command.compareToIgnoreCase("query") == 0) {
-            query(tableTest, collector);
+        if (command.compareToIgnoreCase("select") == 0) {
+            select(tableTest, callback);
         }
     }
 
@@ -171,66 +197,31 @@ public class PerformanceTableLiquid {
         return uuid.toString().replace("-", "");
     }
 
-    private static PerformanceCallback createCallback(PerformanceCollector collector) {
-        PerformanceCallback callback = new PerformanceCallback();
-        callback.setTimeout(0);
-        callback.setCollector(collector);
-        return callback;
+    private static void insert(TableTestLiquid tableTest, TransactionCallback callback) {
+        long nextID = getNextID();
+        tableTest.insert("fruit" + nextID, String.valueOf(nextID), "apple" + getId(), callback);
     }
 
-    private static void sendTransactionException(
-            Exception e, String command, PerformanceCallback callback) {
+    private static void update(TableTestLiquid tableTest, TransactionCallback callback) {
+        long nextID = getNextID();
+        tableTest.update("fruit" + nextID, String.valueOf(nextID), "apple" + getId(), callback);
+    }
+
+    private static void remove(TableTestLiquid tableTest, TransactionCallback callback) {
+        long nextID = getNextID();
+        tableTest.remove("fruit" + nextID, callback);
+    }
+
+    private static void select(TableTestLiquid tableTest, TransactionCallback callback) {
         TransactionReceipt receipt = new TransactionReceipt();
-        receipt.setStatus(-1);
-        callback.onResponse(receipt);
-        logger.info("call command {} failed, error info: {}", command, e.getMessage());
-    }
-
-    private static void insert(TableTestLiquid tableTest, PerformanceCollector collector) {
-        PerformanceCallback callback = createCallback(collector);
         try {
-            long nextID = getNextID();
-            tableTest.insert("fruit" + nextID, String.valueOf(nextID), "apple" + getId(), callback);
-        } catch (Exception e) {
-            sendTransactionException(e, "insert", callback);
-        }
-    }
-
-    private static void update(TableTestLiquid tableTest, PerformanceCollector collector) {
-        PerformanceCallback callback = createCallback(collector);
-        try {
-            long nextID = getNextID();
-            tableTest.update("fruit" + nextID, String.valueOf(nextID), "apple" + getId(), callback);
-        } catch (Exception e) {
-            sendTransactionException(e, "update", callback);
-        }
-    }
-
-    private static void remove(TableTestLiquid tableTest, PerformanceCollector collector) {
-        PerformanceCallback callback = createCallback(collector);
-        try {
-            long nextID = getNextID();
-            tableTest.remove("fruit" + nextID, callback);
-
-        } catch (Exception e) {
-            sendTransactionException(e, "remove", callback);
-        }
-    }
-
-    private static void query(TableTestLiquid tableTest, PerformanceCollector collector) {
-        try {
-            Long timeBefore = System.currentTimeMillis();
             long nextID = getNextID();
             tableTest.select("fruit" + nextID);
-            Long timeAfter = System.currentTimeMillis();
-            TransactionReceipt receipt = new TransactionReceipt();
-            receipt.setStatus(0x0);
-            collector.onMessage(receipt, timeAfter - timeBefore);
+            receipt.setStatus(0);
+            callback.onResponse(receipt);
         } catch (Exception e) {
-            TransactionReceipt receipt = new TransactionReceipt();
             receipt.setStatus(-1);
-            collector.onMessage(receipt, (long) (0));
-            logger.error("query error: {}", e);
+            callback.onResponse(receipt);
         }
     }
 }
