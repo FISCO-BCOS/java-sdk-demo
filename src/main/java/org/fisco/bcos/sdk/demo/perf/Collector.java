@@ -33,6 +33,7 @@ public class Collector {
 
     private Integer total = 0;
     private AtomicInteger received = new AtomicInteger(0);
+
     private AtomicInteger error = new AtomicInteger(0);
     private Long startTimestamp = System.currentTimeMillis();
 
@@ -50,6 +51,10 @@ public class Collector {
 
     public void setReceived(Integer received) {
         this.received.getAndSet(received);
+    }
+
+    public AtomicInteger getError() {
+        return error;
     }
 
     public void onRpcMessage(JsonRpcResponse response, Long cost) {

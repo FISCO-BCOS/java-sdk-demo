@@ -119,7 +119,7 @@ public class LegoTransactionDemo {
                         transactionDecoder.decodeReceiptWithValues(
                                 abiTx.abiContent, abiTx.methodName, receipt);
                 System.out.println("5:[in TxCallback]response decode: " + response.getEvents());
-            } catch (TransactionException | IOException | ContractCodecException e) {
+            } catch (ContractCodecException e) {
                 e.printStackTrace();
             }
         }

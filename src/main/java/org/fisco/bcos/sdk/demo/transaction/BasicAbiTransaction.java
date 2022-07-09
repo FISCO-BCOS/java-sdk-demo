@@ -5,7 +5,7 @@ import java.util.List;
 import org.fisco.bcos.sdk.jni.common.JniException;
 import org.fisco.bcos.sdk.jni.utilities.tx.TransactionBuilderJniObj;
 import org.fisco.bcos.sdk.v3.client.Client;
-import org.fisco.bcos.sdk.v3.client.protocol.model.Transaction;
+import org.fisco.bcos.sdk.v3.client.protocol.model.TransactionAttribute;
 import org.fisco.bcos.sdk.v3.codec.ContractCodec;
 import org.fisco.bcos.sdk.v3.codec.ContractCodecException;
 import org.fisco.bcos.sdk.v3.crypto.CryptoSuite;
@@ -183,9 +183,9 @@ public class BasicAbiTransaction {
         byte[] hash = transactionEncoder.encodeAndHashBytes(transaction);
         int txAttribute = 0;
         if (isWASM) {
-            txAttribute |= Transaction.LIQUID_SCALE_CODEC;
+            txAttribute |= TransactionAttribute.LIQUID_SCALE_CODEC;
             if (this.isDeployTransaction) {
-                txAttribute |= Transaction.LIQUID_CREATE;
+                txAttribute |= TransactionAttribute.LIQUID_CREATE;
             }
         }
         return transactionEncoder.encodeToTransactionBytes(

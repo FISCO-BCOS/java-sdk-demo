@@ -34,14 +34,19 @@ public class ParallelOkPerf {
         System.out.println(" Usage:");
         System.out.println("===== ParallelOk test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [add] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [add] [count] [tps] [file] [isParallel].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [transfer] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [transfer] [count] [tps] [file] [isParallel].");
+        System.out.println(
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [generate] [count] [tps] [file] [isParallel].");
+
         System.out.println("===== DagTransafer test===========");
         System.out.println(
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupId] [add] [count] [tps] [file].");
         System.out.println(
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupId] [transfer] [count] [tps] [file].");
+        System.out.println(
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupId] [generate] [count] [tps] [file].");
     }
 
     public static void main(String[] args)
@@ -53,9 +58,12 @@ public class ParallelOkPerf {
                 System.out.println("The configFile " + configFileName + " doesn't exist!");
                 return;
             }
+            boolean isParallel = true;
             if (args.length < 6) {
                 Usage();
                 return;
+            } else if (args.length == 7) {
+                isParallel = Boolean.parseBoolean(args[6]);
             }
             String perfType = args[0];
             String groupId = args[1];
@@ -63,6 +71,10 @@ public class ParallelOkPerf {
             Integer count = Integer.valueOf(args[3]);
             Integer qps = Integer.valueOf(args[4]);
             String userFile = args[5];
+            Integer conflictPercent = 0;
+            if (args.length == 7) {
+                conflictPercent = Integer.valueOf(args[6]);
+            }
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
@@ -74,9 +86,16 @@ public class ParallelOkPerf {
                             "ParallelOkPerf", Runtime.getRuntime().availableProcessors());
 
             if (perfType.compareToIgnoreCase("parallelok") == 0) {
-                parallelOkPerf(groupId, command, count, qps, threadPoolService);
+                parallelOkPerf(
+                        groupId,
+                        command,
+                        count,
+                        qps,
+                        conflictPercent,
+                        threadPoolService,
+                        isParallel);
             } else if (perfType.compareToIgnoreCase("precompiled") == 0) {
-                dagTransferPerf(groupId, command, count, qps, threadPoolService);
+                dagTransferPerf(groupId, command, count, qps, conflictPercent, threadPoolService);
             } else {
                 System.out.println(
                         "invalid perf option: "
@@ -95,7 +114,9 @@ public class ParallelOkPerf {
             String command,
             Integer count,
             Integer qps,
-            ThreadPoolService threadPoolService)
+            Integer conflictPercent,
+            ThreadPoolService threadPoolService,
+            boolean isParallel)
             throws IOException, InterruptedException, ContractException {
         System.out.println(
                 "====== ParallelOk trans, count: "
@@ -103,13 +124,19 @@ public class ParallelOkPerf {
                         + ", qps:"
                         + qps
                         + ", groupId: "
-                        + groupId);
+                        + groupId
+                        + ", conflictPercent: "
+                        + conflictPercent
+                        + ", isParallel: "
+                        + isParallel);
         ParallelOk parallelOk;
         ParallelOkDemo parallelOkDemo;
         switch (command) {
             case "add":
                 // deploy ParallelOk
-                parallelOk = ParallelOk.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
+                parallelOk =
+                        ParallelOk.deploy(
+                                client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
 
                 System.out.println(
                         "====== ParallelOk userAdd, deploy success, address: "
@@ -132,7 +159,20 @@ public class ParallelOkPerf {
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.userTransfer(BigInteger.valueOf(count), BigInteger.valueOf(qps));
                 break;
-
+            case "generate":
+                dagUserInfo.loadDagTransferUser();
+                parallelOk =
+                        ParallelOk.load(
+                                dagUserInfo.getContractAddr(),
+                                client,
+                                client.getCryptoSuite().getCryptoKeyPair());
+                parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
+                parallelOkDemo.generateTransferTxs(
+                        BigInteger.valueOf(count),
+                        "parallelOKTxs.txt",
+                        BigInteger.valueOf(qps),
+                        BigInteger.valueOf(conflictPercent));
+                break;
             default:
                 System.out.println("invalid command: " + command);
                 Usage();
@@ -145,6 +185,7 @@ public class ParallelOkPerf {
             String command,
             Integer count,
             Integer qps,
+            Integer conflictPercent,
             ThreadPoolService threadPoolService)
             throws IOException, InterruptedException, ContractException {
         System.out.println(
@@ -153,7 +194,9 @@ public class ParallelOkPerf {
                         + ", qps:"
                         + qps
                         + ", groupId: "
-                        + groupId);
+                        + groupId
+                        + ", conflictPercent: "
+                        + conflictPercent);
 
         DagPrecompiledDemo dagPrecompiledDemo;
         switch (command) {
@@ -165,6 +208,15 @@ public class ParallelOkPerf {
                 dagUserInfo.loadDagTransferUser();
                 dagPrecompiledDemo = new DagPrecompiledDemo(client, dagUserInfo, threadPoolService);
                 dagPrecompiledDemo.userTransfer(BigInteger.valueOf(count), BigInteger.valueOf(qps));
+                break;
+            case "generate":
+                dagUserInfo.loadDagTransferUser();
+                dagPrecompiledDemo = new DagPrecompiledDemo(client, dagUserInfo, threadPoolService);
+                dagPrecompiledDemo.generateTransferTxs(
+                        BigInteger.valueOf(count),
+                        "dagTxs.txt",
+                        BigInteger.valueOf(qps),
+                        BigInteger.valueOf(conflictPercent));
                 break;
             default:
                 System.out.println("invalid command: " + command);
