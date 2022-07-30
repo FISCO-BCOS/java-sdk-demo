@@ -93,7 +93,8 @@ List logger = [
 dependencies {
     compile ("org.fisco-bcos.java-sdk:fisco-bcos-java-sdk:${javaSDKVersion}")
     compile('org.fisco-bcos.code-generator:bcos-code-generator:1.0.0-SNAPSHOT') {
-        transitive = false
+        exclude group : "org.fisco-bcos.java-sdk"
+        exclude group : "org.slf4j"
     }
     compile ("org.fisco-bcos:solcJ:${solcJVersion}")
     compile ("com.google.guava:guava:${guavaVersion}")
