@@ -30,7 +30,6 @@ import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
-import org.fisco.bcos.sdk.v3.model.TransactionReceiptStatus;
 import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
@@ -98,12 +97,13 @@ public class PerformanceTableLiquid {
 
             // deploy the TableTest
             System.out.println("====== Deploy TableTest ====== ");
-            String tableTestPath = "table_test" + new Random().nextInt(1000);
+            String tableTestPath = "table_test" + new Random().nextInt(100000);
+            System.out.println("====== Deploy contract address: " + tableTestPath + " ====== ");
+
             TableTestLiquid tableTestLiquid =
                     TableTestLiquid.deploy(
                             client, client.getCryptoSuite().getCryptoKeyPair(), tableTestPath);
-            if (tableTestLiquid.getDeployReceipt().getStatus()
-                    != TransactionReceiptStatus.Success.getCode()) {
+            if (!tableTestLiquid.getDeployReceipt().isStatusOK()) {
                 throw new ContractException(
                         "deploy failed: " + tableTestLiquid.getDeployReceipt().getMessage());
             }
@@ -221,6 +221,7 @@ public class PerformanceTableLiquid {
             callback.onResponse(receipt);
         } catch (Exception e) {
             receipt.setStatus(-1);
+            receipt.setMessage(e.getMessage());
             callback.onResponse(receipt);
         }
     }
