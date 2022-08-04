@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
+import org.fisco.bcos.sdk.demo.contract.HelloExternal;
 import org.fisco.bcos.sdk.demo.contract.HelloWorld;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
@@ -30,7 +31,7 @@ public class PerformanceDeployTest {
         System.out.println(" Usage:");
         System.out.println("===== PerformanceDeployTest test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceDeployTest [groupId] [count] [qps].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceDeployTest [groupId] [count] [qps] [isExternal].");
     }
 
     public static void main(String[] args)
@@ -50,6 +51,10 @@ public class PerformanceDeployTest {
             String groupId = args[0];
             int count = Integer.parseInt(args[1]);
             Integer qps = Integer.parseInt(args[2]);
+            boolean isExternal = false;
+            if (args.length == 4) {
+                isExternal = Boolean.parseBoolean(args[3]);
+            }
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
@@ -58,8 +63,11 @@ public class PerformanceDeployTest {
                     new ThreadPoolService(
                             "PerformanceDeployTest", Runtime.getRuntime().availableProcessors());
 
-            start(groupId, count, qps, threadPoolService);
-
+            if (isExternal) {
+                externalDeploy(groupId, count, qps, threadPoolService);
+            } else {
+                localDeploy(groupId, count, qps, threadPoolService);
+            }
             threadPoolService.getThreadPool().awaitTermination(0, TimeUnit.SECONDS);
             System.exit(0);
         } catch (Exception e) {
@@ -68,24 +76,40 @@ public class PerformanceDeployTest {
         }
     }
 
-    public static void start(
+    public static void localDeploy(
             String groupId, int count, Integer qps, ThreadPoolService threadPoolService)
-            throws IOException, InterruptedException, ContractException {
+            throws InterruptedException {
         System.out.println(
                 "====== Start test, count: " + count + ", qps:" + qps + ", groupId: " + groupId);
 
-        RateLimiter limiter = RateLimiter.create(qps);
-
         String abi = HelloWorld.getABI();
         String binary = HelloWorld.getBinary(client.getCryptoSuite());
+        deploy(count, qps, threadPoolService, abi, binary);
+    }
+
+    public static void externalDeploy(
+            String groupId, int count, Integer qps, ThreadPoolService threadPoolService)
+            throws InterruptedException {
+        System.out.println(
+                "====== Start test, count: " + count + ", qps:" + qps + ", groupId: " + groupId);
+
+        String abi = HelloExternal.getABI();
+        String binary = HelloExternal.getBinary(client.getCryptoSuite());
+        deploy(count, qps, threadPoolService, abi, binary);
+    }
+
+    private static void deploy(
+            int count, Integer qps, ThreadPoolService threadPoolService, String abi, String binary)
+            throws InterruptedException {
         AssembleTransactionProcessor assembleTransactionProcessor =
                 TransactionProcessorFactory.createAssembleTransactionProcessor(
                         client,
                         client.getCryptoSuite().getCryptoKeyPair(),
-                        "HelloWorld",
+                        "HelloExternal",
                         abi,
                         binary);
 
+        RateLimiter limiter = RateLimiter.create(qps);
         random.setSeed(System.currentTimeMillis());
 
         System.out.println("Sending transactions...");
