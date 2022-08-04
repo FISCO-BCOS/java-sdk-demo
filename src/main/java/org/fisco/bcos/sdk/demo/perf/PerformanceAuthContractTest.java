@@ -322,12 +322,17 @@ public class PerformanceAuthContractTest {
         checkResult(count, threadPoolService);
     }
 
-    private static void checkResult(int count, ThreadPoolService threadPoolService) {
+    private static void checkResult(int count, ThreadPoolService threadPoolService)
+            throws InterruptedException {
         System.out.println("Checking result...");
         CountDownLatch checkLatch = new CountDownLatch(count);
         for (Map.Entry<String, AtomicLong> entry : accountLedger.entrySet()) {
             final String accountAddress = entry.getKey();
             final long expectBalance = entry.getValue().longValue();
+            if (accountAddress == null || accountAddress.isEmpty()) {
+                checkLatch.countDown();
+                continue;
+            }
             threadPoolService
                     .getThreadPool()
                     .execute(
@@ -356,5 +361,6 @@ public class PerformanceAuthContractTest {
                             });
         }
         System.out.println("Checking finished!");
+        checkLatch.await();
     }
 }
