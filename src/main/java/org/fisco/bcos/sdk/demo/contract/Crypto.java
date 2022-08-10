@@ -31,7 +31,7 @@ public class Crypto extends Contract {
             org.fisco.bcos.sdk.v3.utils.StringUtils.joinAll("", SM_BINARY_ARRAY);
 
     public static final String[] ABI_ARRAY = {
-        "[{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"message\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"publicKey\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"proof\",\"type\":\"bytes\"}],\"name\":\"curve25519VRFVerify\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"selector\":[3223983919,1336590190],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"keccak256Hash\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"selector\":[3952145497,3058761991],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"message\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"sign\",\"type\":\"bytes\"}],\"name\":\"sm2Verify\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"selector\":[1290970746,4084113549],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"sm3\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"selector\":[4214502972,4065726901],\"stateMutability\":\"view\",\"type\":\"function\"}]"
+        "[{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"message\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"publicKey\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"proof\",\"type\":\"bytes\"}],\"name\":\"curve25519VRFVerify\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"selector\":[3223983919,1336590190],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"keccak256Hash\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"selector\":[3952145497,3058761991],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"message\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"publicKey\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"r\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"}],\"name\":\"sm2Verify\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"selector\":[3420142183,586016286],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"sm3\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"selector\":[4214502972,4065726901],\"stateMutability\":\"view\",\"type\":\"function\"}]"
     };
 
     public static final String ABI = org.fisco.bcos.sdk.v3.utils.StringUtils.joinAll("", ABI_ARRAY);
@@ -82,13 +82,17 @@ public class Crypto extends Contract {
         return executeCallWithSingleValueReturn(function, byte[].class);
     }
 
-    public Tuple2<Boolean, String> sm2Verify(byte[] message, byte[] sign) throws ContractException {
+    public Tuple2<Boolean, String> sm2Verify(byte[] message, byte[] publicKey, byte[] r, byte[] s)
+            throws ContractException {
         final Function function =
                 new Function(
                         FUNC_SM2VERIFY,
                         Arrays.<Type>asList(
-                                new org.fisco.bcos.sdk.v3.codec.datatypes.DynamicBytes(message),
-                                new org.fisco.bcos.sdk.v3.codec.datatypes.DynamicBytes(sign)),
+                                new org.fisco.bcos.sdk.v3.codec.datatypes.generated.Bytes32(
+                                        message),
+                                new org.fisco.bcos.sdk.v3.codec.datatypes.DynamicBytes(publicKey),
+                                new org.fisco.bcos.sdk.v3.codec.datatypes.generated.Bytes32(r),
+                                new org.fisco.bcos.sdk.v3.codec.datatypes.generated.Bytes32(s)),
                         Arrays.<TypeReference<?>>asList(
                                 new TypeReference<Bool>() {}, new TypeReference<Address>() {}));
         List<Type> results = executeCallWithMultipleValueReturn(function);
