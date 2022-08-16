@@ -425,13 +425,13 @@ public class PerformanceAuthTransferTest {
 
         System.out.println("Sending transactions finished!");
 
-        checkResult(count, threadPoolService);
+        checkResult(threadPoolService);
     }
 
-    private static void checkResult(int count, ThreadPoolService threadPoolService)
+    private static void checkResult(ThreadPoolService threadPoolService)
             throws InterruptedException {
         System.out.println("Checking result...");
-        CountDownLatch checkLatch = new CountDownLatch(count);
+        CountDownLatch checkLatch = new CountDownLatch(accountLedger.size());
         for (Map.Entry<String, AtomicLong> entry : accountLedger.entrySet()) {
             final String accountAddress = entry.getKey();
             final long expectBalance = entry.getValue().longValue();
@@ -459,14 +459,14 @@ public class PerformanceAuthTransferTest {
                                                         + " not equal to expected: "
                                                         + expectBalance);
                                     }
-
                                     checkLatch.countDown();
                                 } catch (ContractException e) {
+                                    checkLatch.countDown();
                                     e.printStackTrace();
                                 }
                             });
         }
-        System.out.println("Checking finished!");
         checkLatch.await();
+        System.out.println("Checking finished!");
     }
 }
