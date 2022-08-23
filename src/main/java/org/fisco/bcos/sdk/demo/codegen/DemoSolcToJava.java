@@ -21,7 +21,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
-import org.fisco.bcos.sdk.v3.codegen.CodeGenMain;
+import org.fisco.bcos.codegen.CodeGenMain;
 import org.fisco.solc.compiler.CompilationResult;
 import org.fisco.solc.compiler.SolidityCompiler;
 import org.slf4j.Logger;
@@ -152,11 +152,18 @@ public class DemoSolcToJava {
             smBinFile = binDir + "/sm/" + filename + ".bin";
             CodeGenMain.main(
                     Arrays.asList(
-                                    "-a", abiFile,
-                                    "-b", binFile,
-                                    "-s", smBinFile,
-                                    "-p", packageName,
-                                    "-o", tempDirPath)
+                                    "-v",
+                                    "V3",
+                                    "-a",
+                                    abiFile,
+                                    "-b",
+                                    binFile,
+                                    "-s",
+                                    smBinFile,
+                                    "-p",
+                                    packageName,
+                                    "-o",
+                                    tempDirPath)
                             .toArray(new String[0]));
         }
     }

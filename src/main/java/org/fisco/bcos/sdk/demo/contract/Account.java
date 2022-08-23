@@ -213,4 +213,12 @@ public class Account extends Contract {
                 null,
                 null);
     }
+
+    public Client getClient() {
+        return this.client;
+    }
+
+    public String getContractSender() {
+        return this.client.getCryptoSuite().getCryptoKeyPair().getAddress();
+    }
 }
