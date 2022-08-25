@@ -41,7 +41,7 @@ public class DMCTransferStar {
         System.out.println(" Usage:");
         System.out.println("===== Executor Single Contract Integration Test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.rc4.DMCTransferStar [groupId] [starNode] [count] [qps] [allowRevert]");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.DMCTransferStar [groupId] [starNode] [count] [qps] [allowRevert]");
     }
 
     private static final Long INIT_BALANCE = 0L;

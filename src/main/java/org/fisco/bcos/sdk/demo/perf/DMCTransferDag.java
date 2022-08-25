@@ -41,7 +41,7 @@ public class DMCTransferDag {
         System.out.println(" Usage:");
         System.out.println("===== Executor Single Contract Integration Test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.rc4.DMCTransferDag [groupId] [count] [qps] [allowRevert].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.DMCTransferDag [groupId] [startNodeNum] [count] [qps] [allowRevert].");
     }
 
     private static final Long INIT_BALANCE = 0L;
@@ -55,19 +55,20 @@ public class DMCTransferDag {
                 System.out.println("The configFile " + configFileName + " doesn't exist!");
                 return;
             }
-            if (args.length < 4) {
+            if (args.length < 5) {
                 Usage();
                 return;
             }
-            if (args.length > 4) {
+            if (args.length > 5) {
                 System.out.println("Please set the parameters as specified!");
                 return;
             }
 
             String groupId = args[0];
-            Integer count = Integer.valueOf(args[1]);
-            Integer qps = Integer.valueOf(args[2]);
-            boolean allowRevert = Boolean.valueOf(args[3]);
+            Integer startNodeNum = Integer.valueOf(args[1]);
+            Integer count = Integer.valueOf(args[2]);
+            Integer qps = Integer.valueOf(args[3]);
+            boolean allowRevert = Boolean.valueOf(args[4]);
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
@@ -77,7 +78,7 @@ public class DMCTransferDag {
                             "ExecutorDagContractClient",
                             Runtime.getRuntime().availableProcessors());
 
-            start(sdk, groupId, count, qps, allowRevert, threadPoolService);
+            start(sdk, groupId, startNodeNum, count, qps, allowRevert, threadPoolService);
             threadPoolService.getThreadPool().awaitTermination(0, TimeUnit.SECONDS);
             System.exit(0);
         } catch (Exception e) {
@@ -89,6 +90,7 @@ public class DMCTransferDag {
     public static void start(
             BcosSDK sdk,
             String groupId,
+            Integer startNodeNum,
             Integer count,
             Integer qps,
             boolean allowRevert,
@@ -96,19 +98,20 @@ public class DMCTransferDag {
             throws IOException, InterruptedException, ContractException {
         System.out.println(
                 "====== Start "
-                        + "Executor DAG Contract test, contracts num is 8 "
+                        + "Executor DAG Contract test, contracts num is"
+                        + (startNodeNum + 5)
                         + ", tx count: "
                         + count
                         + ", groupId: "
                         + groupId);
         RateLimiter limiter = RateLimiter.create(qps.intValue());
-        DmcTransfer[] contracts = new DmcTransfer[8];
+        DmcTransfer[] contracts = new DmcTransfer[startNodeNum + 5];
         // List<String> contractsAddr = new ArrayList<>();
-        String[] contractsAddr = new String[8];
+        String[] contractsAddr = new String[startNodeNum + 5];
 
         System.out.println("Create contract and generate call relationship...");
-        CountDownLatch contractLatch = new CountDownLatch(8);
-        for (int i = 0; i < 8; ++i) {
+        CountDownLatch contractLatch = new CountDownLatch(startNodeNum + 5);
+        for (int i = 0; i < (startNodeNum + 5); ++i) {
             final int index = i;
             threadPoolService
                     .getThreadPool()
@@ -139,26 +142,31 @@ public class DMCTransferDag {
                             });
         }
         contractLatch.await();
-        System.out.println("Create " + 8 + " contracts finished!");
+        System.out.println("Create " + (startNodeNum + 5) + " contracts finished!");
 
         String userAddress = sdk.getConfig().getAccountConfig().getAccountAddress();
         List<String> DAGCenterAddr = new ArrayList<>();
-        List<String> DAGCenterAddr1 = new ArrayList<>();
+        List<String> DAGOut = new ArrayList<>();
         List<String> DAGIn = new ArrayList<>();
-        DAGCenterAddr.add(contractsAddr[5]);
-        DAGCenterAddr.add(contractsAddr[6]);
-        DAGCenterAddr1.add(contractsAddr[6]);
-        DAGCenterAddr1.add(contractsAddr[7]);
-        DAGIn.add(contractsAddr[3]);
-        DAGIn.add(contractsAddr[4]);
+        for (int i = 0; i < startNodeNum; ++i) {
+            DAGIn.add(contractsAddr[i]);
+        }
+        DAGCenterAddr.add(contractsAddr[startNodeNum]);
+        DAGCenterAddr.add(contractsAddr[startNodeNum + 1]);
+        DAGOut.add(contractsAddr[startNodeNum + 2]);
+        DAGOut.add(contractsAddr[startNodeNum + 3]);
+        DAGOut.add(contractsAddr[startNodeNum + 4]);
 
-        contracts[0].addNextCall(userAddress, Arrays.asList(contractsAddr[3]));
-        contracts[1].addNextCall(userAddress, DAGIn);
-        contracts[2].addNextCall(userAddress, Arrays.asList(contractsAddr[4]));
-        contracts[3].addNextCall(contractsAddr[0], DAGCenterAddr);
-        contracts[3].addNextCall(contractsAddr[1], DAGCenterAddr);
-        contracts[4].addNextCall(contractsAddr[1], DAGCenterAddr1);
-        contracts[4].addNextCall(contractsAddr[2], DAGCenterAddr1);
+        for (int i = 0; i < startNodeNum; ++i) {
+            // userAddr -> centerNode
+            contracts[i].addNextCall(userAddress, DAGCenterAddr);
+        }
+        for (int i = 0; i < 2; ++i) {
+            for (int j = 0; j < startNodeNum; ++j) {
+                // In -> Out
+                contracts[startNodeNum + i].addNextCall(contractsAddr[j], DAGOut);
+            }
+        }
 
         System.out.println("Create contract and generate call relationship finished!");
 
@@ -190,82 +198,41 @@ public class DMCTransferDag {
         AtomicInteger expectBalance = new AtomicInteger(0);
 
         for (int i = 0; i < count; ) {
-            for (int j = 0; j < 3 && i < count; ++j) {
-                if (j != 1) {
-                    int finalJ = j;
-                    threadPoolService
-                            .getThreadPool()
-                            .execute(
-                                    new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            limiter.acquire();
-                                            long now = System.currentTimeMillis();
-                                            contracts[finalJ].takeShare(
-                                                    BigInteger.valueOf(4),
-                                                    allowRevert,
-                                                    new TransactionCallback() {
-                                                        @Override
-                                                        public void onResponse(
-                                                                TransactionReceipt receipt) {
-                                                            long cost =
-                                                                    System.currentTimeMillis()
-                                                                            - now;
-                                                            collector.onMessage(receipt, cost);
+            for (int j = 0; j < startNodeNum && i < count; ++j) {
+                int finalJ = j;
+                threadPoolService
+                        .getThreadPool()
+                        .execute(
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        limiter.acquire();
+                                        long now = System.currentTimeMillis();
+                                        contracts[finalJ].takeShare(
+                                                BigInteger.valueOf(9),
+                                                allowRevert,
+                                                new TransactionCallback() {
+                                                    @Override
+                                                    public void onResponse(
+                                                            TransactionReceipt receipt) {
+                                                        long cost =
+                                                                System.currentTimeMillis() - now;
+                                                        collector.onMessage(receipt, cost);
 
-                                                            receivedBar.step();
-                                                            if (!receipt.isStatusOK()) {
-                                                                errorBar.step();
-                                                            }
-                                                            transactionLatch.countDown();
-                                                            totalCost.addAndGet(
-                                                                    System.currentTimeMillis()
-                                                                            - now);
-                                                            expectBalance.addAndGet(4);
+                                                        receivedBar.step();
+                                                        if (!receipt.isStatusOK()) {
+                                                            errorBar.step();
                                                         }
-                                                    });
-                                            sendedBar.step();
-                                        }
-                                    });
-                    ++i;
-                } else {
-                    int finalJ = j;
-                    threadPoolService
-                            .getThreadPool()
-                            .execute(
-                                    new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            limiter.acquire();
-                                            long now = System.currentTimeMillis();
-                                            contracts[finalJ].takeShare(
-                                                    BigInteger.valueOf(7),
-                                                    allowRevert,
-                                                    new TransactionCallback() {
-                                                        @Override
-                                                        public void onResponse(
-                                                                TransactionReceipt receipt) {
-                                                            long cost =
-                                                                    System.currentTimeMillis()
-                                                                            - now;
-                                                            collector.onMessage(receipt, cost);
-
-                                                            receivedBar.step();
-                                                            if (!receipt.isStatusOK()) {
-                                                                errorBar.step();
-                                                            }
-                                                            transactionLatch.countDown();
-                                                            totalCost.addAndGet(
-                                                                    System.currentTimeMillis()
-                                                                            - now);
-                                                            expectBalance.addAndGet(7);
-                                                        }
-                                                    });
-                                            sendedBar.step();
-                                        }
-                                    });
-                    ++i;
-                }
+                                                        transactionLatch.countDown();
+                                                        totalCost.addAndGet(
+                                                                System.currentTimeMillis() - now);
+                                                        expectBalance.addAndGet(9);
+                                                    }
+                                                });
+                                        sendedBar.step();
+                                    }
+                                });
+                ++i;
             }
         }
         transactionLatch.await();
@@ -277,8 +244,8 @@ public class DMCTransferDag {
         System.out.println("Sending transactions finished!");
 
         AtomicInteger total = new AtomicInteger();
-        CountDownLatch checkLatch = new CountDownLatch(8);
-        for (int j = 0; j < 8; ++j) {
+        CountDownLatch checkLatch = new CountDownLatch(startNodeNum + 5);
+        for (int j = 0; j < startNodeNum + 5; ++j) {
             limiter.acquire();
             int finalJ = j;
             threadPoolService
