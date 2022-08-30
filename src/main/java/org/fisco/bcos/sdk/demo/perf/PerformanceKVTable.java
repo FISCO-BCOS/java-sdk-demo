@@ -14,40 +14,43 @@
 package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
+import java.io.IOException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
+import me.tongfei.progressbar.ProgressBar;
+import me.tongfei.progressbar.ProgressBarBuilder;
+import me.tongfei.progressbar.ProgressBarStyle;
 import org.fisco.bcos.sdk.demo.contract.KVTableTest;
-import org.fisco.bcos.sdk.demo.perf.callback.PerformanceCallback;
-import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
+import org.fisco.bcos.sdk.demo.contract.MapTest;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.BcosSDKException;
 import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.codec.ContractCodecException;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
-import org.fisco.bcos.sdk.v3.model.TransactionReceiptStatus;
+import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
+import org.fisco.bcos.sdk.v3.transaction.manager.AssembleTransactionProcessor;
+import org.fisco.bcos.sdk.v3.transaction.manager.TransactionProcessorFactory;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PerformanceKVTable {
-    private static Logger logger = LoggerFactory.getLogger(PerformanceKVTable.class);
-    private static AtomicInteger sendedTransactions = new AtomicInteger(0);
-    private static AtomicLong uniqueID = new AtomicLong(0);
-    private static final Set<String> supportCommands = new HashSet<>(Arrays.asList("set", "get"));
+    private static AtomicLong atomicLong = new AtomicLong(0);
+    private static ThreadPoolService threadPoolService =
+            new ThreadPoolService("PerformanceKVTable", 1000000);
+    private static Client client;
+    private static KVTableTest kvTableTest = null;
+    private static MapTest mapTest = null;
+    private static int length = 256;
 
     private static void Usage() {
         System.out.println(" Usage:");
         System.out.println("===== PerformanceKVTable test===========");
         System.out.println(
-                " \t java -cp \'conf/:lib/*:apps/*\' org.fisco.bcos.sdk.demo.perf.PerformanceKVTable [set] [count] [tps] [groupId].");
-        System.out.println(
-                " \t java -cp \'conf/:lib/*:apps/*\' org.fisco.bcos.sdk.demo.perf.PerformanceKVTable [get] [count] [tps] [groupId].");
+                " \t java -cp \'conf/:lib/*:apps/*\' org.fisco.bcos.sdk.demo.perf.PerformanceKVTable [count] [tps] [groupId] [useKVTable] [valueLength].");
     }
 
     public static void main(String[] args) {
@@ -62,149 +65,228 @@ public class PerformanceKVTable {
                 Usage();
                 return;
             }
-            String command = args[0];
-            Integer count = Integer.valueOf(args[1]);
-            Integer qps = Integer.valueOf(args[2]);
-            String groupId = args[3];
+            int count = Integer.parseInt(args[0]);
+            int qps = Integer.parseInt(args[1]);
+            String groupId = args[2];
+            boolean useKVTable = Boolean.parseBoolean(args[3]);
+            if (args.length == 5) {
+                length = Integer.parseInt(args[4]);
+            }
             System.out.println(
                     "====== PerformanceKVTable "
-                            + command
-                            + ", count: "
+                            + "count: "
                             + count
                             + ", qps:"
                             + qps
                             + ", groupId: "
-                            + groupId);
-
-            if (!supportCommands.contains(command)) {
-                System.out.println("Command " + command + " not supported!");
-                Usage();
-                return;
-            }
+                            + groupId
+                            + ", useKVTable:"
+                            + useKVTable
+                            + ", valueLength:"
+                            + length);
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
 
             // build the client
-            Client client = sdk.getClient(groupId);
+            client = sdk.getClient(groupId);
             if (client == null) {
                 System.out.println("client is null");
                 return;
             }
 
-            // deploy the KVTableTest
-            System.out.println("====== Deploy KVTableTest ====== ");
-            KVTableTest kvTableTest =
-                    KVTableTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
-            if (kvTableTest.getDeployReceipt().getStatus()
-                    != TransactionReceiptStatus.Success.getCode()) {
-                throw new ContractException(
-                        "deploy failed: " + kvTableTest.getDeployReceipt().getMessage());
-            }
-            System.out.println(
-                    "====== Deploy KVTableTest success, address: "
-                            + kvTableTest.getContractAddress()
-                            + " ====== ");
-
-            PerformanceCollector collector = new PerformanceCollector();
-            collector.setTotal(count);
-            RateLimiter limiter = RateLimiter.create(qps);
-            Integer area = count / 10;
-            final Integer total = count;
-
-            System.out.println("====== PerformanceKVTable " + command + " start ======");
-            ThreadPoolService threadPoolService =
-                    new ThreadPoolService("PerformanceKVTable", 1000000);
-            for (Integer i = 0; i < count; ++i) {
-                limiter.acquire();
-                threadPoolService
-                        .getThreadPool()
-                        .execute(
-                                () -> {
-                                    callTableOperation(command, kvTableTest, collector);
-                                    int current = sendedTransactions.incrementAndGet();
-                                    if (current >= area && ((current % area) == 0)) {
-                                        System.out.println(
-                                                "Already sent: "
-                                                        + current
-                                                        + "/"
-                                                        + total
-                                                        + " transactions");
-                                    }
-                                });
-            }
-            // wait to collect all the receipts
-            while (!collector.getReceived().equals(count)) {
-                Thread.sleep(1000);
-            }
+            start(groupId, count, qps, useKVTable);
             threadPoolService.stop();
             System.exit(0);
-        } catch (BcosSDKException | ContractException | InterruptedException e) {
+        } catch (BcosSDKException | ContractException | InterruptedException | IOException e) {
             System.out.println(
                     "====== PerformanceKVTable test failed, error message: " + e.getMessage());
             System.exit(0);
         }
     }
 
-    private static void callTableOperation(
-            String command, KVTableTest kvTableTest, PerformanceCollector collector) {
-        if (command.compareToIgnoreCase("set") == 0) {
-            set(kvTableTest, collector);
+    public static void start(String groupId, int count, int qps, boolean useKV)
+            throws IOException, InterruptedException, ContractException {
+
+        String address;
+
+        if (useKV) {
+            System.out.println("====== Deploy KVTableTest ====== ");
+            kvTableTest = KVTableTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
+            if (!kvTableTest.getDeployReceipt().isStatusOK()) {
+                throw new ContractException(
+                        "deploy failed: " + kvTableTest.getDeployReceipt().getMessage());
+            }
+            address = kvTableTest.getContractAddress();
+            System.out.println(
+                    "====== Deploy KVTableTest success, address: "
+                            + kvTableTest.getContractAddress()
+                            + " ====== ");
+        } else {
+            System.out.println("====== Deploy MapTest ====== ");
+
+            mapTest = MapTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
+            if (!mapTest.getDeployReceipt().isStatusOK()) {
+                throw new ContractException(
+                        "deploy failed: " + mapTest.getDeployReceipt().getMessage());
+            }
+            address = mapTest.getContractAddress();
+            System.out.println(
+                    "====== Deploy MapTest success, address: "
+                            + mapTest.getContractAddress()
+                            + " ====== ");
         }
 
-        if (command.compareToIgnoreCase("get") == 0) {
-            get(kvTableTest, collector);
+        System.out.println(
+                "====== Start test, count: " + count + ", qps:" + qps + ", groupId: " + groupId);
+
+        AssembleTransactionProcessor assembleTransactionProcessor =
+                TransactionProcessorFactory.createAssembleTransactionProcessor(
+                        client,
+                        client.getCryptoSuite().getCryptoKeyPair(),
+                        useKV ? "KVTableTest" : "MapTest",
+                        useKV ? KVTableTest.getABI() : MapTest.getABI(),
+                        useKV
+                                ? KVTableTest.getBinary(client.getCryptoSuite())
+                                : MapTest.getBinary(client.getCryptoSuite()));
+
+        set(count, qps, useKV, address, assembleTransactionProcessor);
+
+        get(qps, useKV, address, assembleTransactionProcessor);
+    }
+
+    private static void set(
+            int count,
+            int qps,
+            boolean useKV,
+            String address,
+            AssembleTransactionProcessor assembleTransactionProcessor)
+            throws InterruptedException {
+        RateLimiter limiter = RateLimiter.create(qps);
+        String formatter = "%" + length + "s";
+        CountDownLatch setLatch = new CountDownLatch(count);
+        System.out.println("Setting data...");
+        ProgressBar sentBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Send   :")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        ProgressBar receivedBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Receive:")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+
+        Collector collector = new Collector();
+        collector.setTotal(count);
+
+        for (int i = 0; i < count; ++i) {
+            limiter.acquire();
+            long key = atomicLong.getAndIncrement();
+
+            List<Object> params = new ArrayList<>(2);
+            params.add(String.valueOf(key));
+            params.add(String.format(formatter, key));
+            threadPoolService
+                    .getThreadPool()
+                    .execute(
+                            () -> {
+                                try {
+                                    long now = System.currentTimeMillis();
+                                    assembleTransactionProcessor.sendTransactionAsync(
+                                            address,
+                                            useKV ? KVTableTest.getABI() : MapTest.getABI(),
+                                            "set",
+                                            params,
+                                            new TransactionCallback() {
+                                                @Override
+                                                public void onResponse(TransactionReceipt receipt) {
+                                                    long cost = System.currentTimeMillis() - now;
+                                                    collector.onMessage(receipt, cost);
+                                                    setLatch.countDown();
+                                                    receivedBar.step();
+                                                }
+                                            });
+                                } catch (ContractCodecException e) {
+                                    setLatch.countDown();
+                                    atomicLong.getAndDecrement();
+                                    e.printStackTrace();
+                                }
+                                sentBar.step();
+                            });
         }
+        setLatch.await();
+        sentBar.close();
+        receivedBar.close();
+        collector.report();
+        System.out.println("Set data finished!");
     }
 
-    public static long getNextID() {
-        return uniqueID.getAndIncrement();
-    }
+    private static void get(
+            int qps,
+            boolean useKV,
+            String address,
+            AssembleTransactionProcessor assembleTransactionProcessor)
+            throws InterruptedException {
+        System.out.println("Getting data...");
+        int callCount = Math.toIntExact(atomicLong.get());
+        ProgressBar callBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Send   :")
+                        .setInitialMax(callCount)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        ProgressBar callbackBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Receive:")
+                        .setInitialMax(callCount)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        CountDownLatch getLatch = new CountDownLatch(callCount);
+        RateLimiter callLimiter = RateLimiter.create(qps);
+        Collector getCollector = new Collector();
+        getCollector.setTotal(callCount);
 
-    private static String getId() {
-        UUID uuid = UUID.randomUUID();
-        return uuid.toString().replace("-", "");
-    }
+        for (int i = 0; i < callCount; ++i) {
+            List<Object> params = new ArrayList<>(1);
+            params.add(String.valueOf(atomicLong.getAndDecrement()));
+            threadPoolService
+                    .getThreadPool()
+                    .execute(
+                            () -> {
+                                try {
+                                    callLimiter.acquire();
+                                    long now = System.currentTimeMillis();
 
-    private static PerformanceCallback createCallback(PerformanceCollector collector) {
-        PerformanceCallback callback = new PerformanceCallback();
-        callback.setTimeout(0);
-        callback.setCollector(collector);
-        return callback;
-    }
-
-    private static void sendTransactionException(
-            Exception e, String command, PerformanceCallback callback) {
-        TransactionReceipt receipt = new TransactionReceipt();
-        receipt.setStatus(-1);
-        callback.onResponse(receipt);
-        logger.info("call command {} failed, error info: {}", command, e.getMessage());
-    }
-
-    private static void set(KVTableTest kvTableTest, PerformanceCollector collector) {
-        PerformanceCallback callback = createCallback(collector);
-        try {
-            long id = getNextID();
-            kvTableTest.set(String.valueOf(id), "apple" + getId(), callback);
-        } catch (Exception e) {
-            sendTransactionException(e, "insert", callback);
+                                    assembleTransactionProcessor.sendTransactionAsync(
+                                            address,
+                                            useKV ? KVTableTest.getABI() : MapTest.getABI(),
+                                            "get",
+                                            params,
+                                            new TransactionCallback() {
+                                                @Override
+                                                public void onResponse(TransactionReceipt receipt) {
+                                                    long cost = System.currentTimeMillis() - now;
+                                                    getCollector.onMessage(receipt, cost);
+                                                    callbackBar.step();
+                                                    getLatch.countDown();
+                                                }
+                                            });
+                                } catch (ContractCodecException e) {
+                                    e.printStackTrace();
+                                    getLatch.countDown();
+                                }
+                                callBar.step();
+                            });
         }
-    }
+        getLatch.await();
 
-    private static void get(KVTableTest kvTableTest, PerformanceCollector collector) {
-        try {
-            Long timeBefore = System.currentTimeMillis();
-            long id = getNextID();
-            kvTableTest.get(String.valueOf(id));
-            Long timeAfter = System.currentTimeMillis();
-            TransactionReceipt receipt = new TransactionReceipt();
-            receipt.setStatus(0x0);
-            collector.onMessage(receipt, timeAfter - timeBefore);
-        } catch (Exception e) {
-            TransactionReceipt receipt = new TransactionReceipt();
-            receipt.setStatus(-1);
-            collector.onMessage(receipt, (long) (0));
-            logger.error("query error: ", e);
-        }
+        callBar.close();
+        callbackBar.close();
+        getCollector.report();
+
+        System.out.println("Getting data finished!");
     }
 }
