@@ -14,6 +14,9 @@
 package org.fisco.bcos.sdk.demo.perf.parallel;
 
 import com.google.common.util.concurrent.RateLimiter;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.text.SimpleDateFormat;
@@ -21,15 +24,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.fisco.bcos.sdk.client.Client;
-import org.fisco.bcos.sdk.codec.datatypes.generated.tuples.generated.Tuple2;
 import org.fisco.bcos.sdk.demo.contract.DagTransfer;
 import org.fisco.bcos.sdk.demo.perf.callback.ParallelOkCallback;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
 import org.fisco.bcos.sdk.demo.perf.model.DagTransferUser;
 import org.fisco.bcos.sdk.demo.perf.model.DagUserInfo;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.utils.ThreadPoolService;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.codec.datatypes.generated.tuples.generated.Tuple2;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +51,9 @@ public class DagPrecompiledDemo {
         this.dagTransfer =
                 DagTransfer.load(
                         DAG_TRANSFER_ADDR, client, client.getCryptoSuite().getCryptoKeyPair());
+        this.dagTransfer.setEnableDAG(true);
         this.dagUserInfo = dagUserInfo;
+        dagTransfer.setEnableDAG(true);
         this.collector = new PerformanceCollector();
     }
 
@@ -171,6 +176,73 @@ public class DagPrecompiledDemo {
         while (getted.get() < allUser.size()) {
             Thread.sleep(50);
         }
+    }
+
+    public void generateTransferTxs(
+            BigInteger count, String txsFile, BigInteger qps, BigInteger conflictPercent)
+            throws InterruptedException, IOException {
+        File file = new File(txsFile);
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        System.out.println(
+                "DagPrecompiledDemo: test generateTransferTxs, count: "
+                        + count
+                        + ", txsFile: "
+                        + txsFile);
+        System.out.println("===================================================================");
+        queryAccountInfo(qps);
+        FileWriter fileWriter = new FileWriter(file.getName(), true);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        System.out.println(
+                "DagPrecompiledDemo: start generateTransferTxs, count: "
+                        + count
+                        + ", txsFile: "
+                        + txsFile);
+        AtomicInteger generated = new AtomicInteger(0);
+        Integer area = count.intValue() / 10;
+        for (Integer i = 0; i < count.intValue(); i++) {
+            final Integer index = i;
+
+            DagTransferUser from = dagUserInfo.getFrom(index);
+            DagTransferUser to = dagUserInfo.getTo(index);
+            if ((conflictPercent.intValue() > 0)
+                    && (index <= (conflictPercent.intValue() * count.intValue()) / 100)) {
+                to = dagUserInfo.getNext(index);
+            }
+            Random random = new Random();
+            int r = random.nextInt(100) + 1;
+            BigInteger amount = BigInteger.valueOf(r);
+            String txData =
+                    dagTransfer.getSignedTransactionForUserTransfer(
+                            from.getUser(), to.getUser(), amount);
+            try {
+                bufferedWriter.write(txData);
+                bufferedWriter.newLine();
+                generated.incrementAndGet();
+                if (generated.get() >= area && ((generated.get() % area) == 0)) {
+                    System.out.println(
+                            "Already generated: "
+                                    + generated.get()
+                                    + "/"
+                                    + count
+                                    + " transactions");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        while (generated.intValue() < count.intValue()) {
+            Thread.sleep(2000);
+        }
+        System.out.println(
+                "DagPrecompiledDemo: generateTransferTxs success ! count: "
+                        + count
+                        + ", txsFile: "
+                        + txsFile);
+        bufferedWriter.close();
+        System.exit(0);
     }
 
     public void userTransfer(BigInteger count, BigInteger qps) throws InterruptedException {

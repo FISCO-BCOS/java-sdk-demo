@@ -15,19 +15,23 @@ package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import org.fisco.bcos.sdk.BcosSDK;
-import org.fisco.bcos.sdk.BcosSDKException;
-import org.fisco.bcos.sdk.client.Client;
-import org.fisco.bcos.sdk.demo.contract.KVTest;
+import org.fisco.bcos.sdk.demo.contract.KVTableTest;
 import org.fisco.bcos.sdk.demo.perf.callback.PerformanceCallback;
 import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
-import org.fisco.bcos.sdk.model.ConstantConfig;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
-import org.fisco.bcos.sdk.transaction.model.exception.ContractException;
-import org.fisco.bcos.sdk.utils.ThreadPoolService;
+import org.fisco.bcos.sdk.v3.BcosSDK;
+import org.fisco.bcos.sdk.v3.BcosSDKException;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.model.ConstantConfig;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.TransactionReceiptStatus;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
+import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +39,7 @@ public class PerformanceKVTable {
     private static Logger logger = LoggerFactory.getLogger(PerformanceKVTable.class);
     private static AtomicInteger sendedTransactions = new AtomicInteger(0);
     private static AtomicLong uniqueID = new AtomicLong(0);
+    private static final Set<String> supportCommands = new HashSet<>(Arrays.asList("set", "get"));
 
     private static void Usage() {
         System.out.println(" Usage:");
@@ -71,6 +76,12 @@ public class PerformanceKVTable {
                             + ", groupId: "
                             + groupId);
 
+            if (!supportCommands.contains(command)) {
+                System.out.println("Command " + command + " not supported!");
+                Usage();
+                return;
+            }
+
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
 
@@ -78,16 +89,21 @@ public class PerformanceKVTable {
             Client client = sdk.getClient(groupId);
             if (client == null) {
                 System.out.println("client is null");
+                return;
             }
 
-            // deploy the HelloWorld
-            System.out.println("====== Deploy KVTest ====== ");
-            KVTest kvTest = KVTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
-            // create table
-            // tableTest.create();
+            // deploy the KVTableTest
+            System.out.println("====== Deploy KVTableTest ====== ");
+            KVTableTest kvTableTest =
+                    KVTableTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
+            if (kvTableTest.getDeployReceipt().getStatus()
+                    != TransactionReceiptStatus.Success.getCode()) {
+                throw new ContractException(
+                        "deploy failed: " + kvTableTest.getDeployReceipt().getMessage());
+            }
             System.out.println(
-                    "====== Deploy KVTest success, address: "
-                            + kvTest.getContractAddress()
+                    "====== Deploy KVTableTest success, address: "
+                            + kvTableTest.getContractAddress()
                             + " ====== ");
 
             PerformanceCollector collector = new PerformanceCollector();
@@ -105,11 +121,11 @@ public class PerformanceKVTable {
                         .getThreadPool()
                         .execute(
                                 () -> {
-                                    callTableOperation(command, kvTest, collector);
+                                    callTableOperation(command, kvTableTest, collector);
                                     int current = sendedTransactions.incrementAndGet();
                                     if (current >= area && ((current % area) == 0)) {
                                         System.out.println(
-                                                "Already sended: "
+                                                "Already sent: "
                                                         + current
                                                         + "/"
                                                         + total
@@ -131,13 +147,13 @@ public class PerformanceKVTable {
     }
 
     private static void callTableOperation(
-            String command, KVTest kvTest, PerformanceCollector collector) {
+            String command, KVTableTest kvTableTest, PerformanceCollector collector) {
         if (command.compareToIgnoreCase("set") == 0) {
-            set(kvTest, collector);
+            set(kvTableTest, collector);
         }
 
         if (command.compareToIgnoreCase("get") == 0) {
-            get(kvTest, collector);
+            get(kvTableTest, collector);
         }
     }
 
@@ -165,30 +181,30 @@ public class PerformanceKVTable {
         logger.info("call command {} failed, error info: {}", command, e.getMessage());
     }
 
-    private static void set(KVTest kvTest, PerformanceCollector collector) {
+    private static void set(KVTableTest kvTableTest, PerformanceCollector collector) {
         PerformanceCallback callback = createCallback(collector);
         try {
             long id = getNextID();
-            kvTest.set("fruit" + id, String.valueOf(id), "apple" + getId(), callback);
+            kvTableTest.set(String.valueOf(id), "apple" + getId(), callback);
         } catch (Exception e) {
             sendTransactionException(e, "insert", callback);
         }
     }
 
-    private static void get(KVTest kvTest, PerformanceCollector collector) {
+    private static void get(KVTableTest kvTableTest, PerformanceCollector collector) {
         try {
-            Long time_before = System.currentTimeMillis();
+            Long timeBefore = System.currentTimeMillis();
             long id = getNextID();
-            kvTest.get("fruit" + id);
-            Long time_after = System.currentTimeMillis();
+            kvTableTest.get(String.valueOf(id));
+            Long timeAfter = System.currentTimeMillis();
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setStatus(0x0);
-            collector.onMessage(receipt, time_after - time_before);
+            collector.onMessage(receipt, timeAfter - timeBefore);
         } catch (Exception e) {
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setStatus(-1);
             collector.onMessage(receipt, (long) (0));
-            logger.error("query error: {}", e);
+            logger.error("query error: ", e);
         }
     }
 }

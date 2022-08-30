@@ -1,8 +1,9 @@
 package org.fisco.bcos.sdk.demo.transaction;
 
-import org.fisco.bcos.sdk.crypto.CryptoSuite;
-import org.fisco.bcos.sdk.crypto.keypair.CryptoKeyPair;
-import org.fisco.bcos.sdk.crypto.signature.SignatureResult;
+import org.fisco.bcos.sdk.jni.common.JniException;
+import org.fisco.bcos.sdk.v3.crypto.CryptoSuite;
+import org.fisco.bcos.sdk.v3.crypto.keypair.CryptoKeyPair;
+import org.fisco.bcos.sdk.v3.crypto.signature.SignatureResult;
 
 public class KeyToolSignTransaction implements ISignTransaction {
     public KeyToolSignTransaction(CryptoSuite cryptoSuite) {
@@ -42,7 +43,8 @@ public class KeyToolSignTransaction implements ISignTransaction {
 
     /*模拟异步调用，demo代码比较简单，就本地直接同步回调了，可以改成启动一个签名线程*/
     public void requestForSignAsync(
-            byte[] dataToSign, int crytotype, ISignedTransactionCallback callback) {
+            byte[] dataToSign, int crytotype, ISignedTransactionCallback callback)
+            throws JniException {
 
         String signatureStr = requestForSign(dataToSign, crytotype);
         if (callback != null) {

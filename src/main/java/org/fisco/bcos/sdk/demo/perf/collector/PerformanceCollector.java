@@ -15,8 +15,8 @@ package org.fisco.bcos.sdk.demo.perf.collector;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import org.fisco.bcos.sdk.model.JsonRpcResponse;
-import org.fisco.bcos.sdk.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.JsonRpcResponse;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +56,7 @@ public class PerformanceCollector {
         try {
             boolean errorMessage = false;
             if (response.getError() != null && response.getError().getCode() != 0) {
-                logger.warn("receive error jsonRpcResponse: {}", response.toString());
+                logger.warn("receive error jsonRpcResponse: {}", response);
                 errorMessage = true;
             }
             stat(errorMessage, cost);
@@ -90,7 +90,7 @@ public class PerformanceCollector {
         if ((received.get() + 1) % (total / 10) == 0) {
             System.out.println(
                     "                                                       |received:"
-                            + String.valueOf((received.get() + 1) * 100 / total)
+                            + (received.get() + 1) * 100 / total
                             + "%");
         }
 
@@ -115,68 +115,64 @@ public class PerformanceCollector {
         if (received.incrementAndGet() >= total) {
             System.out.println("total");
 
-            Long totalTime = System.currentTimeMillis() - startTimestamp;
+            long totalTime = System.currentTimeMillis() - startTimestamp;
 
             System.out.println(
                     "===================================================================");
 
-            System.out.println("Total transactions:  " + String.valueOf(total));
-            System.out.println("Total time: " + String.valueOf(totalTime) + "ms");
+            System.out.println("Total transactions:  " + total);
+            System.out.println("Total time: " + totalTime + "ms");
             System.out.println(
-                    "TPS(include error requests): "
-                            + String.valueOf(total / ((double) totalTime / 1000)));
+                    "TPS(include error requests): " + total / ((double) totalTime / 1000));
             System.out.println(
                     "TPS(exclude error requests): "
-                            + String.valueOf(
-                                    (double) (total - error.get()) / ((double) totalTime / 1000)));
-            System.out.println("Avg time cost: " + String.valueOf(totalCost.get() / total) + "ms");
+                            + (total - error.get()) / ((double) totalTime / 1000));
+            System.out.println("Avg time cost: " + totalCost.get() / total + "ms");
             System.out.println(
-                    "Error rate: "
-                            + String.valueOf((error.get() / (double) received.get()) * 100)
-                            + "%");
+                    "Error rate: " + (error.get() / (double) received.get()) * 100 + "%");
 
             System.out.println("Time area:");
             System.out.println(
                     "0    < time <  50ms   : "
-                            + String.valueOf(less50)
+                            + less50
                             + "  : "
-                            + String.valueOf((double) less50.get() / total * 100)
+                            + (double) less50.get() / total * 100
                             + "%");
             System.out.println(
                     "50   < time <  100ms  : "
-                            + String.valueOf(less100)
+                            + less100
                             + "  : "
-                            + String.valueOf((double) less100.get() / total * 100)
+                            + (double) less100.get() / total * 100
                             + "%");
             System.out.println(
                     "100  < time <  200ms  : "
-                            + String.valueOf(less200)
+                            + less200
                             + "  : "
-                            + String.valueOf((double) less200.get() / total * 100)
+                            + (double) less200.get() / total * 100
                             + "%");
             System.out.println(
                     "200  < time <  400ms  : "
-                            + String.valueOf(less400)
+                            + less400
                             + "  : "
-                            + String.valueOf((double) less400.get() / total * 100)
+                            + (double) less400.get() / total * 100
                             + "%");
             System.out.println(
                     "400  < time <  1000ms : "
-                            + String.valueOf(less1000)
+                            + less1000
                             + "  : "
-                            + String.valueOf((double) less1000.get() / total * 100)
+                            + (double) less1000.get() / total * 100
                             + "%");
             System.out.println(
                     "1000 < time <  2000ms : "
-                            + String.valueOf(less2000)
+                            + less2000
                             + "  : "
-                            + String.valueOf((double) less2000.get() / total * 100)
+                            + (double) less2000.get() / total * 100
                             + "%");
             System.out.println(
                     "2000 < time           : "
-                            + String.valueOf(timeout2000)
+                            + timeout2000
                             + "  : "
-                            + String.valueOf((double) timeout2000.get() / total * 100)
+                            + (double) timeout2000.get() / total * 100
                             + "%");
         }
     }

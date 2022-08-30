@@ -2,17 +2,16 @@ package org.fisco.bcos.sdk.demo.transaction;
 
 import java.math.BigInteger;
 import java.util.List;
-import org.fisco.bcos.sdk.client.Client;
-import org.fisco.bcos.sdk.client.protocol.model.tars.Transaction;
-import org.fisco.bcos.sdk.client.protocol.model.tars.TransactionData;
-import org.fisco.bcos.sdk.codec.ABICodec;
-import org.fisco.bcos.sdk.codec.ABICodecException;
-import org.fisco.bcos.sdk.crypto.CryptoSuite;
-import org.fisco.bcos.sdk.crypto.signature.SignatureResult;
-import org.fisco.bcos.sdk.transaction.builder.TransactionBuilderInterface;
-import org.fisco.bcos.sdk.transaction.builder.TransactionBuilderService;
-import org.fisco.bcos.sdk.transaction.codec.encode.TransactionEncoderService;
-import org.fisco.bcos.sdk.transaction.model.gas.DefaultGasProvider;
+import org.fisco.bcos.sdk.jni.common.JniException;
+import org.fisco.bcos.sdk.jni.utilities.tx.TransactionBuilderJniObj;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.client.protocol.model.TransactionAttribute;
+import org.fisco.bcos.sdk.v3.codec.ContractCodec;
+import org.fisco.bcos.sdk.v3.codec.ContractCodecException;
+import org.fisco.bcos.sdk.v3.crypto.CryptoSuite;
+import org.fisco.bcos.sdk.v3.crypto.signature.SignatureResult;
+import org.fisco.bcos.sdk.v3.transaction.codec.encode.TransactionEncoderService;
+import org.fisco.bcos.sdk.v3.utils.Hex;
 
 public class BasicAbiTransaction {
     String contractName;
@@ -51,31 +50,12 @@ public class BasicAbiTransaction {
         return this;
     }
 
-    BigInteger gasPrice = DefaultGasProvider.GAS_PRICE;
-    BigInteger gasLimit = DefaultGasProvider.GAS_LIMIT;
     BigInteger value = BigInteger.ZERO;
     String extraData = "";
 
     CryptoSuite cryptoSuite;
-    ABICodec abiCodec;
+    ContractCodec ContractCodec;
     TransactionEncoderService transactionEncoder;
-
-    public BigInteger getGasPrice() {
-        return gasPrice;
-    }
-
-    public void setGasPrice(BigInteger gasPrice) {
-        this.gasPrice = gasPrice;
-    }
-
-    public BigInteger getGasLimit() {
-        return gasLimit;
-    }
-
-    public BasicAbiTransaction setGasLimit(BigInteger gasLimit) {
-        this.gasLimit = gasLimit;
-        return this;
-    }
 
     public BigInteger getValue() {
         return value;
@@ -113,12 +93,12 @@ public class BasicAbiTransaction {
 
     public BasicAbiTransaction setTools(
             CryptoSuite cryptoSuite_,
-            ABICodec abiCodec_,
+            ContractCodec ContractCodec_,
             TransactionEncoderService transactionEncoder_) {
         this.cryptoSuite = cryptoSuite_;
-        this.abiCodec = abiCodec_;
-        if (this.abiCodec == null) {
-            this.abiCodec = new ABICodec(cryptoSuite, false);
+        this.ContractCodec = ContractCodec_;
+        if (this.ContractCodec == null) {
+            this.ContractCodec = new ContractCodec(cryptoSuite, false);
         }
         this.transactionEncoder = transactionEncoder_;
         if (this.transactionEncoder == null) {
@@ -164,19 +144,20 @@ public class BasicAbiTransaction {
     }
 
     /** 对合约部署类型的交易进行编码 */
-    public byte[] encodeConstructor() throws ABICodecException {
-        return abiCodec.encodeConstructor(abiContent, binContent, params);
+    public byte[] encodeConstructor() throws ContractCodecException {
+        return ContractCodec.encodeConstructor(abiContent, binContent, params);
     }
 
     /**
      * 对合约调用类型的交易进行编码
      *
-     * @param abiCodec 用于编码交易内容的ABICodeC对象
+     * @param ContractCodec 用于编码交易内容的ContractCodec对象
      * @return 编码后的交易内容
-     * @throws ABICodecException
+     * @throws ContractCodecException
      */
-    public byte[] encodeMethodInput(ABICodec abiCodec) throws ABICodecException {
-        return abiCodec.encodeMethod(this.getAbiContent(), this.getMethodName(), this.getParams());
+    public byte[] encodeMethodInput(ContractCodec ContractCodec) throws ContractCodecException {
+        return ContractCodec.encodeMethod(
+                this.getAbiContent(), this.getMethodName(), this.getParams());
     }
 
     /**
@@ -185,7 +166,7 @@ public class BasicAbiTransaction {
      * @param rawTransaction 需要编码的交易
      * @return 编码后交易的哈希
      */
-    public byte[] calcRawTransactionHash(TransactionData rawTransaction) {
+    public byte[] calcRawTransactionHash(long rawTransaction) throws JniException {
         byte[] hash = transactionEncoder.encodeAndHashBytes(rawTransaction);
         return hash;
     }
@@ -198,35 +179,39 @@ public class BasicAbiTransaction {
      * @return 带有签名的交易编码
      */
     public byte[] encodeRawTransactionWithSignature(
-            TransactionData transaction, SignatureResult signatureResult, boolean isWASM) {
+            long transaction, SignatureResult signatureResult, boolean isWASM) throws JniException {
         byte[] hash = transactionEncoder.encodeAndHashBytes(transaction);
         int txAttribute = 0;
         if (isWASM) {
-            txAttribute |= Transaction.LIQUID_SCALE_CODEC;
+            txAttribute |= TransactionAttribute.LIQUID_SCALE_CODEC;
             if (this.isDeployTransaction) {
-                txAttribute |= Transaction.LIQUID_CREATE;
+                txAttribute |= TransactionAttribute.LIQUID_CREATE;
             }
         }
         return transactionEncoder.encodeToTransactionBytes(
                 transaction, hash, signatureResult, txAttribute);
     }
 
-    public TransactionData makeRawTransaction(Client client, String chainId, String groupId)
-            throws ABICodecException {
+    public long makeRawTransaction(Client client, String chainId, String groupId)
+            throws ContractCodecException, JniException {
         if (this.isDeployTransaction) return makeDeployRawTransaction(client, chainId, groupId);
         return makeMethodRawTransaction(client, chainId, groupId);
     }
 
-    public TransactionData makeRawTransactionByInput(
-            Client client, String chainId, String groupId, byte[] input) {
-        // 创建TransactionBuilder，构造RawTransaction
-        TransactionBuilderInterface transactionBuilder = new TransactionBuilderService(client);
-        TransactionData rawtx = transactionBuilder.createTransaction(to, input, chainId, groupId);
-        return rawtx;
+    public long makeRawTransactionByInput(
+            Client client, String chainId, String groupId, byte[] input) throws JniException {
+        // 构造RawTransaction
+        return TransactionBuilderJniObj.createTransactionData(
+                groupId,
+                chainId,
+                to,
+                Hex.toHexString(input),
+                "",
+                client.getBlockLimit().longValue());
     }
 
-    public TransactionData makeDeployRawTransaction(Client client, String chainId, String groupId)
-            throws ABICodecException {
+    public long makeDeployRawTransaction(Client client, String chainId, String groupId)
+            throws ContractCodecException, JniException {
         byte[] deployInput = encodeConstructor();
         System.out.println("deploy contract bin:" + deployInput);
         System.out.println("bin size " + deployInput.length);
@@ -235,11 +220,11 @@ public class BasicAbiTransaction {
     }
 
     // 构造未签名交易
-    public TransactionData makeMethodRawTransaction(Client client, String chainId, String groupId)
-            throws ABICodecException {
+    public long makeMethodRawTransaction(Client client, String chainId, String groupId)
+            throws ContractCodecException, JniException {
 
         // 编码交易内容
-        byte[] txInput = encodeMethodInput(abiCodec);
+        byte[] txInput = encodeMethodInput(ContractCodec);
 
         // 创建TransactionBuilder，构造RawTransaction
         return makeRawTransactionByInput(client, chainId, groupId, txInput);

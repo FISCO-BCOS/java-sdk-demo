@@ -15,14 +15,13 @@ package org.fisco.bcos.sdk.demo.codegen;
 
 import static org.fisco.solc.compiler.SolidityCompiler.Options.ABI;
 import static org.fisco.solc.compiler.SolidityCompiler.Options.BIN;
-import static org.fisco.solc.compiler.SolidityCompiler.Options.INTERFACE;
 import static org.fisco.solc.compiler.SolidityCompiler.Options.METADATA;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
-import org.fisco.bcos.sdk.codegen.CodeGenMain;
+import org.fisco.bcos.codegen.CodeGenMain;
 import org.fisco.solc.compiler.CompilationResult;
 import org.fisco.solc.compiler.SolidityCompiler;
 import org.slf4j.Logger;
@@ -107,7 +106,7 @@ public class DemoSolcToJava {
 
             /** ecdsa compile */
             SolidityCompiler.Result res =
-                    SolidityCompiler.compile(solFile, false, true, ABI, BIN, INTERFACE, METADATA);
+                    SolidityCompiler.compile(solFile, false, true, ABI, BIN, METADATA);
             logger.debug(
                     " solidity compiler result, success: {}, output: {}",
                     !res.isFailed(),
@@ -118,7 +117,7 @@ public class DemoSolcToJava {
 
             /** sm compile */
             SolidityCompiler.Result smRes =
-                    SolidityCompiler.compile(solFile, true, true, ABI, BIN, INTERFACE, METADATA);
+                    SolidityCompiler.compile(solFile, true, true, ABI, BIN, METADATA);
             logger.debug(
                     " sm solidity compiler result, success: {}, output: {}, error: {}",
                     !smRes.isFailed(),
@@ -153,11 +152,18 @@ public class DemoSolcToJava {
             smBinFile = binDir + "/sm/" + filename + ".bin";
             CodeGenMain.main(
                     Arrays.asList(
-                                    "-a", abiFile,
-                                    "-b", binFile,
-                                    "-s", smBinFile,
-                                    "-p", packageName,
-                                    "-o", tempDirPath)
+                                    "-v",
+                                    "V3",
+                                    "-a",
+                                    abiFile,
+                                    "-b",
+                                    binFile,
+                                    "-s",
+                                    smBinFile,
+                                    "-p",
+                                    packageName,
+                                    "-o",
+                                    tempDirPath)
                             .toArray(new String[0]));
         }
     }
