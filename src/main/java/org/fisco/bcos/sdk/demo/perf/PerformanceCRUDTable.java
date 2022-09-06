@@ -29,12 +29,15 @@ import org.fisco.bcos.sdk.demo.contract.MultiTableTest;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.BcosSDKException;
 import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.client.RespCallback;
 import org.fisco.bcos.sdk.v3.codec.ContractCodecException;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
+import org.fisco.bcos.sdk.v3.model.Response;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.v3.transaction.manager.AssembleTransactionProcessor;
 import org.fisco.bcos.sdk.v3.transaction.manager.TransactionProcessorFactory;
+import org.fisco.bcos.sdk.v3.transaction.model.dto.CallResponse;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
@@ -267,16 +270,25 @@ public class PerformanceCRUDTable {
                                     callLimiter.acquire();
                                     long now = System.currentTimeMillis();
 
-                                    assembleTransactionProcessor.sendTransactionAsync(
+                                    assembleTransactionProcessor.sendCallAsync(
+                                            "",
                                             address,
                                             useKV ? MultiTableTest.getABI() : MultiMapTest.getABI(),
                                             "get",
                                             params,
-                                            new TransactionCallback() {
+                                            new RespCallback<CallResponse>() {
                                                 @Override
-                                                public void onResponse(TransactionReceipt receipt) {
+                                                public void onResponse(CallResponse callResponse) {
                                                     long cost = System.currentTimeMillis() - now;
-                                                    getCollector.onMessage(receipt, cost);
+                                                    getCollector.stat(false, cost);
+                                                    callbackBar.step();
+                                                    getLatch.countDown();
+                                                }
+
+                                                @Override
+                                                public void onError(Response errorResponse) {
+                                                    long cost = System.currentTimeMillis() - now;
+                                                    getCollector.stat(true, cost);
                                                     callbackBar.step();
                                                     getLatch.countDown();
                                                 }
