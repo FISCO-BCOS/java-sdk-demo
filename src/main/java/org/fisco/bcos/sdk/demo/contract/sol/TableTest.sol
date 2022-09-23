@@ -68,6 +68,9 @@ contract TableTest {
     function createTable(string memory tableName,string memory key,string[] memory fields) public returns(int256){
         TableInfo memory tf = TableInfo(key, fields);
         int32 result = tm.createTable(tableName,tf);
+        address t_address = tm.openTable(tableName);
+        require(t_address!=address(0x0),"empty address");
+        table = Table(t_address);
         emit CreateResult(result);
         return result;
     }
