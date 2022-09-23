@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -39,8 +40,9 @@ import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 public class PerformanceTable {
     private static AtomicLong uniqueID = new AtomicLong(0);
     private static final Set<String> supportCommands =
-            new HashSet<>(Arrays.asList("insert", "update", "remove", "select", "create"));
-    private static int NAME_MOD = 100;
+            new HashSet<>(
+                    Arrays.asList("insert", "update", "remove", "select", "create", "batchCreate"));
+    private static int FLAG_NUMBER = 100;
 
     private static void Usage() {
         System.out.println(" Usage:");
@@ -55,6 +57,8 @@ public class PerformanceTable {
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTable [select] [count] [tps] [groupId].");
         System.out.println(
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTable [create] [count] [tps] [groupId] [mod].");
+        System.out.println(
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTable [batchCreate] [count] [tps] [groupId] [batchNumber].");
     }
 
     public static void main(String[] args) {
@@ -73,8 +77,8 @@ public class PerformanceTable {
             int count = Integer.parseInt(args[1]);
             int qps = Integer.parseInt(args[2]);
             String groupId = args[3];
-            if (args.length == 5){
-                NAME_MOD = Integer.parseInt(args[4]);
+            if (args.length == 5) {
+                FLAG_NUMBER = Integer.parseInt(args[4]);
             }
             System.out.println(
                     "====== PerformanceTable "
@@ -116,6 +120,9 @@ public class PerformanceTable {
                             + tableTest.getContractAddress()
                             + " ====== ");
 
+            if (command.equals("batchCreate")) {
+                count = count / FLAG_NUMBER;
+            }
             CountDownLatch countDownLatch = new CountDownLatch(count);
             RateLimiter limiter = RateLimiter.create(qps);
             ProgressBar sentBar =
@@ -192,6 +199,9 @@ public class PerformanceTable {
         if (command.compareToIgnoreCase("create") == 0) {
             create(tableTest, callback);
         }
+        if (command.compareToIgnoreCase("batchCreate") == 0) {
+            batchCreate(tableTest, callback);
+        }
     }
 
     public static long getNextID() {
@@ -232,12 +242,24 @@ public class PerformanceTable {
     }
 
     private static void create(TableTest tableTest, TransactionCallback callback) {
-        long nextID = getNextID() % NAME_MOD;
+        long nextID = new Random().nextInt();
         String tableName = "t_test" + nextID;
         String key = "key" + nextID;
         List<String> fields = new ArrayList<>();
         fields.add("name" + nextID);
         fields.add("age" + nextID);
         tableTest.createTable(tableName, key, fields, callback);
+    }
+
+    private static void batchCreate(TableTest tableTest, TransactionCallback callback) {
+        int nextID = new Random().nextInt();
+        for (int i = 0; i < FLAG_NUMBER; i++) {
+            String tableName = "t_test" + nextID;
+            String key = "key" + nextID;
+            List<String> fields = new ArrayList<>();
+            fields.add("name" + nextID);
+            fields.add("age" + nextID);
+            tableTest.createTable(tableName, key, fields, callback);
+        }
     }
 }
