@@ -200,7 +200,6 @@ public class PerformanceDMC {
 
         System.out.println("Sending transactions finished!");
 
-        /*
         System.out.println("Checking result...");
         CountDownLatch checkLatch = new CountDownLatch(count);
         for (Map.Entry<Integer, AtomicLong> entry : summary.entrySet()) {
@@ -234,7 +233,6 @@ public class PerformanceDMC {
                             });
         }
         System.out.println("Checking finished!");
-        */
 
         // collector.
         // System.out.println("Total elapsed: " + elapsed);

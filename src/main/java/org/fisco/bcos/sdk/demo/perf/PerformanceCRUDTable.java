@@ -18,13 +18,14 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
-import org.fisco.bcos.sdk.demo.contract.KVTableTest;
-import org.fisco.bcos.sdk.demo.contract.MapTest;
+import org.fisco.bcos.sdk.demo.contract.MultiMapTest;
+import org.fisco.bcos.sdk.demo.contract.MultiTableTest;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.BcosSDKException;
 import org.fisco.bcos.sdk.v3.client.Client;
@@ -37,26 +38,27 @@ import org.fisco.bcos.sdk.v3.transaction.manager.TransactionProcessorFactory;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
-public class PerformanceKVTable {
+public class PerformanceCRUDTable {
     private static AtomicLong atomicLong = new AtomicLong(0);
     private static ThreadPoolService threadPoolService =
-            new ThreadPoolService("PerformanceKVTable", 1000000);
+            new ThreadPoolService("PerformanceCRUDTable", 1000000);
     private static Client client;
-    private static KVTableTest kvTableTest = null;
-    private static MapTest mapTest = null;
+    private static MultiTableTest multiTableTest = null;
+    private static MultiMapTest mapTest = null;
     private static int length = 256;
+    private static String PrimaryKey;
 
     private static void Usage() {
         System.out.println(" Usage:");
-        System.out.println("===== PerformanceKVTable test===========");
+        System.out.println("===== PerformanceCRUDTable test===========");
         System.out.println(
-                " \t java -cp \'conf/:lib/*:apps/*\' org.fisco.bcos.sdk.demo.perf.PerformanceKVTable [count] [tps] [groupId] [useKVTable] [valueLength].");
+                " \t java -cp \'conf/:lib/*:apps/*\' org.fisco.bcos.sdk.demo.perf.PerformanceCRUDTable [count] [tps] [groupId] [useTable] [valueLength].");
     }
 
     public static void main(String[] args) {
         try {
             String configFileName = ConstantConfig.CONFIG_FILE_NAME;
-            URL configUrl = PerformanceKVTable.class.getClassLoader().getResource(configFileName);
+            URL configUrl = PerformanceCRUDTable.class.getClassLoader().getResource(configFileName);
             if (configUrl == null) {
                 System.out.println("The configFile " + configFileName + " doesn't exist!");
                 return;
@@ -68,22 +70,25 @@ public class PerformanceKVTable {
             int count = Integer.parseInt(args[0]);
             int qps = Integer.parseInt(args[1]);
             String groupId = args[2];
-            boolean useKVTable = Boolean.parseBoolean(args[3]);
+            boolean useTable = Boolean.parseBoolean(args[3]);
             if (args.length == 5) {
                 length = Integer.parseInt(args[4]);
             }
+            PrimaryKey = String.valueOf(new Random().nextInt());
             System.out.println(
-                    "====== PerformanceKVTable "
+                    "====== PerformanceCRUDTable "
                             + "count: "
                             + count
                             + ", qps:"
                             + qps
                             + ", groupId: "
                             + groupId
-                            + ", useKVTable:"
-                            + useKVTable
+                            + ", useTable:"
+                            + useTable
                             + ", valueLength:"
-                            + length);
+                            + length
+                            + ", PrimaryKey:"
+                            + PrimaryKey);
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
@@ -95,12 +100,12 @@ public class PerformanceKVTable {
                 return;
             }
 
-            start(groupId, count, qps, useKVTable);
+            start(groupId, count, qps, useTable);
             threadPoolService.stop();
             System.exit(0);
         } catch (BcosSDKException | ContractException | InterruptedException | IOException e) {
             System.out.println(
-                    "====== PerformanceKVTable test failed, error message: " + e.getMessage());
+                    "====== PerformanceCRUDTable test failed, error message: " + e.getMessage());
             System.exit(0);
         }
     }
@@ -111,28 +116,29 @@ public class PerformanceKVTable {
         String address;
 
         if (useKV) {
-            System.out.println("====== Deploy KVTableTest ====== ");
-            kvTableTest = KVTableTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
-            if (!kvTableTest.getDeployReceipt().isStatusOK()) {
+            System.out.println("====== Deploy TableTest ====== ");
+            multiTableTest =
+                    MultiTableTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
+            if (!multiTableTest.getDeployReceipt().isStatusOK()) {
                 throw new ContractException(
-                        "deploy failed: " + kvTableTest.getDeployReceipt().getMessage());
+                        "deploy failed: " + multiTableTest.getDeployReceipt().getMessage());
             }
-            address = kvTableTest.getContractAddress();
+            address = multiTableTest.getContractAddress();
             System.out.println(
-                    "====== Deploy KVTableTest success, address: "
-                            + kvTableTest.getContractAddress()
+                    "====== Deploy TableTest success, address: "
+                            + multiTableTest.getContractAddress()
                             + " ====== ");
         } else {
-            System.out.println("====== Deploy MapTest ====== ");
+            System.out.println("====== Deploy MultiMapTest ====== ");
 
-            mapTest = MapTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
+            mapTest = MultiMapTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
             if (!mapTest.getDeployReceipt().isStatusOK()) {
                 throw new ContractException(
                         "deploy failed: " + mapTest.getDeployReceipt().getMessage());
             }
             address = mapTest.getContractAddress();
             System.out.println(
-                    "====== Deploy MapTest success, address: "
+                    "====== Deploy MultiMapTest success, address: "
                             + mapTest.getContractAddress()
                             + " ====== ");
         }
@@ -144,11 +150,11 @@ public class PerformanceKVTable {
                 TransactionProcessorFactory.createAssembleTransactionProcessor(
                         client,
                         client.getCryptoSuite().getCryptoKeyPair(),
-                        useKV ? "KVTableTest" : "MapTest",
-                        useKV ? KVTableTest.getABI() : MapTest.getABI(),
+                        useKV ? "MultiTableTest" : "MultiMapTest",
+                        useKV ? MultiTableTest.getABI() : MultiMapTest.getABI(),
                         useKV
-                                ? KVTableTest.getBinary(client.getCryptoSuite())
-                                : MapTest.getBinary(client.getCryptoSuite()));
+                                ? MultiTableTest.getBinary(client.getCryptoSuite())
+                                : MultiMapTest.getBinary(client.getCryptoSuite()));
 
         set(count, qps, useKV, address, assembleTransactionProcessor);
 
@@ -187,8 +193,8 @@ public class PerformanceKVTable {
             long key = atomicLong.getAndIncrement();
 
             List<Object> params = new ArrayList<>(2);
-            params.add(String.valueOf(key));
-            params.add(String.format(formatter, key));
+            params.add(PrimaryKey + key);
+            params.add(String.format(formatter, PrimaryKey + key));
             threadPoolService
                     .getThreadPool()
                     .execute(
@@ -197,7 +203,7 @@ public class PerformanceKVTable {
                                     long now = System.currentTimeMillis();
                                     assembleTransactionProcessor.sendTransactionAsync(
                                             address,
-                                            useKV ? KVTableTest.getABI() : MapTest.getABI(),
+                                            useKV ? MultiTableTest.getABI() : MultiMapTest.getABI(),
                                             "set",
                                             params,
                                             new TransactionCallback() {
@@ -251,7 +257,8 @@ public class PerformanceKVTable {
 
         for (int i = 0; i < callCount; ++i) {
             List<Object> params = new ArrayList<>(1);
-            params.add(String.valueOf(atomicLong.decrementAndGet()));
+            long key = atomicLong.decrementAndGet();
+            params.add(PrimaryKey + key);
             threadPoolService
                     .getThreadPool()
                     .execute(
@@ -259,9 +266,10 @@ public class PerformanceKVTable {
                                 try {
                                     callLimiter.acquire();
                                     long now = System.currentTimeMillis();
+
                                     assembleTransactionProcessor.sendTransactionAsync(
                                             address,
-                                            useKV ? KVTableTest.getABI() : MapTest.getABI(),
+                                            useKV ? MultiTableTest.getABI() : MultiMapTest.getABI(),
                                             "get",
                                             params,
                                             new TransactionCallback() {
