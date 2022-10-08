@@ -1,4 +1,4 @@
-package com;
+package org.fisco.bcos.sdk.demo.contract;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -105,7 +105,7 @@ public class DelegateCallTest extends Contract {
     public TransactionReceipt codehashAt(String addr) {
         final Function function = new Function(
                 FUNC_CODEHASHAT, 
-                Arrays.<Type>asList(new org.fisco.bcos.sdk.v3.codec.datatypes.Address(addr)), 
+                Arrays.<Type>asList(new Address(addr)),
                 Collections.<TypeReference<?>>emptyList(), 4);
         return executeTransaction(function);
     }
@@ -113,7 +113,7 @@ public class DelegateCallTest extends Contract {
     public String codehashAt(String addr, TransactionCallback callback) {
         final Function function = new Function(
                 FUNC_CODEHASHAT, 
-                Arrays.<Type>asList(new org.fisco.bcos.sdk.v3.codec.datatypes.Address(addr)), 
+                Arrays.<Type>asList(new Address(addr)),
                 Collections.<TypeReference<?>>emptyList(), 4);
         return asyncExecuteTransaction(function, callback);
     }
@@ -121,7 +121,7 @@ public class DelegateCallTest extends Contract {
     public String getSignedTransactionForCodehashAt(String addr) {
         final Function function = new Function(
                 FUNC_CODEHASHAT, 
-                Arrays.<Type>asList(new org.fisco.bcos.sdk.v3.codec.datatypes.Address(addr)), 
+                Arrays.<Type>asList(new Address(addr)),
                 Collections.<TypeReference<?>>emptyList(), 4);
         return createSignedTransaction(function);
     }
@@ -153,7 +153,7 @@ public class DelegateCallTest extends Contract {
     public TransactionReceipt codesizeAt(String addr) {
         final Function function = new Function(
                 FUNC_CODESIZEAT, 
-                Arrays.<Type>asList(new org.fisco.bcos.sdk.v3.codec.datatypes.Address(addr)), 
+                Arrays.<Type>asList(new Address(addr)),
                 Collections.<TypeReference<?>>emptyList(), 4);
         return executeTransaction(function);
     }
@@ -161,7 +161,7 @@ public class DelegateCallTest extends Contract {
     public String codesizeAt(String addr, TransactionCallback callback) {
         final Function function = new Function(
                 FUNC_CODESIZEAT, 
-                Arrays.<Type>asList(new org.fisco.bcos.sdk.v3.codec.datatypes.Address(addr)), 
+                Arrays.<Type>asList(new Address(addr)),
                 Collections.<TypeReference<?>>emptyList(), 4);
         return asyncExecuteTransaction(function, callback);
     }
@@ -169,7 +169,7 @@ public class DelegateCallTest extends Contract {
     public String getSignedTransactionForCodesizeAt(String addr) {
         final Function function = new Function(
                 FUNC_CODESIZEAT, 
-                Arrays.<Type>asList(new org.fisco.bcos.sdk.v3.codec.datatypes.Address(addr)), 
+                Arrays.<Type>asList(new Address(addr)),
                 Collections.<TypeReference<?>>emptyList(), 4);
         return createSignedTransaction(function);
     }

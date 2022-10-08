@@ -14,6 +14,19 @@
 package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
+import me.tongfei.progressbar.ProgressBar;
+import me.tongfei.progressbar.ProgressBarBuilder;
+import me.tongfei.progressbar.ProgressBarStyle;
+import org.fisco.bcos.sdk.demo.contract.DelegateCallTest;
+import org.fisco.bcos.sdk.v3.BcosSDK;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.model.ConstantConfig;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
+import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
+import sun.util.resources.ext.CalendarData_da;
+
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URL;
@@ -23,26 +36,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import me.tongfei.progressbar.ProgressBar;
-import me.tongfei.progressbar.ProgressBarBuilder;
-import me.tongfei.progressbar.ProgressBarStyle;
-import org.fisco.bcos.sdk.demo.contract.Account;
-import org.fisco.bcos.sdk.v3.BcosSDK;
-import org.fisco.bcos.sdk.v3.client.Client;
-import org.fisco.bcos.sdk.v3.model.ConstantConfig;
-import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
-import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
-import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
-import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
-public class PerformanceDMC {
+public class PerformanceDelegateCall {
     private static Client client;
 
     public static void Usage() {
         System.out.println(" Usage:");
-        System.out.println("===== PerformanceDMC test===========");
+        System.out.println("===== PerformanceDelegateCall test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceDMC [groupId] [userCount] [count] [qps].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceDelegateCall [groupId] [contractCount] [count] [qps].");
     }
 
     public static void main(String[] args)
@@ -60,7 +62,7 @@ public class PerformanceDMC {
                 return;
             }
             String groupId = args[0];
-            int userCount = Integer.valueOf(args[1]).intValue();
+            int contractCount = Integer.valueOf(args[1]).intValue();
             Integer count = Integer.valueOf(args[2]).intValue();
             Integer qps = Integer.valueOf(args[3]).intValue();
 
@@ -68,9 +70,9 @@ public class PerformanceDMC {
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
             ThreadPoolService threadPoolService =
-                    new ThreadPoolService("DMCClient", Runtime.getRuntime().availableProcessors());
+                    new ThreadPoolService("DelegateCallClient", Runtime.getRuntime().availableProcessors());
 
-            start(groupId, userCount, count, qps, threadPoolService);
+            start(groupId, contractCount, count, qps, threadPoolService);
 
             threadPoolService.getThreadPool().awaitTermination(0, TimeUnit.SECONDS);
             System.exit(0);
@@ -82,14 +84,14 @@ public class PerformanceDMC {
 
     public static void start(
             String groupId,
-            int userCount,
+            int contractCount,
             int count,
             Integer qps,
             ThreadPoolService threadPoolService)
             throws IOException, InterruptedException, ContractException {
         System.out.println(
-                "====== Start test, user count: "
-                        + userCount
+                "====== Start test, contract count: "
+                        + contractCount
                         + ", count: "
                         + count
                         + ", qps:"
@@ -99,34 +101,33 @@ public class PerformanceDMC {
 
         RateLimiter limiter = RateLimiter.create(qps.intValue());
 
-        Account[] accounts = new Account[userCount];
+        DelegateCallTest[] contracts = new DelegateCallTest[contractCount];
+        String[] delegateDests = new String[contractCount];
         Map<Integer, AtomicLong> summary = new ConcurrentHashMap<Integer, AtomicLong>();
 
         final Random random = new Random();
         random.setSeed(System.currentTimeMillis());
 
-        System.out.println("Create account...");
-        CountDownLatch userLatch = new CountDownLatch(userCount);
-        for (int i = 0; i < userCount; ++i) {
+        System.out.println("Create contract...");
+        CountDownLatch userLatch = new CountDownLatch(contractCount);
+        for (int i = 0; i < contractCount; ++i) {
             final int index = i;
             threadPoolService
                     .getThreadPool()
                     .execute(
                             new Runnable() {
                                 public void run() {
-                                    Account account;
+                                    DelegateCallTest contract;
                                     try {
-                                        long initBalance = Math.abs(random.nextLong());
 
                                         limiter.acquire();
-                                        account =
-                                                Account.deploy(
+                                        contract =
+                                                DelegateCallTest.deploy(
                                                         client,
                                                         client.getCryptoSuite().getCryptoKeyPair());
-                                        account.addBalance(BigInteger.valueOf(initBalance));
-
-                                        accounts[index] = account;
-                                        summary.put(index, new AtomicLong(initBalance));
+                                        summary.put(index, new AtomicLong(0));
+                                        delegateDests[index] = contract.delegateDest();
+                                        contracts[index] = contract;
                                         userLatch.countDown();
                                     } catch (ContractException e) {
                                         e.printStackTrace();
@@ -135,7 +136,7 @@ public class PerformanceDMC {
                             });
         }
         userLatch.await();
-        System.out.println("Create account finished!");
+        System.out.println("Create contract finished!");
 
         System.out.println("Sending transactions...");
         ProgressBar sendedBar =
@@ -159,26 +160,38 @@ public class PerformanceDMC {
         for (int i = 0; i < count; ++i) {
             limiter.acquire();
 
-            final int index = i % accounts.length;
+            final int index = i % contracts.length;
             threadPoolService
                     .getThreadPool()
                     .execute(
                             new Runnable() {
                                 @Override
                                 public void run() {
-                                    Account account = accounts[index];
+                                    DelegateCallTest contract = contracts[index];
+                                    String delegateDest = delegateDests[index * 7 % contractCount];
                                     long now = System.currentTimeMillis();
 
-                                    final long value = Math.abs(random.nextLong() % 1000);
+                                    final long value = 2;
+                                    contract.codesizeAt(delegateDest, new TransactionCallback() {
+                                        @Override
+                                        public void onResponse(TransactionReceipt receipt) {
+                                        }
+                                    });
 
-                                    account.addBalance(
-                                            BigInteger.valueOf(value),
+                                    contract.codesizeAt(delegateDest,new TransactionCallback() {
+                                        @Override
+                                        public void onResponse(TransactionReceipt receipt) {
+                                        }
+                                    });
+
+                                    contract.testSuccess(
                                             new TransactionCallback() {
                                                 @Override
                                                 public void onResponse(TransactionReceipt receipt) {
-                                                    AtomicLong count = summary.get(index);
-                                                    count.addAndGet(value);
-
+                                                    if (receipt.getStatus() == 0) {
+                                                        AtomicLong count = summary.get(index);
+                                                        count.addAndGet(value);
+                                                    }
                                                     long cost = System.currentTimeMillis() - now;
                                                     collector.onMessage(receipt, cost);
 
@@ -187,7 +200,8 @@ public class PerformanceDMC {
                                                     totalCost.addAndGet(
                                                             System.currentTimeMillis() - now);
                                                 }
-                                            });
+                                            }
+                                    );
                                     sendedBar.step();
                                 }
                             });
@@ -214,7 +228,7 @@ public class PerformanceDMC {
                                 public void run() {
                                     try {
                                         limiter.acquire();
-                                        BigInteger balance = accounts[index].balance();
+                                        BigInteger balance = contracts[index].value();
                                         if (balance.longValue() != expectBalance) {
                                             System.out.println(
                                                     "Check failed! Account["
@@ -232,6 +246,7 @@ public class PerformanceDMC {
                                 }
                             });
         }
+        System.out.println("Revert(ERROR) is ok. Reverted tx num: " + collector.getError());
         System.out.println("Checking finished!");
 
         // collector.
