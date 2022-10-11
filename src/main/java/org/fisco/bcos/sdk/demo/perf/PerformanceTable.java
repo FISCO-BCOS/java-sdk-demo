@@ -243,7 +243,7 @@ public class PerformanceTable {
 
     private static void create(TableTest tableTest, TransactionCallback callback) {
         long nextID = new Random().nextInt();
-        String tableName = "t_test" + nextID;
+        String tableName = "t_test" + Math.abs(nextID);
         String key = "key" + nextID;
         List<String> fields = new ArrayList<>();
         fields.add("name" + nextID);
@@ -254,7 +254,7 @@ public class PerformanceTable {
     private static void batchCreate(TableTest tableTest, TransactionCallback callback) {
         int nextID = new Random().nextInt();
         for (int i = 0; i < FLAG_NUMBER; i++) {
-            String tableName = "t_test" + nextID;
+            String tableName = "t_test" + Math.abs(nextID);
             String key = "key" + nextID;
             List<String> fields = new ArrayList<>();
             fields.add("name" + nextID);
