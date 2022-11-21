@@ -4,7 +4,6 @@ plugins {
     id 'idea'
     id 'java-library'
     id 'jacoco'
-    id 'com.github.sherter.google-java-format' version '0.8'
     id 'maven-publish'
     id 'org.ajoberstar.grgit' version '4.1.0'
 }
@@ -57,12 +56,6 @@ sourceSets {
         }
         resources.srcDir file('src/integration-test/resources')
     }
-}
-
-googleJavaFormat {
-    options style: 'AOSP'
-    source = sourceSets*.allJava
-    include '**/*.java'
 }
 
 configurations {
