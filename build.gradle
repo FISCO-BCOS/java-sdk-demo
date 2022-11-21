@@ -3,9 +3,9 @@ plugins {
     id 'idea'
     id 'java-library'
     id 'jacoco'
-    id 'com.github.sherter.google-java-format' version '0.8'
     id 'maven-publish'
 }
+
 println("Notice: current gradle version is " + gradle.gradleVersion)
 // Additional attribute definition
 ext {
@@ -54,12 +54,6 @@ sourceSets {
     }
 }
 
-googleJavaFormat {
-    options style: 'AOSP'
-    source = sourceSets*.allJava
-    include '**/*.java'
-}
-
 configurations {
     integrationTestCompile.extendsFrom testCompile
     integrationTestRuntime.extendsFrom testRuntime
@@ -73,7 +67,6 @@ task integrationTest(type: Test) {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
 }
-
 
 List spring = [
         "org.springframework:spring-core:$springVersion",
