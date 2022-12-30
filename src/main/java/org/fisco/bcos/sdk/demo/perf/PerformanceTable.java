@@ -46,7 +46,7 @@ public class PerformanceTable {
 
     private static void Usage() {
         System.out.println(" Usage:");
-        System.out.println("===== PerformanceTableLiquid test===========");
+        System.out.println("===== PerformanceTable test===========");
         System.out.println(
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTable [insert] [count] [tps] [groupId].");
         System.out.println(
@@ -138,10 +138,10 @@ public class PerformanceTable {
                             .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                             .build();
 
-            System.out.println("====== PerformanceTableLiquid " + command + " start ======");
+            System.out.println("====== PerformanceTable " + command + " start ======");
             ThreadPoolService threadPoolService =
                     new ThreadPoolService(
-                            "PerformanceTableLiquid", Runtime.getRuntime().availableProcessors());
+                            "PerformanceTable", Runtime.getRuntime().availableProcessors());
 
             Collector collector = new Collector();
             collector.setTotal(count);
@@ -176,7 +176,7 @@ public class PerformanceTable {
             System.exit(0);
         } catch (Exception e) {
             System.out.println(
-                    "====== PerformanceTableLiquid test failed, error message: " + e.getMessage());
+                    "====== PerformanceTable test failed, error message: " + e.getMessage());
             e.printStackTrace();
             System.exit(0);
         }
