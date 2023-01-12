@@ -50,7 +50,7 @@ public class PerformanceTiger {
         System.out.println(" Usage:");
         System.out.println("===== PerformanceDMC test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTiger [groupId] [count] [qps] [isParallel].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTiger [groupId] [count] [qps].");
     }
 
     public static void main(String[] args)
@@ -499,7 +499,7 @@ public class PerformanceTiger {
         System.out.println("Create tiger hole...");
         TigerHoleV2 tigerHole =
                 TigerHoleV2.deploy(client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
-        tigerHole.enableParallel();
+        //tigerHole.enableParallel();
         System.out.println("Create tiger v2 hole finished!");
 
         Map<String, Integer> seedUsers = createSeedUsers(tigerHole, count, executor);
