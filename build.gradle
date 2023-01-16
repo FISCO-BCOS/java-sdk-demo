@@ -10,18 +10,18 @@ println("Notice: current gradle version is " + gradle.gradleVersion)
 // Additional attribute definition
 ext {
     // jackson version
-    javaSDKVersion="3.1.0"
+    javaSDKVersion="3.2.0-SNAPSHOT"
     //solcJVersion = "0.4.25.1"
     //solcJVersion = "0.5.2.1"
     //solcJVersion = "0.6.10.1"
     solcJVersion = "0.8.11.1"
-    guavaVersion = "29.0-jre"
+    guavaVersion = "30.1.1-jre"
     commonsCollections4Version = "4.4"
     springVersion = '5.3.22'
 }
 
 archivesBaseName = 'java-sdk-demo'
-version = '3.0.1'
+version = '3.2.0'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
