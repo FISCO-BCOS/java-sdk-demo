@@ -14,6 +14,7 @@
 package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
+
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
+
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
@@ -74,7 +76,7 @@ public class PerformanceTable {
                 return;
             }
             String command = args[0];
-            int count = Integer.parseInt(args[1]);
+            int sendCount = Integer.parseInt(args[1]);
             int qps = Integer.parseInt(args[2]);
             String groupId = args[3];
             if (args.length == 5) {
@@ -84,7 +86,7 @@ public class PerformanceTable {
                     "====== PerformanceTable "
                             + command
                             + ", count: "
-                            + count
+                            + sendCount
                             + ", qps:"
                             + qps
                             + ", groupId: "
@@ -120,21 +122,31 @@ public class PerformanceTable {
                             + tableTest.getContractAddress()
                             + " ====== ");
 
+            int totalCount = sendCount;
             if (command.equals("batchCreate")) {
-                count = count / FLAG_NUMBER;
+                sendCount = sendCount / FLAG_NUMBER;
+                totalCount = sendCount * FLAG_NUMBER;
+                System.out.println(
+                        "====== batchCreate, "
+                                + "batchSendCount: "
+                                + sendCount
+                                + ", eachBatchSendTx:"
+                                + FLAG_NUMBER
+                                + ", totalCount: "
+                                + totalCount);
             }
-            CountDownLatch countDownLatch = new CountDownLatch(count);
+            CountDownLatch countDownLatch = new CountDownLatch(totalCount);
             RateLimiter limiter = RateLimiter.create(qps);
             ProgressBar sentBar =
                     new ProgressBarBuilder()
                             .setTaskName("Send   :")
-                            .setInitialMax(count)
+                            .setInitialMax(sendCount)
                             .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                             .build();
             ProgressBar receivedBar =
                     new ProgressBarBuilder()
                             .setTaskName("Receive:")
-                            .setInitialMax(count)
+                            .setInitialMax(totalCount)
                             .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                             .build();
 
@@ -144,8 +156,8 @@ public class PerformanceTable {
                             "PerformanceTable", Runtime.getRuntime().availableProcessors());
 
             Collector collector = new Collector();
-            collector.setTotal(count);
-            for (int i = 0; i < count; ++i) {
+            collector.setTotal(totalCount);
+            for (int i = 0; i < sendCount; ++i) {
                 limiter.acquire();
                 threadPoolService
                         .getThreadPool()
