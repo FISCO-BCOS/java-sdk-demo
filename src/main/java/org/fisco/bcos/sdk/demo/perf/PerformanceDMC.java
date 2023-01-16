@@ -77,6 +77,7 @@ public class PerformanceDMC {
 			start(groupId, userCount, count, qps, threadPoolService);
 
 			threadPoolService.getThreadPool().awaitTermination(0, TimeUnit.SECONDS);
+			System.exit(0);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(1);
