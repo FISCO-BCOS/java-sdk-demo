@@ -14,6 +14,15 @@
 package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.URL;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
@@ -25,16 +34,6 @@ import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.net.URL;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class PerformanceDelegateCall {
     private static Client client;
@@ -69,7 +68,8 @@ public class PerformanceDelegateCall {
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
             ThreadPoolService threadPoolService =
-                    new ThreadPoolService("DelegateCallClient", Runtime.getRuntime().availableProcessors());
+                    new ThreadPoolService(
+                            "DelegateCallClient", Runtime.getRuntime().availableProcessors());
 
             start(groupId, contractCount, count, qps, threadPoolService);
 
@@ -171,17 +171,21 @@ public class PerformanceDelegateCall {
                                     long now = System.currentTimeMillis();
 
                                     final long value = 2;
-                                    contract.codesizeAt(delegateDest, new TransactionCallback() {
-                                        @Override
-                                        public void onResponse(TransactionReceipt receipt) {
-                                        }
-                                    });
+                                    contract.codesizeAt(
+                                            delegateDest,
+                                            new TransactionCallback() {
+                                                @Override
+                                                public void onResponse(
+                                                        TransactionReceipt receipt) {}
+                                            });
 
-                                    contract.codesizeAt(delegateDest,new TransactionCallback() {
-                                        @Override
-                                        public void onResponse(TransactionReceipt receipt) {
-                                        }
-                                    });
+                                    contract.codesizeAt(
+                                            delegateDest,
+                                            new TransactionCallback() {
+                                                @Override
+                                                public void onResponse(
+                                                        TransactionReceipt receipt) {}
+                                            });
 
                                     contract.testSuccess(
                                             new TransactionCallback() {
@@ -199,8 +203,7 @@ public class PerformanceDelegateCall {
                                                     totalCost.addAndGet(
                                                             System.currentTimeMillis() - now);
                                                 }
-                                            }
-                                    );
+                                            });
                                     sendedBar.step();
                                 }
                             });

@@ -14,14 +14,20 @@
 package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
+import java.math.BigInteger;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
-import org.fisco.bcos.sdk.demo.contract.TableTest;
 import org.fisco.bcos.sdk.demo.contract.TableTestV320;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
-import org.fisco.bcos.sdk.v3.codec.datatypes.generated.tuples.generated.Tuple1;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.fisco.bcos.sdk.v3.model.TransactionReceiptStatus;
@@ -29,23 +35,10 @@ import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
-import java.math.BigInteger;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicLong;
-
 public class PerformanceTableV320 {
     private static AtomicLong uniqueID = new AtomicLong(0);
     private static final Set<String> supportCommands =
-            new HashSet<>(
-                    Arrays.asList("insert", "update", "remove", "select"));
+            new HashSet<>(Arrays.asList("insert", "update", "remove", "select"));
     private static final int LIMIT_MAX = 500;
 
     private static void Usage() {
@@ -160,11 +153,17 @@ public class PerformanceTableV320 {
                                 () -> {
                                     long now = System.currentTimeMillis();
                                     if (useRange && command.compareToIgnoreCase("insert") != 0) {
-                                        callTableOperationWithRange(command, tableTest, from + finalI * finalCount,
-                                                LIMIT_MAX + finalI * finalCount, new TransactionCallback() {
+                                        callTableOperationWithRange(
+                                                command,
+                                                tableTest,
+                                                from + finalI * finalCount,
+                                                LIMIT_MAX + finalI * finalCount,
+                                                new TransactionCallback() {
                                                     @Override
-                                                    public void onResponse(TransactionReceipt receipt) {
-                                                        long cost = System.currentTimeMillis() - now;
+                                                    public void onResponse(
+                                                            TransactionReceipt receipt) {
+                                                        long cost =
+                                                                System.currentTimeMillis() - now;
                                                         collector.onMessage(receipt, cost);
                                                         receivedBar.step();
                                                         countDownLatch.countDown();
@@ -176,8 +175,10 @@ public class PerformanceTableV320 {
                                                 tableTest,
                                                 new TransactionCallback() {
                                                     @Override
-                                                    public void onResponse(TransactionReceipt receipt) {
-                                                        long cost = System.currentTimeMillis() - now;
+                                                    public void onResponse(
+                                                            TransactionReceipt receipt) {
+                                                        long cost =
+                                                                System.currentTimeMillis() - now;
                                                         collector.onMessage(receipt, cost);
                                                         receivedBar.step();
                                                         countDownLatch.countDown();
@@ -219,7 +220,11 @@ public class PerformanceTableV320 {
     }
 
     private static void callTableOperationWithRange(
-            String command, TableTestV320 tableTest, int from, int to, TransactionCallback callback) {
+            String command,
+            TableTestV320 tableTest,
+            int from,
+            int to,
+            TransactionCallback callback) {
         if (command.compareToIgnoreCase("update") == 0) {
             updateRange(tableTest, from, to, callback);
         }
@@ -242,15 +247,24 @@ public class PerformanceTableV320 {
 
     private static void insert(TableTestV320 tableTest, TransactionCallback callback) {
         long nextID = getNextID();
-        tableTest.insert(BigInteger.valueOf(getNextID()), "apple" + getId(), String.valueOf(nextID), callback);
+        tableTest.insert(
+                BigInteger.valueOf(getNextID()),
+                "apple" + getId(),
+                String.valueOf(nextID),
+                callback);
     }
 
     private static void update(TableTestV320 tableTest, TransactionCallback callback) {
         long nextID = getNextID();
-        tableTest.update(BigInteger.valueOf(getNextID()), "apple" + getId(), String.valueOf(nextID), callback);
+        tableTest.update(
+                BigInteger.valueOf(getNextID()),
+                "apple" + getId(),
+                String.valueOf(nextID),
+                callback);
     }
 
-    private static void updateRange(TableTestV320 tableTest, int from, int to, TransactionCallback callback) {
+    private static void updateRange(
+            TableTestV320 tableTest, int from, int to, TransactionCallback callback) {
         tableTest.update(BigInteger.valueOf(from), BigInteger.valueOf(to), callback);
     }
 
@@ -258,7 +272,8 @@ public class PerformanceTableV320 {
         tableTest.remove(BigInteger.valueOf(getNextID()), callback);
     }
 
-    private static void removeRange(TableTestV320 tableTest, int from, int to, TransactionCallback callback) {
+    private static void removeRange(
+            TableTestV320 tableTest, int from, int to, TransactionCallback callback) {
         tableTest.remove(BigInteger.valueOf(from), BigInteger.valueOf(to), callback);
     }
 
@@ -274,7 +289,8 @@ public class PerformanceTableV320 {
         }
     }
 
-    private static void selectRange(TableTestV320 tableTest, int from, int to, TransactionCallback callback) {
+    private static void selectRange(
+            TableTestV320 tableTest, int from, int to, TransactionCallback callback) {
         TransactionReceipt receipt = new TransactionReceipt();
         try {
             tableTest.select(BigInteger.valueOf(from), BigInteger.valueOf(to));

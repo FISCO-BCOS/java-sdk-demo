@@ -4,13 +4,14 @@ plugins {
     id 'java-library'
     id 'jacoco'
     id 'maven-publish'
+    id 'com.github.sherter.google-java-format' version '0.9'
 }
 
 println("Notice: current gradle version is " + gradle.gradleVersion)
 // Additional attribute definition
 ext {
     // jackson version
-    javaSDKVersion="3.2.0"
+    javaSDKVersion="3.3.0-SNAPSHOT"
     //solcJVersion = "0.4.25.1"
     //solcJVersion = "0.5.2.1"
     //solcJVersion = "0.6.10.1"
@@ -21,7 +22,7 @@ ext {
 }
 
 archivesBaseName = 'java-sdk-demo'
-version = '3.2.0'
+version = '3.3.0'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -82,6 +83,16 @@ List logger = [
         "org.apache.logging.log4j:log4j-slf4j-impl:$log4j_version",
         "org.apache.logging.log4j:log4j-web:$log4j_version"
 ]
+
+googleJavaFormat {
+    toolVersion = '1.7'
+    options style: 'AOSP'
+    source = sourceSets*.allJava
+    include '**/*.java'
+    exclude '**/*Test.java'
+    exclude '**/Test*.java'
+    exclude '**/Mock*.java'
+}
 
 dependencies {
     compile ("org.fisco-bcos.java-sdk:fisco-bcos-java-sdk:${javaSDKVersion}")
