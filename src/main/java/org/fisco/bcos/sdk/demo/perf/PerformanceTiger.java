@@ -499,7 +499,7 @@ public class PerformanceTiger {
         System.out.println("Create tiger hole...");
         TigerHoleV2 tigerHole =
                 TigerHoleV2.deploy(client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
-        //tigerHole.enableParallel();
+        // tigerHole.enableParallel();
         System.out.println("Create tiger v2 hole finished!");
 
         Map<String, Integer> seedUsers = createSeedUsers(tigerHole, count, executor);

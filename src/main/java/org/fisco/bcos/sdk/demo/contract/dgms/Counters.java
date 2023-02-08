@@ -9,13 +9,19 @@ import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 
 @SuppressWarnings("unchecked")
 public class Counters extends Contract {
-    public static final String[] BINARY_ARRAY = {"604c602c600b82828239805160001a60731460008114601c57601e565bfe5b5030600052607381538281f30073000000000000000000000000000000000000000030146080604052600080fd00a165627a7a723058208b8b00d18656131bcb7ffb26364c7cb287712e64351b80e2983ea3fff4881fd20029"};
+    public static final String[] BINARY_ARRAY = {
+        "604c602c600b82828239805160001a60731460008114601c57601e565bfe5b5030600052607381538281f30073000000000000000000000000000000000000000030146080604052600080fd00a165627a7a723058208b8b00d18656131bcb7ffb26364c7cb287712e64351b80e2983ea3fff4881fd20029"
+    };
 
-    public static final String BINARY = org.fisco.bcos.sdk.v3.utils.StringUtils.joinAll("", BINARY_ARRAY);
+    public static final String BINARY =
+            org.fisco.bcos.sdk.v3.utils.StringUtils.joinAll("", BINARY_ARRAY);
 
-    public static final String[] SM_BINARY_ARRAY = {"604c602c600b82828239805160001a60731460008114601c57601e565bfe5b5030600052607381538281f30073000000000000000000000000000000000000000030146080604052600080fd00a165627a7a723058202ecf0f2f49959d2172ab2f7ecb18b23412d20a03d8b9980b83bbb89754f64a6c0029"};
+    public static final String[] SM_BINARY_ARRAY = {
+        "604c602c600b82828239805160001a60731460008114601c57601e565bfe5b5030600052607381538281f30073000000000000000000000000000000000000000030146080604052600080fd00a165627a7a723058202ecf0f2f49959d2172ab2f7ecb18b23412d20a03d8b9980b83bbb89754f64a6c0029"
+    };
 
-    public static final String SM_BINARY = org.fisco.bcos.sdk.v3.utils.StringUtils.joinAll("", SM_BINARY_ARRAY);
+    public static final String SM_BINARY =
+            org.fisco.bcos.sdk.v3.utils.StringUtils.joinAll("", SM_BINARY_ARRAY);
 
     public static final String[] ABI_ARRAY = {"[]"};
 
@@ -37,8 +43,15 @@ public class Counters extends Contract {
         return new Counters(contractAddress, client, credential);
     }
 
-    public static Counters deploy(Client client, CryptoKeyPair credential) throws
-            ContractException {
-        return deploy(Counters.class, client, credential, getBinary(client.getCryptoSuite()), getABI(), null, null);
+    public static Counters deploy(Client client, CryptoKeyPair credential)
+            throws ContractException {
+        return deploy(
+                Counters.class,
+                client,
+                credential,
+                getBinary(client.getCryptoSuite()),
+                getABI(),
+                null,
+                null);
     }
 }

@@ -22,6 +22,7 @@ import org.fisco.bcos.sdk.demo.perf.parallel.DagPrecompiledDemo;
 import org.fisco.bcos.sdk.demo.perf.parallel.ParallelOkDemo;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.contract.precompiled.sharding.ShardingService;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
@@ -29,6 +30,7 @@ import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 public class ParallelOkPerf {
     private static Client client;
     private static DagUserInfo dagUserInfo = new DagUserInfo();
+    private static ShardingService shardingService;
 
     public static void Usage() {
         System.out.println(" Usage:");
@@ -84,6 +86,8 @@ public class ParallelOkPerf {
             ThreadPoolService threadPoolService =
                     new ThreadPoolService(
                             "ParallelOkPerf", Runtime.getRuntime().availableProcessors());
+            shardingService =
+                    new ShardingService(client, client.getCryptoSuite().getCryptoKeyPair());
 
             if (perfType.compareToIgnoreCase("parallelok") == 0) {
                 parallelOkPerf(
@@ -137,10 +141,14 @@ public class ParallelOkPerf {
                 parallelOk =
                         ParallelOk.deploy(
                                 client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
+                String shardName = "shard" + parallelOk.getContractAddress();
+                try {
+                    shardingService.linkShard(shardName, parallelOk.getContractAddress());
+                } catch (ContractException e){}
 
                 System.out.println(
                         "====== ParallelOk userAdd, deploy success, address: "
-                                + parallelOk.getContractAddress());
+                                + shardName);
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.userAdd(BigInteger.valueOf(count), BigInteger.valueOf(qps));
                 break;
