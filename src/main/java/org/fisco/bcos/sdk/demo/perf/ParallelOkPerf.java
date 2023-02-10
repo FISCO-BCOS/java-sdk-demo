@@ -142,7 +142,9 @@ public class ParallelOkPerf {
                         ParallelOk.deploy(
                                 client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
                 String shardName = "shard" + parallelOk.getContractAddress();
-                shardingService.linkShard(shardName, parallelOk.getContractAddress());
+                try {
+                    shardingService.linkShard(shardName, parallelOk.getContractAddress());
+                } catch (ContractException e){}
 
                 System.out.println(
                         "====== ParallelOk userAdd, deploy success, address: "
