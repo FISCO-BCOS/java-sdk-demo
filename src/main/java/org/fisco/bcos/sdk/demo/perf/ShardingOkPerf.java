@@ -97,6 +97,124 @@ public class ShardingOkPerf {
         }
     }
 
+    public static void addOneShard(
+            Integer shardNum,
+            Integer count,
+            Integer qps,
+            Integer conflictPercent,
+            ThreadPoolService threadPoolService,
+            boolean isParallel) throws IOException, InterruptedException, ContractException {
+
+    }
+
+
+    public static void add(
+            Integer shardNum,
+            Integer count,
+            Integer qps,
+            Integer conflictPercent,
+            ThreadPoolService threadPoolService,
+            boolean isParallel) throws IOException, InterruptedException, ContractException {
+
+        int txtotal = count * shardNum;
+        ParallelOk[] contracts = new ParallelOk[shardNum];
+        CountDownLatch transactionLatch = new CountDownLatch((int) txtotal);
+        AtomicLong totalCost = new AtomicLong(0);
+
+        ProgressBar sendedBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Send   :")
+                        .setInitialMax(txtotal)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        ProgressBar receivedBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Receive:")
+                        .setInitialMax(txtotal)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+
+        // deploy ParallelOk
+        for (int i = 0; i < shardNum; i++) {
+            String shardName = "testShard" + i;
+            ParallelOk parallelOk =
+                    ParallelOk.deploy(
+                            client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
+            contracts[i] = parallelOk;
+            shardingService.linkShard("testShard" + i, parallelOk.getContractAddress());
+            System.out.println(
+                    "====== ShardingOk userAdd, deploy success to shard: "
+                            + shardName
+                            + ", address: "
+                            + parallelOk.getContractAddress());
+        }
+        Collector collector = new Collector();
+        collector.setTotal((int) txtotal);
+
+        System.out.println("Start userAdd test...");
+        System.out.println("===================================================================");
+
+        RateLimiter limiter = RateLimiter.create(qps.intValue());
+        for (int i = 0; i < count; ++i) {
+            limiter.acquire();
+            long seconds = System.currentTimeMillis() / 1000L;
+            String user = Long.toHexString(seconds) + Integer.toHexString(i);
+            BigInteger amount = BigInteger.valueOf(1000000000);
+            DagTransferUser dtu = new DagTransferUser();
+            dtu.setUser(user);
+            dtu.setAmount(amount);
+
+            for (int j = 0; j < shardNum; j++) {
+                final int index = j;
+                threadPoolService
+                        .getThreadPool()
+                        .execute(
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        ParallelOk contract = contracts[index];
+                                        long now = System.currentTimeMillis();
+                                        contract.set(
+                                                user,
+                                                amount,
+                                                new TransactionCallback() {
+                                                    public void onResponse(
+                                                            TransactionReceipt receipt) {
+                                                        long cost =
+                                                                System.currentTimeMillis() - now;
+                                                        collector.onMessage(receipt, cost);
+                                                        receivedBar.step();
+                                                        transactionLatch.countDown();
+                                                        totalCost.addAndGet(
+                                                                System.currentTimeMillis() - now);
+                                                    }
+                                                });
+                                        sendedBar.step();
+                                    }
+                                });
+            }
+            dagUserInfo.addUser(dtu);
+        }
+        transactionLatch.await();
+        System.out.println("Sending transactions finished!");
+        dagUserInfo.writeDagTransferUser();
+        collector.report();
+        sendedBar.close();
+        receivedBar.close();
+    }
+
+    public static void transferOneShard(
+            Integer shardNum,
+            Integer count,
+            Integer qps,
+            Integer conflictPercent,
+            ThreadPoolService threadPoolService,
+            boolean isParallel)
+            throws IOException, InterruptedException, ContractException {
+
+
+    }
+
     public static void shardingOkPerf(
             String groupId,
             Integer shardNum,
@@ -119,117 +237,19 @@ public class ShardingOkPerf {
                         + ", isParallel: "
                         + isParallel);
 
-        int txtotal = count * shardNum;
-        ParallelOk[] contracts = new ParallelOk[shardNum];
-        Collector collector = new Collector();
-        collector.setTotal((int) txtotal);
-        CountDownLatch transactionLatch = new CountDownLatch((int) txtotal);
-        AtomicLong totalCost = new AtomicLong(0);
-
-        ProgressBar sendedBar =
-                new ProgressBarBuilder()
-                        .setTaskName("Send   :")
-                        .setInitialMax(txtotal)
-                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
-                        .build();
-        ProgressBar receivedBar =
-                new ProgressBarBuilder()
-                        .setTaskName("Receive:")
-                        .setInitialMax(txtotal)
-                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
-                        .build();
-
         switch (command) {
             case "add":
-                // deploy ShardingOk
-                for (int i = 0; i < shardNum; i++) {
-                    String shardName = "testShard" + i;
-                    ParallelOk parallelOk =
-                            ParallelOk.deploy(
-                                    client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
-                    contracts[i] = parallelOk;
-                    shardingService.linkShard("testShard" + i, parallelOk.getContractAddress());
-                    System.out.println(
-                            "====== ShardingOk userAdd, deploy success to shard: "
-                                    + shardName
-                                    + ", address: "
-                                    + parallelOk.getContractAddress());
-                }
-
-                System.out.println("Start userAdd test...");
-                System.out.println(
-                        "===================================================================");
-
-                RateLimiter limiter = RateLimiter.create(qps.intValue());
-                for (int i = 0; i < count; ++i) {
-                    limiter.acquire();
-                    long seconds = System.currentTimeMillis() / 1000L;
-                    String user = Long.toHexString(seconds) + Integer.toHexString(i);
-                    BigInteger amount = BigInteger.valueOf(1000000000);
-                    DagTransferUser dtu = new DagTransferUser();
-                    dtu.setUser(user);
-                    dtu.setAmount(amount);
-
-                    for (int j = 0; j < shardNum; j++) {
-                        final int index = j;
-                        threadPoolService
-                                .getThreadPool()
-                                .execute(
-                                        new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                ParallelOk contract = contracts[index];
-                                                long now = System.currentTimeMillis();
-                                                contract.set(
-                                                        user,
-                                                        amount,
-                                                        new TransactionCallback() {
-                                                            public void onResponse(
-                                                                    TransactionReceipt receipt) {
-                                                                long cost =
-                                                                        System.currentTimeMillis()
-                                                                                - now;
-                                                                collector.onMessage(receipt, cost);
-                                                                receivedBar.step();
-                                                                transactionLatch.countDown();
-                                                                totalCost.addAndGet(
-                                                                        System.currentTimeMillis()
-                                                                                - now);
-                                                            }
-                                                        });
-                                                sendedBar.step();
-                                            }
-                                        });
-                    }
-                    dagUserInfo.addUser(dtu);
-                }
-                transactionLatch.await();
-                System.out.println("Sending transactions finished!");
-                dagUserInfo.writeDagTransferUser();
-
+                add(shardNum, count, qps,conflictPercent, threadPoolService, isParallel);
                 break;
             case "transfer":
-                /*
-                               dagUserInfo.loadDagTransferUser();
-                               parallelOk =
-                                       ParallelOk.load(
-                                               dagUserInfo.getContractAddr(),
-                                               client,
-                                               client.getCryptoSuite().getCryptoKeyPair());
-                               System.out.println(
-                                       "====== ShardingOk trans, load success, address: "
-                                               + parallelOk.getContractAddress());
 
-                               System.out.println("Start transfer...");
-                               parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
-                               parallelOkDemo.userTransfer(BigInteger.valueOf(count), BigInteger.valueOf(qps));
-
-                */
                 break;
             default:
                 System.out.println("invalid command: " + command);
                 Usage();
                 break;
         }
+
+
     }
 }
