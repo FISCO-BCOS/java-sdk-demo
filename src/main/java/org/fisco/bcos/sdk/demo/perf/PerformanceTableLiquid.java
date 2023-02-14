@@ -97,7 +97,7 @@ public class PerformanceTableLiquid {
 
             // deploy the TableTest
             System.out.println("====== Deploy TableTest ====== ");
-            String tableTestPath = "table_test" + new Random().nextInt(100000);
+            String tableTestPath = "table_test" + new Random().nextInt(Integer.MAX_VALUE);
             System.out.println("====== Deploy contract address: " + tableTestPath + " ====== ");
 
             TableTestLiquid tableTestLiquid =

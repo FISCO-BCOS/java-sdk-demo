@@ -85,7 +85,7 @@ public class ParallelLiquidPerf {
                         + ", groupId: "
                         + groupId);
         ParallelOkLiquid parallelOkLiquid;
-        String parallelOkPath = "parallelOk" + new Random().nextInt(1000);
+        String parallelOkPath = "parallelOk" + new Random().nextInt(Integer.MAX_VALUE);
         ParallelLiquidDemo parallelLiquidDemo;
         switch (command) {
             case "add":
