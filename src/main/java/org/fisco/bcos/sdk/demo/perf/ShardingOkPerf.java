@@ -103,10 +103,8 @@ public class ShardingOkPerf {
             Integer qps,
             Integer conflictPercent,
             ThreadPoolService threadPoolService,
-            boolean isParallel) throws IOException, InterruptedException, ContractException {
-
-    }
-
+            boolean isParallel)
+            throws IOException, InterruptedException, ContractException {}
 
     public static void add(
             Integer shardNum,
@@ -114,7 +112,8 @@ public class ShardingOkPerf {
             Integer qps,
             Integer conflictPercent,
             ThreadPoolService threadPoolService,
-            boolean isParallel) throws IOException, InterruptedException, ContractException {
+            boolean isParallel)
+            throws IOException, InterruptedException, ContractException {
 
         int txtotal = count * shardNum;
         ParallelOk[] contracts = new ParallelOk[shardNum];
@@ -210,10 +209,7 @@ public class ShardingOkPerf {
             Integer conflictPercent,
             ThreadPoolService threadPoolService,
             boolean isParallel)
-            throws IOException, InterruptedException, ContractException {
-
-
-    }
+            throws IOException, InterruptedException, ContractException {}
 
     public static void shardingOkPerf(
             String groupId,
@@ -239,17 +235,14 @@ public class ShardingOkPerf {
 
         switch (command) {
             case "add":
-                add(shardNum, count, qps,conflictPercent, threadPoolService, isParallel);
+                add(shardNum, count, qps, conflictPercent, threadPoolService, isParallel);
                 break;
             case "transfer":
-
                 break;
             default:
                 System.out.println("invalid command: " + command);
                 Usage();
                 break;
         }
-
-
     }
 }

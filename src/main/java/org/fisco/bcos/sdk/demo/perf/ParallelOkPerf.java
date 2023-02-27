@@ -144,11 +144,11 @@ public class ParallelOkPerf {
                 String shardName = "shard" + parallelOk.getContractAddress();
                 try {
                     shardingService.linkShard(shardName, parallelOk.getContractAddress());
-                } catch (ContractException e){}
+                } catch (ContractException e) {
+                }
 
                 System.out.println(
-                        "====== ParallelOk userAdd, deploy success, address: "
-                                + shardName);
+                        "====== ParallelOk userAdd, deploy success, address: " + shardName);
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.userAdd(BigInteger.valueOf(count), BigInteger.valueOf(qps));
                 break;
