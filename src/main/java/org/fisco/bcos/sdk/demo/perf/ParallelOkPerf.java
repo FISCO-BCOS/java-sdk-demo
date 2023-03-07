@@ -64,8 +64,8 @@ public class ParallelOkPerf {
             if (args.length < 6) {
                 Usage();
                 return;
-            } else if (args.length == 7) {
-                isParallel = Boolean.parseBoolean(args[6]);
+            } else if (args.length == 8) {
+                isParallel = Boolean.parseBoolean(args[7]);
             }
             String perfType = args[0];
             String groupId = args[1];
@@ -165,7 +165,7 @@ public class ParallelOkPerf {
 
                 System.out.println("Start transfer...");
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
-                parallelOkDemo.userTransfer(BigInteger.valueOf(count), BigInteger.valueOf(qps));
+                parallelOkDemo.userTransfer(count, BigInteger.valueOf(qps));
                 break;
             case "generate":
                 dagUserInfo.loadDagTransferUser();

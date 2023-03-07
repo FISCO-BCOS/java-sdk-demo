@@ -28,7 +28,6 @@ import me.tongfei.progressbar.ProgressBarStyle;
 import org.fisco.bcos.sdk.demo.contract.DmcTransfer;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
-import org.fisco.bcos.sdk.v3.contract.precompiled.model.PrecompiledVersionCheck;
 import org.fisco.bcos.sdk.v3.contract.precompiled.sharding.ShardingService;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
@@ -137,10 +136,11 @@ public class DMCTransferRing {
                                                         client.getCryptoSuite().getCryptoKeyPair());
                                         String address = contract.getContractAddress();
 
-                                        try{
+                                        try {
                                             shardingService.linkShard(
                                                     "dmctest" + address.substring(0, 4), address);
-                                        } catch (ContractException e){}
+                                        } catch (ContractException e) {
+                                        }
 
                                         String sender =
                                                 contract.addBalance(BigInteger.valueOf(initBalance))
@@ -373,6 +373,7 @@ public class DMCTransferRing {
                             + ", expectBalance is "
                             + expectBalance);
         }
-        System.out.println("check finished, total balance equal expectBalance! " + total.intValue());
+        System.out.println(
+                "check finished, total balance equal expectBalance! " + total.intValue());
     }
 }

@@ -136,10 +136,11 @@ public class DMCTransferStar {
                                                         client,
                                                         client.getCryptoSuite().getCryptoKeyPair());
                                         String address = contract.getContractAddress();
-                                        try{
+                                        try {
                                             shardingService.linkShard(
                                                     "dmctest" + address.substring(0, 4), address);
-                                        } catch (ContractException e){}
+                                        } catch (ContractException e) {
+                                        }
                                         String sender =
                                                 contract.addBalance(BigInteger.valueOf(initBalance))
                                                         .getFrom();
