@@ -138,10 +138,11 @@ public class DMCTransferDag {
                                         contracts[index] = contract;
                                         String address = contract.getContractAddress();
                                         contractsAddr[index] = address;
-                                        try{
+                                        try {
                                             shardingService.linkShard(
                                                     "dmctest" + address.substring(0, 4), address);
-                                        } catch (ContractException e){}
+                                        } catch (ContractException e) {
+                                        }
                                         contractLatch.countDown();
                                     } catch (ContractException e) {
                                         e.printStackTrace();
