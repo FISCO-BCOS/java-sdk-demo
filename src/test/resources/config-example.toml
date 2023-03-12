@@ -16,6 +16,7 @@ useSMCrypto = "false"
 # enSslKey = "conf/sm_ensdk.key"                # SM ssl cert file path
 
 [network]
+sendRpcRequestToHighestBlockNode="false"
 peers=["127.0.0.1:20200", "127.0.0.1:20201"]    # The peer list to connect
 
 [account]
