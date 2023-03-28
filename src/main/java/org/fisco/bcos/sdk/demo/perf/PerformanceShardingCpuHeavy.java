@@ -14,6 +14,16 @@
 package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.URL;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
@@ -29,22 +39,10 @@ import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.net.URL;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
 public class PerformanceShardingCpuHeavy {
     private static final int DEFAULT_SORT_ARRAY_SIZE = 100000;
     private static Client client;
     private static ShardingService shardingService;
-
 
     public static void Usage() {
         System.out.println(" Usage:");
@@ -244,7 +242,8 @@ public class PerformanceShardingCpuHeavy {
                                                             client,
                                                             client.getCryptoSuite()
                                                                     .getCryptoKeyPair());
-                                            shardingService.linkShard(shardName, contract.getContractAddress());
+                                            shardingService.linkShard(
+                                                    shardName, contract.getContractAddress());
                                             if (enableParallel) {
                                                 contract.enableParallel();
                                             }

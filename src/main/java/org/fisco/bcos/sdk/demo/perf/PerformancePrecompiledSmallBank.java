@@ -43,7 +43,7 @@ import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
 public class PerformancePrecompiledSmallBank {
     private static Client client;
-    private static DagUserInfo dagUserInfo = new DagUserInfo();;
+    private static DagUserInfo dagUserInfo = new DagUserInfo();
 
     public static void Usage() {
         System.out.println(" Usage:");
