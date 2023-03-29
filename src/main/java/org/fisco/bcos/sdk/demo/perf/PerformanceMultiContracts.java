@@ -104,6 +104,7 @@ public class PerformanceMultiContracts {
         System.out.println("deploy and add 10000 users of SmallBankPrecompiled use DAG...");
         SmallBank smallBank =
                 SmallBank.deploy(client, client.getCryptoSuite().getCryptoKeyPair(), true);
+        smallBank.setEnableDAG(true);
         // add users of smallBank
         DagUserInfo dagUserInfo = new DagUserInfo();
         IntStream.range(0, 10000)
@@ -142,10 +143,11 @@ public class PerformanceMultiContracts {
         EvidenceSignersData evidenceSignersData =
                 EvidenceSignersData.deploy(
                         client, client.getCryptoSuite().getCryptoKeyPair(), evidenceSigners);
-        System.out.println("load CpuHeavyPrecompiled array length 1k...");
-
+        System.out.println("load CpuHeavyPrecompiled array length 100k...");
+        int arrayLength = 100000;
         CpuHeavyPrecompiled cpuHeavy =
                 CpuHeavyPrecompiled.load(0, client, client.getCryptoSuite().getCryptoKeyPair());
+        cpuHeavy.setEnableDAG(true);
         int contractCount = 4;
         if (enableShard) {
             shardingService.linkShard("shardWeID", weID.getContractAddress());
@@ -256,7 +258,7 @@ public class PerformanceMultiContracts {
                                     // cpuHeavy
                                     now = System.currentTimeMillis();
                                     cpuHeavy.sort(
-                                            BigInteger.valueOf(1000),
+                                            BigInteger.valueOf(arrayLength),
                                             BigInteger.valueOf(index),
                                             new TransactionCallback() {
                                                 @Override
