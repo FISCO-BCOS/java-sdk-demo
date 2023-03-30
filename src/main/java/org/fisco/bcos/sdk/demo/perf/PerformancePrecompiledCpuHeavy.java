@@ -207,7 +207,9 @@ public class PerformancePrecompiledCpuHeavy {
                         + ", groupId: "
                         + groupId
                         + ", enableParallel: "
-                        + enableParallel);
+                        + enableParallel
+                        + ", sortArraySize: "
+                        + sortArraySize);
 
         RateLimiter limiter = RateLimiter.create(qps.intValue());
 
