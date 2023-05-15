@@ -176,6 +176,7 @@ public class ParallelOkPerf {
                                 client.getCryptoSuite().getCryptoKeyPair());
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.generateTransferTxs(
+                        client.getGroup(),
                         BigInteger.valueOf(count),
                         "parallelOKTxs.txt",
                         BigInteger.valueOf(qps),
