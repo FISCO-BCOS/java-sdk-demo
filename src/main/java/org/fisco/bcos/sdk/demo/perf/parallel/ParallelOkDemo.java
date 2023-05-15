@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.IntStream;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
@@ -235,76 +237,139 @@ public class ParallelOkDemo {
     }
 
     public void generateTransferTxs(
-            String groupID,
-            BigInteger count,
-            String txsFile,
-            BigInteger qps,
-            BigInteger conflictPercent)
+            String groupID, int count, String txsPath, BigInteger qps, BigInteger conflictPercent)
             throws InterruptedException, IOException {
-        File file = new File(txsFile);
-        if (!file.exists()) {
-            file.createNewFile();
+
+        // if txsPath not exist, create it
+        File txsDir = new File(txsPath);
+        if (!txsDir.exists()) {
+            txsDir.mkdir();
         }
         System.out.println(
                 "ParallelOkDemo: test generateTransferTxs, count: "
                         + count
-                        + ", txsFile: "
-                        + txsFile);
+                        + ", txsPath: "
+                        + txsPath);
         System.out.println("===================================================================");
         // queryAccount(qps);
-        FileWriter fileWriter = new FileWriter(file.getName(), true);
-        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        int threads = Runtime.getRuntime().availableProcessors();
+        BufferedWriter[] bufferedWriters = new BufferedWriter[threads];
+        Lock[] locks = new ReentrantLock[threads];
+        for (int i = 0; i < threads; i++) {
+            String fileName = txsPath + "/" + i + ".txt";
+            File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            FileWriter fileWriter = new FileWriter(fileName, true);
+            bufferedWriters[i] = new BufferedWriter(fileWriter);
+            locks[i] = new ReentrantLock();
+        }
         System.out.println(
                 "ParallelOkDemo: start generateTransferTxs, count: "
                         + count
-                        + ", txsFile: "
-                        + txsFile);
-        AtomicInteger generated = new AtomicInteger(0);
-        Integer area = count.intValue() / 10;
-        for (Integer i = 0; i < count.intValue(); i++) {
+                        + ", txsPath: "
+                        + txsPath);
+        ProgressBar generatedBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Generated   :")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        CountDownLatch transactionLatch = new CountDownLatch(count);
+        for (Integer i = 0; i < count; i++) {
             final Integer index = i;
+            threadPoolService
+                    .getThreadPool()
+                    .execute(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    DagTransferUser from = dagUserInfo.getFrom(index);
+                                    DagTransferUser to = dagUserInfo.getTo(index);
+                                    // if ((conflictPercent.intValue() > 0)
+                                    //         && (index
+                                    //                 <= (conflictPercent.intValue() * count)
+                                    //                         / 100)) {
+                                    //     to = dagUserInfo.getNext(index);
+                                    // }
+                                    Random random = new Random();
+                                    int r = random.nextInt(100) + 1;
+                                    BigInteger amount = BigInteger.valueOf(r);
+                                    String txData =
+                                            parallelOk.getSignedTransactionForTransfer(
+                                                    from.getUser(), to.getUser(), amount);
+                                    JsonRpcRequest request =
+                                            new JsonRpcRequest<>(
+                                                    "sendTransaction",
+                                                    Arrays.asList(groupID, "", txData, false));
+                                    ObjectMapper objectMapper =
+                                            ObjectMapperFactory.getObjectMapper();
+                                    int fileIndex = index % threads;
+                                    try {
+                                        locks[fileIndex].lock();
+                                        bufferedWriters[fileIndex].write(
+                                                objectMapper.writeValueAsString(request));
+                                        bufferedWriters[fileIndex].newLine();
+                                        locks[fileIndex].unlock();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
 
-            DagTransferUser from = dagUserInfo.getFrom(index);
-            DagTransferUser to = dagUserInfo.getTo(index);
-            if ((conflictPercent.intValue() > 0)
-                    && (index <= (conflictPercent.intValue() * count.intValue()) / 100)) {
-                to = dagUserInfo.getNext(index);
-            }
-            Random random = new Random();
-            int r = random.nextInt(100) + 1;
-            BigInteger amount = BigInteger.valueOf(r);
-            String txData =
-                    parallelOk.getSignedTransactionForTransfer(
-                            from.getUser(), to.getUser(), amount);
-            JsonRpcRequest request =
-                    new JsonRpcRequest<>(
-                            "sendTransaction", Arrays.asList(groupID, "", txData, false));
-            ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
-            try {
-                bufferedWriter.write(objectMapper.writeValueAsString(request));
-                bufferedWriter.newLine();
-                generated.incrementAndGet();
-                if (generated.get() >= area && ((generated.get() % area) == 0)) {
-                    System.out.println(
-                            "Already generated: "
-                                    + generated.get()
-                                    + "/"
-                                    + count
-                                    + " transactions");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                                    generatedBar.step();
+                                    transactionLatch.countDown();
+                                }
+                            });
         }
-        while (generated.intValue() < count.intValue()) {
-            Thread.sleep(2000);
-        }
+        transactionLatch.await();
+        generatedBar.close();
+        // Integer area = count.intValue() / 10;
+        // for (Integer i = 0; i < count.intValue(); i++) {
+        // final Integer index = i;
+
+        // DagTransferUser from = dagUserInfo.getFrom(index);
+        // DagTransferUser to = dagUserInfo.getTo(index);
+        // if ((conflictPercent.intValue() > 0)
+        // && (index <= (conflictPercent.intValue() * count.intValue()) / 100)) {
+        // to = dagUserInfo.getNext(index);
+        // }
+        // Random random = new Random();
+        // int r = random.nextInt(100) + 1;
+        // BigInteger amount = BigInteger.valueOf(r);
+        // String txData =
+        // parallelOk.getSignedTransactionForTransfer(
+        // from.getUser(), to.getUser(), amount);
+        // JsonRpcRequest request =
+        // new JsonRpcRequest<>(
+        // "sendTransaction", Arrays.asList(groupID, "", txData, false));
+        // ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
+        // try {
+        // bufferedWriter.write(objectMapper.writeValueAsString(request));
+        // bufferedWriter.newLine();
+        // generated.incrementAndGet();
+        // if (generated.get() >= area && ((generated.get() % area) == 0)) {
+        // System.out.println(
+        // "Already generated: "
+        // + generated.get()
+        // + "/"
+        // + count
+        // + " transactions");
+        // }
+        // } catch (IOException e) {
+        // e.printStackTrace();
+        // }
+        // }
+        // while (generated.intValue() < count.intValue()) {
+        // Thread.sleep(2000);
+        // }
         System.out.println(
                 "ParallelOkDemo: generateTransferTxs success ! count: "
                         + count
-                        + ", txsFile: "
-                        + txsFile);
-        bufferedWriter.close();
+                        + ", txsPath: "
+                        + txsPath);
+        for (int i = 0; i < threads; i++) {
+            bufferedWriters[i].close();
+        }
         System.exit(0);
     }
 

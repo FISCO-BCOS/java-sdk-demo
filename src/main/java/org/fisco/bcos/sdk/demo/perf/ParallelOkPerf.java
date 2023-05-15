@@ -177,8 +177,8 @@ public class ParallelOkPerf {
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.generateTransferTxs(
                         client.getGroup(),
-                        BigInteger.valueOf(count),
-                        "parallelOKTxs.txt",
+                        count,
+                        "parallelOKTxs",
                         BigInteger.valueOf(qps),
                         BigInteger.valueOf(conflictPercent));
                 break;
