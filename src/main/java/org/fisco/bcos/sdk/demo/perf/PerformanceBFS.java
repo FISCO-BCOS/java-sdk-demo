@@ -38,7 +38,7 @@ public class PerformanceBFS {
     private static final Set<String> supportCommands =
             new HashSet<>(Arrays.asList("mkdir", "link"));
     private static String contractAddress;
-    private static EnumNodeVersion version;
+    private static EnumNodeVersion.Version version;
 
     private static void Usage() {
         System.out.println(" Usage:");
@@ -183,7 +183,7 @@ public class PerformanceBFS {
 
     private static void link(BFSPrecompiled bfsPrecompiled, TransactionCallback callback) {
         String nextID = getNextID();
-        if (version.compareToVersion(EnumNodeVersion.BCOS_3_1_0) >= 0) {
+        if (version.compareTo(EnumNodeVersion.BCOS_3_1_0.toVersionObj()) >= 0) {
             bfsPrecompiled.link("/apps/link" + nextID, contractAddress, "", callback);
         } else {
             bfsPrecompiled.link("link", nextID, contractAddress, "", callback);
