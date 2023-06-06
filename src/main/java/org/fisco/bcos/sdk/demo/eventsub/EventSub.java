@@ -1,5 +1,6 @@
 package org.fisco.bcos.sdk.demo.eventsub;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URL;
 import java.util.ArrayList;
@@ -37,8 +38,7 @@ public class EventSub {
         System.exit(0);
     }
 
-    public static void main(String[] args) throws ConfigException, JniException {
-
+    public static void main(String[] args) throws ConfigException, JniException, IOException {
         String configFileName = ConstantConfig.CONFIG_FILE_NAME;
         URL configUrl = ParallelOkPerf.class.getClassLoader().getResource(configFileName);
         if (configUrl == null) {
@@ -146,5 +146,7 @@ public class EventSub {
                         System.out.println(" \t logs: " + logs);
                     }
                 });
+        System.in.read();
+        System.exit(0);
     }
 }
