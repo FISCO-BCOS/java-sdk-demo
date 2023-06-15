@@ -90,7 +90,7 @@ public class PerformanceBFS {
                 System.out.println("client is null");
                 return;
             }
-            version = client.getChainVersion();
+            version = client.getChainCompatibilityVersion();
 
             HelloWorld helloWorld =
                     HelloWorld.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
