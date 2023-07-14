@@ -141,7 +141,7 @@ public class PerformancePaillierPrecompiled {
                             int firstIndex = index % numbers;
                             int secondIndex = (index + numbers / 2) % numbers;
                             String first = data[firstIndex];
-                            String second = data[firstIndex];
+                            String second = data[secondIndex];
                             BigInteger result = bigs[firstIndex].add(bigs[secondIndex]);
                             paillierPrecompiled.paillierAdd(
                                     first,
@@ -162,7 +162,11 @@ public class PerformancePaillierPrecompiled {
                                                     PaillierCipher.decrypt(
                                                             output, paillierKeyPair.getPrivate());
                                             if (!ret.equals(result)) {
-                                                System.out.println("result not equal");
+                                                System.out.println(
+                                                        "result not equal, return: "
+                                                                + ret
+                                                                + " expect: "
+                                                                + result);
                                             }
                                         }
                                     });
