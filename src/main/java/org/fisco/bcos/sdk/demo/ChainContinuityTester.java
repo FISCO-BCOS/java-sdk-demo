@@ -77,24 +77,37 @@ public class ChainContinuityTester {
                 getNodeBlocks(nodeId, fromBlock, threadPoolService);
             }
         }
-        System.out.println("finish get node blocks, begin to check continuity...");
+        System.out.println("Finish get node blocks, begin to check continuity...");
+        System.out.println("===================================================");
         for (Map.Entry<String, ConcurrentHashMap<Long, BcosBlock.Block>> concurrentHashMapEntry :
                 nodeBlockMap.entrySet()) {
             checkBlockContinuity(concurrentHashMapEntry);
         }
+        System.out.println("Check continuity finished.");
+        System.out.println("===================================================");
         if (nodeIds.isEmpty()) {
-            return;
+            System.exit(0);
         }
+        System.out.println("Begin to check block consistency...");
         List<ConcurrentHashMap<Long, BcosBlock.Block>> values =
                 new ArrayList<>(nodeBlockMap.values());
+
+        ProgressBar checkBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Checking   :")
+                        .setInitialMax(toBlock.intValue())
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
         for (long i = fromBlock.longValue(); i < toBlock.longValue(); i++) {
             BcosBlock.Block block = values.get(0).get(i);
             if (block == null) {
+                checkBar.close();
                 break;
             }
             for (int j = 1; j < nodeBlockMap.size(); j++) {
                 BcosBlock.Block block1 = values.get(j).get(i);
                 if (block1 == null) {
+                    checkBar.step();
                     break;
                 }
                 boolean equals = block1.equals(block);
@@ -111,10 +124,14 @@ public class ChainContinuityTester {
                 equals = equals && block1.getHash().equals(block.getHash());
                 equals = equals && block1.getGasUsed().equals(block.getGasUsed());
                 if (!equals) {
-                    System.out.println("block continuity check failed, blockNumber:" + i);
+                    System.out.println("ERROR: block continuity check failed, blockNumber:" + i);
                 }
+                checkBar.step();
             }
+            checkBar.close();
         }
+        System.out.println("===================================================");
+        System.exit(0);
     }
 
     private static void checkBlockContinuity(
@@ -124,15 +141,10 @@ public class ChainContinuityTester {
                 concurrentHashMapEntry.getValue();
         ConcurrentSkipListSet<String> transactionHashes = new ConcurrentSkipListSet<>();
         final AtomicLong lastTimestamp = new AtomicLong(0);
-        ProgressBar checkBar =
-                new ProgressBarBuilder()
-                        .setTaskName("Checking " + nodeId + " continuity: ")
-                        .setInitialMax(blockConcurrentHashMap.size())
-                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
-                        .build();
+        System.out.println("Checking " + nodeId.substring(0, 8) + "... continuity...");
         blockConcurrentHashMap.forEach(
                 (blockNumber, block) -> {
-                    if (block.getTimestamp() <= lastTimestamp.get()) {
+                    if (block.getTimestamp() < lastTimestamp.get()) {
                         System.out.println(
                                 "block continuity timestamp check failed, nodeId:"
                                         + nodeId
@@ -149,7 +161,7 @@ public class ChainContinuityTester {
                                     transactionHash -> {
                                         if (!transactionHashes.add(transactionHash.get())) {
                                             System.out.println(
-                                                    "block continuity transactionHash check failed, nodeId:"
+                                                    "ERROR: block continuity transactionHash check failed, nodeId:"
                                                             + nodeId
                                                             + ", blockNumber:"
                                                             + blockNumber
@@ -157,9 +169,7 @@ public class ChainContinuityTester {
                                                             + transactionHash.get());
                                         }
                                     });
-                    checkBar.step();
                 });
-        checkBar.close();
     }
 
     public static void getNodeBlocks(
@@ -172,7 +182,7 @@ public class ChainContinuityTester {
         }
         ConcurrentHashMap<Long, BcosBlock.Block> blockConcurrentHashMap = new ConcurrentHashMap<>();
         System.out.println(
-                "get node blocks..., nodeId:"
+                "Get node blocks..., nodeId:"
                         + nodeId
                         + ", blockNumber:"
                         + blockNumber.getBlockNumber().intValue()
@@ -181,20 +191,20 @@ public class ChainContinuityTester {
                         + ", toBlock:"
                         + toBlock.intValue());
 
-        CountDownLatch countDownLatch = new CountDownLatch(blockNumber.getBlockNumber().intValue());
+        CountDownLatch countDownLatch = new CountDownLatch(toBlock.intValue());
         ProgressBar sentBar =
                 new ProgressBarBuilder()
                         .setTaskName("Send   :")
-                        .setInitialMax(blockNumber.getBlockNumber().intValue())
+                        .setInitialMax(toBlock.intValue())
                         .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                         .build();
         ProgressBar receivedBar =
                 new ProgressBarBuilder()
                         .setTaskName("Receive:")
-                        .setInitialMax(blockNumber.getBlockNumber().intValue())
+                        .setInitialMax(toBlock.intValue())
                         .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                         .build();
-        for (long i = 0; i < blockNumber.getBlockNumber().intValue(); i++) {
+        for (long i = fromBlk.longValue(); i < toBlock.longValue(); i++) {
             long finalI = i;
             threadPoolService
                     .getThreadPool()
@@ -204,7 +214,7 @@ public class ChainContinuityTester {
                                         nodeId,
                                         BigInteger.valueOf(finalI),
                                         false,
-                                        false,
+                                        true,
                                         new RespCallback<BcosBlock>() {
                                             @Override
                                             public void onResponse(BcosBlock bcosBlock) {
