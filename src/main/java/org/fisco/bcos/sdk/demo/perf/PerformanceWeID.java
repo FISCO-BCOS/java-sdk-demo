@@ -135,7 +135,6 @@ public class PerformanceWeID {
                             List<String> service = new ArrayList<String>();
                             service.add(String.valueOf(random.nextInt(1000000000)));
                             int contractIndex = index % shards;
-                            // 生成长度为32的随机字符串
                             contracts[contractIndex].createWeId(
                                     String.valueOf(index),
                                     "true",
