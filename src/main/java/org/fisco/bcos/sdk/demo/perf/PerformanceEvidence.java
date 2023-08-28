@@ -164,6 +164,7 @@ public class PerformanceEvidence {
                             String evidence = new String(evidenceBuffer);
                             int contractIndex = index % shards;
                             long now = System.currentTimeMillis();
+                            // 生成长度为32的随机字符串
                             contracts[contractIndex].newEvidence(
                                     evidence,
                                     String.valueOf(index),

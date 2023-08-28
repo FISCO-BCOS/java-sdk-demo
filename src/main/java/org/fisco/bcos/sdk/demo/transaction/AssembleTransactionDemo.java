@@ -20,6 +20,7 @@ public class AssembleTransactionDemo {
     String contractAddress = "0x31231c2abad03b071b3440268f28194029dad743";
 
     public void testDeploy() throws Exception {
+        // 部署HelloWorld合约。第一个参数为合约名称，第二个参数为合约构造函数的列表，是List<Object>类型。
         TransactionResponse response =
                 bcosClientWrapper.transactionProcessor.deployByContractLoader(
                         "HelloWorld", new ArrayList<>());
@@ -46,6 +47,7 @@ public class AssembleTransactionDemo {
     }
 
     public void testCall() throws TransactionBaseException, ContractCodecException {
+        // 查询HelloWorld合约的『name』函数，合约地址为helloWorldAddress，参数为空
         String contractName = "HelloWorld";
         // contractAddress = "0x6aa57232d12f4b516cafc4919219ed56f996613e";
         System.out.println("call address: " + contractAddress);
