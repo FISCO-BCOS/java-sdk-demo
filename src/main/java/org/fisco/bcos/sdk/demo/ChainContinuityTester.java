@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
-
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
@@ -96,7 +95,7 @@ public class ChainContinuityTester {
         ProgressBar checkBar =
                 new ProgressBarBuilder()
                         .setTaskName("Checking   :")
-                        .setInitialMax(toBlock.intValue()- fromBlock.intValue())
+                        .setInitialMax(toBlock.intValue() - fromBlock.intValue())
                         .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                         .build();
         for (long i = fromBlock.longValue(); i < toBlock.longValue(); i++) {
@@ -120,27 +119,27 @@ public class ChainContinuityTester {
                                     equals =
                                             equals
                                                     && (block1.getTimestamp()
-                                                    == block.getTimestamp());
+                                                            == block.getTimestamp());
                                     equals =
                                             equals
                                                     && (Objects.equals(
-                                                    block1.getReceiptsRoot(),
-                                                    block.getReceiptsRoot()));
+                                                            block1.getReceiptsRoot(),
+                                                            block.getReceiptsRoot()));
                                     equals =
                                             equals
                                                     && (Objects.equals(
-                                                    block1.getTransactionsRoot(),
-                                                    block.getTransactionsRoot()));
+                                                            block1.getTransactionsRoot(),
+                                                            block.getTransactionsRoot()));
                                     equals =
                                             equals
                                                     && (Objects.equals(
-                                                    block.getStateRoot(),
-                                                    block1.getStateRoot()));
+                                                            block.getStateRoot(),
+                                                            block1.getStateRoot()));
                                     equals = equals && block1.getHash().equals(block.getHash());
                                     equals =
                                             equals
                                                     && block1.getGasUsed()
-                                                    .equals(block.getGasUsed());
+                                                            .equals(block.getGasUsed());
                                     if (!equals) {
                                         System.out.println(
                                                 "ERROR: block continuity check failed, blockNumber:"
