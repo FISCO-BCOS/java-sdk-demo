@@ -21,9 +21,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
@@ -33,7 +31,7 @@ import java.util.stream.IntStream;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
-import org.fisco.bcos.sdk.demo.contract.EvidenceSignersData;
+import org.fisco.bcos.sdk.demo.contract.SimpleEvidenceFactory;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
 import org.fisco.bcos.sdk.v3.client.protocol.request.JsonRpcRequest;
@@ -44,14 +42,14 @@ import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ObjectMapperFactory;
 
-public class PerformanceEvidence {
+public class PerformanceSimpleEvidence {
     private static Client client;
 
     public static void usage() {
         System.out.println(" Usage:");
-        System.out.println("===== PerformanceEvidence test===========");
+        System.out.println("===== PerformanceSimpleEvidence test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceEvidence [new/generate] [groupId] [count] [qps] [evidenceLength] [shards].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceSimpleEvidence [new/generate] [groupId] [count] [qps] [evidenceLength] [shards].");
     }
 
     public static void main(String[] args)
@@ -120,13 +118,11 @@ public class PerformanceEvidence {
 
         ShardingService shardingService =
                 new ShardingService(client, client.getCryptoSuite().getCryptoKeyPair());
-        List<String> evidenceSigners = new ArrayList<>();
-        evidenceSigners.add(client.getCryptoSuite().getCryptoKeyPair().getAddress());
-        EvidenceSignersData[] contracts = new EvidenceSignersData[shards];
+        SimpleEvidenceFactory[] contracts = new SimpleEvidenceFactory[shards];
         for (int i = 0; i < shards; i++) {
             contracts[i] =
-                    EvidenceSignersData.deploy(
-                            client, client.getCryptoSuite().getCryptoKeyPair(), evidenceSigners);
+                    SimpleEvidenceFactory.deploy(
+                            client, client.getCryptoSuite().getCryptoKeyPair());
             shardingService.linkShard("testShard" + i, contracts[i].getContractAddress());
         }
 
@@ -157,24 +153,18 @@ public class PerformanceEvidence {
                 .forEach(
                         index -> {
                             limiter.acquire();
-                            byte[] data = new byte[32];
-                            random.nextBytes(data);
                             byte[] evidenceBuffer = new byte[evidenceLength];
                             random.nextBytes(evidenceBuffer);
                             String evidence = new String(evidenceBuffer);
                             int contractIndex = index % shards;
                             long now = System.currentTimeMillis();
+                            // 生成长度为32的随机字符串
                             contracts[contractIndex].newEvidence(
                                     evidence,
-                                    String.valueOf(index),
-                                    String.valueOf(index),
                                     BigInteger.valueOf(1),
-                                    data,
-                                    data,
                                     new TransactionCallback() {
                                         @Override
                                         public void onResponse(TransactionReceipt receipt) {
-
                                             long cost = System.currentTimeMillis() - now;
                                             collector.onMessage(receipt, cost);
 
@@ -197,7 +187,7 @@ public class PerformanceEvidence {
             throws IOException, InterruptedException, ContractException {
 
         // if txsPath not exist, create it
-        String txsPath = "newEvidenceTxs";
+        String txsPath = "newSimpleEvidenceTxs";
         File txsDir = new File(txsPath);
         if (!txsDir.exists()) {
             txsDir.mkdir();
@@ -230,13 +220,11 @@ public class PerformanceEvidence {
 
         ShardingService shardingService =
                 new ShardingService(client, client.getCryptoSuite().getCryptoKeyPair());
-        List<String> evidenceSigners = new ArrayList<>();
-        evidenceSigners.add(client.getCryptoSuite().getCryptoKeyPair().getAddress());
-        EvidenceSignersData[] contracts = new EvidenceSignersData[shards];
+        SimpleEvidenceFactory[] contracts = new SimpleEvidenceFactory[shards];
         for (int i = 0; i < shards; i++) {
             contracts[i] =
-                    EvidenceSignersData.deploy(
-                            client, client.getCryptoSuite().getCryptoKeyPair(), evidenceSigners);
+                    SimpleEvidenceFactory.deploy(
+                            client, client.getCryptoSuite().getCryptoKeyPair());
             shardingService.linkShard("testShard" + i, contracts[i].getContractAddress());
         }
 
@@ -259,8 +247,6 @@ public class PerformanceEvidence {
                 .parallel()
                 .forEach(
                         index -> {
-                            byte[] data = new byte[32];
-                            random.nextBytes(data);
                             byte[] evidenceBuffer = new byte[evidenceLength];
                             random.nextBytes(evidenceBuffer);
                             String evidence = new String(evidenceBuffer);
@@ -269,12 +255,7 @@ public class PerformanceEvidence {
                             // 生成长度为32的随机字符串
                             String txData =
                                     contracts[contractIndex].getSignedTransactionForNewEvidence(
-                                            evidence,
-                                            String.valueOf(index),
-                                            String.valueOf(index),
-                                            BigInteger.valueOf(1),
-                                            data,
-                                            data);
+                                            evidence, BigInteger.valueOf(1));
                             JsonRpcRequest request =
                                     new JsonRpcRequest<>(
                                             "sendTransaction",
