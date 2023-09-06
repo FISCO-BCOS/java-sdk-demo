@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
-
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
@@ -24,6 +23,7 @@ import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 public class ChainContinuityTester {
     private static Client client;
     private static BigInteger toBlock;
+    // nodeId -> blockNumber -> block
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Long, BcosBlock.Block>>
             nodeBlockMap = new ConcurrentHashMap<>();
 
@@ -82,7 +82,7 @@ public class ChainContinuityTester {
         System.out.println("===================================================");
         for (Map.Entry<String, ConcurrentHashMap<Long, BcosBlock.Block>> concurrentHashMapEntry :
                 nodeBlockMap.entrySet()) {
-            checkBlockContinuity(concurrentHashMapEntry, threadPoolService);
+            checkBlockContinuity(concurrentHashMapEntry, fromBlock, threadPoolService);
         }
         System.out.println("Check continuity finished.");
         System.out.println("===================================================");
@@ -96,7 +96,7 @@ public class ChainContinuityTester {
         ProgressBar checkBar =
                 new ProgressBarBuilder()
                         .setTaskName("Checking   :")
-                        .setInitialMax(toBlock.intValue()- fromBlock.intValue())
+                        .setInitialMax(toBlock.intValue() - fromBlock.intValue())
                         .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                         .build();
         for (long i = fromBlock.longValue(); i < toBlock.longValue(); i++) {
@@ -120,27 +120,27 @@ public class ChainContinuityTester {
                                     equals =
                                             equals
                                                     && (block1.getTimestamp()
-                                                    == block.getTimestamp());
+                                                            == block.getTimestamp());
                                     equals =
                                             equals
                                                     && (Objects.equals(
-                                                    block1.getReceiptsRoot(),
-                                                    block.getReceiptsRoot()));
+                                                            block1.getReceiptsRoot(),
+                                                            block.getReceiptsRoot()));
                                     equals =
                                             equals
                                                     && (Objects.equals(
-                                                    block1.getTransactionsRoot(),
-                                                    block.getTransactionsRoot()));
+                                                            block1.getTransactionsRoot(),
+                                                            block.getTransactionsRoot()));
                                     equals =
                                             equals
                                                     && (Objects.equals(
-                                                    block.getStateRoot(),
-                                                    block1.getStateRoot()));
+                                                            block.getStateRoot(),
+                                                            block1.getStateRoot()));
                                     equals = equals && block1.getHash().equals(block.getHash());
                                     equals =
                                             equals
                                                     && block1.getGasUsed()
-                                                    .equals(block.getGasUsed());
+                                                            .equals(block.getGasUsed());
                                     if (!equals) {
                                         System.out.println(
                                                 "ERROR: block continuity check failed, blockNumber:"
@@ -157,6 +157,7 @@ public class ChainContinuityTester {
 
     private static void checkBlockContinuity(
             Map.Entry<String, ConcurrentHashMap<Long, BcosBlock.Block>> concurrentHashMapEntry,
+            BigInteger fromBlk,
             ThreadPoolService threadPoolService) {
         String nodeId = concurrentHashMapEntry.getKey();
         ConcurrentHashMap<Long, BcosBlock.Block> blockConcurrentHashMap =
@@ -164,41 +165,41 @@ public class ChainContinuityTester {
         ConcurrentSkipListSet<String> transactionHashes = new ConcurrentSkipListSet<>();
         final AtomicLong lastTimestamp = new AtomicLong(0);
         System.out.println("Checking " + nodeId.substring(0, 8) + "... continuity...");
-        blockConcurrentHashMap.forEach(
-                (blockNumber, block) -> {
-                    if (block.getTimestamp() < lastTimestamp.get()) {
-                        System.out.println(
-                                "block continuity timestamp check failed, nodeId:"
-                                        + nodeId
-                                        + ", blockNumber:"
-                                        + blockNumber
-                                        + ", timestamp:"
-                                        + block.getTimestamp()
-                                        + ", lastTimestamp:"
-                                        + lastTimestamp);
-                    }
-                    lastTimestamp.set(block.getTimestamp());
-                    List<BcosBlock.TransactionHash> transactionHashes1 =
-                            block.getTransactionHashes();
-                    for (int i = 0; i < transactionHashes1.size(); i++) {
-                        int finalI = i;
-                        threadPoolService
-                                .getThreadPool()
-                                .execute(
-                                        () -> {
-                                            String txHash = transactionHashes1.get(finalI).get();
-                                            if (!transactionHashes.add(txHash)) {
-                                                System.out.println(
-                                                        "ERROR: block continuity transactionHash check failed, nodeId:"
-                                                                + nodeId
-                                                                + ", blockNumber:"
-                                                                + blockNumber
-                                                                + ", transactionHash:"
-                                                                + txHash);
-                                            }
-                                        });
-                    }
-                });
+        for (long i = fromBlk.longValue(); i < toBlock.longValue(); i++) {
+            BcosBlock.Block block = blockConcurrentHashMap.get(i);
+            if (block.getTimestamp() < lastTimestamp.get()) {
+                System.out.println(
+                        "block continuity timestamp check failed, nodeId:"
+                                + nodeId
+                                + ", blockNumber:"
+                                + i
+                                + ", timestamp:"
+                                + block.getTimestamp()
+                                + ", lastTimestamp:"
+                                + lastTimestamp);
+            }
+            lastTimestamp.set(block.getTimestamp());
+            List<BcosBlock.TransactionHash> transactionHashes1 = block.getTransactionHashes();
+            for (int j = 0; j < transactionHashes1.size(); j++) {
+                int finalJ = j;
+                long finalI = i;
+                threadPoolService
+                        .getThreadPool()
+                        .execute(
+                                () -> {
+                                    String txHash = transactionHashes1.get(finalJ).get();
+                                    if (!transactionHashes.add(txHash)) {
+                                        System.out.println(
+                                                "ERROR: block continuity transactionHash check failed, nodeId:"
+                                                        + nodeId
+                                                        + ", blockNumber:"
+                                                        + finalI
+                                                        + ", transactionHash:"
+                                                        + txHash);
+                                    }
+                                });
+            }
+        }
     }
 
     public static void getNodeBlocks(
