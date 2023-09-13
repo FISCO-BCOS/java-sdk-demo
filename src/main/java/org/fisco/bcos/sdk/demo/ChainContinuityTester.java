@@ -23,6 +23,7 @@ import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 public class ChainContinuityTester {
     private static Client client;
     private static BigInteger toBlock;
+    // nodeId -> blockNumber -> block
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Long, BcosBlock.Block>>
             nodeBlockMap = new ConcurrentHashMap<>();
 
@@ -81,7 +82,7 @@ public class ChainContinuityTester {
         System.out.println("===================================================");
         for (Map.Entry<String, ConcurrentHashMap<Long, BcosBlock.Block>> concurrentHashMapEntry :
                 nodeBlockMap.entrySet()) {
-            checkBlockContinuity(concurrentHashMapEntry, threadPoolService);
+            checkBlockContinuity(concurrentHashMapEntry, fromBlock, threadPoolService);
         }
         System.out.println("Check continuity finished.");
         System.out.println("===================================================");
@@ -156,6 +157,7 @@ public class ChainContinuityTester {
 
     private static void checkBlockContinuity(
             Map.Entry<String, ConcurrentHashMap<Long, BcosBlock.Block>> concurrentHashMapEntry,
+            BigInteger fromBlk,
             ThreadPoolService threadPoolService) {
         String nodeId = concurrentHashMapEntry.getKey();
         ConcurrentHashMap<Long, BcosBlock.Block> blockConcurrentHashMap =
@@ -163,41 +165,41 @@ public class ChainContinuityTester {
         ConcurrentSkipListSet<String> transactionHashes = new ConcurrentSkipListSet<>();
         final AtomicLong lastTimestamp = new AtomicLong(0);
         System.out.println("Checking " + nodeId.substring(0, 8) + "... continuity...");
-        blockConcurrentHashMap.forEach(
-                (blockNumber, block) -> {
-                    if (block.getTimestamp() < lastTimestamp.get()) {
-                        System.out.println(
-                                "block continuity timestamp check failed, nodeId:"
-                                        + nodeId
-                                        + ", blockNumber:"
-                                        + blockNumber
-                                        + ", timestamp:"
-                                        + block.getTimestamp()
-                                        + ", lastTimestamp:"
-                                        + lastTimestamp);
-                    }
-                    lastTimestamp.set(block.getTimestamp());
-                    List<BcosBlock.TransactionHash> transactionHashes1 =
-                            block.getTransactionHashes();
-                    for (int i = 0; i < transactionHashes1.size(); i++) {
-                        int finalI = i;
-                        threadPoolService
-                                .getThreadPool()
-                                .execute(
-                                        () -> {
-                                            String txHash = transactionHashes1.get(finalI).get();
-                                            if (!transactionHashes.add(txHash)) {
-                                                System.out.println(
-                                                        "ERROR: block continuity transactionHash check failed, nodeId:"
-                                                                + nodeId
-                                                                + ", blockNumber:"
-                                                                + blockNumber
-                                                                + ", transactionHash:"
-                                                                + txHash);
-                                            }
-                                        });
-                    }
-                });
+        for (long i = fromBlk.longValue(); i < toBlock.longValue(); i++) {
+            BcosBlock.Block block = blockConcurrentHashMap.get(i);
+            if (block.getTimestamp() < lastTimestamp.get()) {
+                System.out.println(
+                        "block continuity timestamp check failed, nodeId:"
+                                + nodeId
+                                + ", blockNumber:"
+                                + i
+                                + ", timestamp:"
+                                + block.getTimestamp()
+                                + ", lastTimestamp:"
+                                + lastTimestamp);
+            }
+            lastTimestamp.set(block.getTimestamp());
+            List<BcosBlock.TransactionHash> transactionHashes1 = block.getTransactionHashes();
+            for (int j = 0; j < transactionHashes1.size(); j++) {
+                int finalJ = j;
+                long finalI = i;
+                threadPoolService
+                        .getThreadPool()
+                        .execute(
+                                () -> {
+                                    String txHash = transactionHashes1.get(finalJ).get();
+                                    if (!transactionHashes.add(txHash)) {
+                                        System.out.println(
+                                                "ERROR: block continuity transactionHash check failed, nodeId:"
+                                                        + nodeId
+                                                        + ", blockNumber:"
+                                                        + finalI
+                                                        + ", transactionHash:"
+                                                        + txHash);
+                                    }
+                                });
+            }
+        }
     }
 
     public static void getNodeBlocks(

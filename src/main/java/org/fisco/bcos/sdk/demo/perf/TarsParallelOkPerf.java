@@ -87,6 +87,7 @@ public class TarsParallelOkPerf {
                     new TarsTransactionProcessor(
                             client, client.getCryptoSuite().getCryptoKeyPair(), groupId, "chain0");
 
+
             dagUserInfo.setFile(userFile);
             ThreadPoolService threadPoolService =
                     new ThreadPoolService(
@@ -146,6 +147,7 @@ public class TarsParallelOkPerf {
                                 client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
                 parallelOk.setTransactionProcessor(tarsTransactionProcessor);
 
+
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.userAdd(BigInteger.valueOf(count), BigInteger.valueOf(qps));
                 break;
@@ -157,6 +159,7 @@ public class TarsParallelOkPerf {
                                 client,
                                 client.getCryptoSuite().getCryptoKeyPair());
                 parallelOk.setTransactionProcessor(tarsTransactionProcessor);
+
                 System.out.println(
                         "====== ParallelOk trans, load success, address: "
                                 + parallelOk.getContractAddress());
@@ -173,6 +176,7 @@ public class TarsParallelOkPerf {
                                 client,
                                 client.getCryptoSuite().getCryptoKeyPair());
                 parallelOk.setTransactionProcessor(tarsTransactionProcessor);
+
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.generateTransferTxs(
                         client.getGroup(),
