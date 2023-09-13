@@ -23,15 +23,15 @@ import org.fisco.bcos.sdk.demo.perf.parallel.ParallelOkDemo;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
 import org.fisco.bcos.sdk.v3.client.TarsClient;
-import org.fisco.bcos.sdk.v3.contract.precompiled.sharding.ShardingService;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
+import org.fisco.bcos.sdk.v3.transaction.manager.TarsTransactionProcessor;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
 public class TarsParallelOkPerf {
     private static Client client;
+    private static TarsTransactionProcessor tarsTransactionProcessor;
     private static DagUserInfo dagUserInfo = new DagUserInfo();
-    private static ShardingService shardingService;
 
     public static void Usage() {
         System.out.println(" Usage:");
@@ -83,6 +83,9 @@ public class TarsParallelOkPerf {
             BcosSDK sdk = BcosSDK.build(configFile);
             TarsClient.loadLibrary();
             client = sdk.getTarsClient(groupId);
+            tarsTransactionProcessor =
+                    new TarsTransactionProcessor(
+                            client, client.getCryptoSuite().getCryptoKeyPair(), groupId, "chain0");
 
             dagUserInfo.setFile(userFile);
             ThreadPoolService threadPoolService =
@@ -141,6 +144,7 @@ public class TarsParallelOkPerf {
                 parallelOk =
                         ParallelOk.deploy(
                                 client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
+                parallelOk.setTransactionProcessor(tarsTransactionProcessor);
 
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.userAdd(BigInteger.valueOf(count), BigInteger.valueOf(qps));
@@ -152,6 +156,7 @@ public class TarsParallelOkPerf {
                                 dagUserInfo.getContractAddr(),
                                 client,
                                 client.getCryptoSuite().getCryptoKeyPair());
+                parallelOk.setTransactionProcessor(tarsTransactionProcessor);
                 System.out.println(
                         "====== ParallelOk trans, load success, address: "
                                 + parallelOk.getContractAddress());
@@ -167,6 +172,7 @@ public class TarsParallelOkPerf {
                                 dagUserInfo.getContractAddr(),
                                 client,
                                 client.getCryptoSuite().getCryptoKeyPair());
+                parallelOk.setTransactionProcessor(tarsTransactionProcessor);
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.generateTransferTxs(
                         client.getGroup(),
