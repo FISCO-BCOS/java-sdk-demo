@@ -111,7 +111,7 @@ public class PerformancePaillierPrecompiled {
         BigInteger[] bigs = new BigInteger[numbers];
         KeyPair paillierKeyPair = PaillierKeyPair.generateKeyPair(pklen);
         for (int i = 0; i < numbers; i++) {
-            bigs[i] = new BigInteger(256, random);
+            bigs[i] = new BigInteger(250, random);
             data[i] = PaillierCipher.encrypt(bigs[i], paillierKeyPair.getPublic());
         }
         System.out.println("Sending transactions...");
