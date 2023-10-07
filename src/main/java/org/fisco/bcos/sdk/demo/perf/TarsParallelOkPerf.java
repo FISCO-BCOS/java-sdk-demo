@@ -22,7 +22,6 @@ import org.fisco.bcos.sdk.demo.perf.parallel.DagPrecompiledDemo;
 import org.fisco.bcos.sdk.demo.perf.parallel.ParallelOkDemo;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
-import org.fisco.bcos.sdk.v3.client.TarsClient;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.transaction.manager.TarsTransactionProcessor;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
@@ -81,12 +80,10 @@ public class TarsParallelOkPerf {
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
-            TarsClient.loadLibrary();
             client = sdk.getTarsClient(groupId);
             tarsTransactionProcessor =
                     new TarsTransactionProcessor(
                             client, client.getCryptoSuite().getCryptoKeyPair(), groupId, "chain0");
-
 
             dagUserInfo.setFile(userFile);
             ThreadPoolService threadPoolService =
@@ -146,7 +143,6 @@ public class TarsParallelOkPerf {
                         ParallelOk.deploy(
                                 client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
                 parallelOk.setTransactionProcessor(tarsTransactionProcessor);
-
 
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.userAdd(BigInteger.valueOf(count), BigInteger.valueOf(qps));
