@@ -22,40 +22,40 @@ import org.fisco.bcos.sdk.demo.perf.parallel.DagPrecompiledDemo;
 import org.fisco.bcos.sdk.demo.perf.parallel.ParallelOkDemo;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
-import org.fisco.bcos.sdk.v3.contract.precompiled.sharding.ShardingService;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
+import org.fisco.bcos.sdk.v3.transaction.manager.TarsTransactionProcessor;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
-public class ParallelOkPerf {
+public class TarsParallelOkPerf {
     private static Client client;
+    private static TarsTransactionProcessor tarsTransactionProcessor;
     private static DagUserInfo dagUserInfo = new DagUserInfo();
-    private static ShardingService shardingService;
 
     public static void Usage() {
         System.out.println(" Usage:");
         System.out.println("===== ParallelOk test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [add] [count] [tps] [file] [isParallel].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.TarsParallelOkPerf [parallelok] [groupId] [add] [count] [tps] [file] [isParallel].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [transfer] [count] [tps] [file] [isParallel].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.TarsParallelOkPerf [parallelok] [groupId] [transfer] [count] [tps] [file] [isParallel].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [generate] [count] [tps] [file] [isParallel].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.TarsParallelOkPerf [parallelok] [groupId] [generate] [count] [tps] [file] [isParallel].");
 
         System.out.println("===== DagTransafer test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupId] [add] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.TarsParallelOkPerf [precompiled] [groupId] [add] [count] [tps] [file].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupId] [transfer] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.TarsParallelOkPerf [precompiled] [groupId] [transfer] [count] [tps] [file].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [precompiled] [groupId] [generate] [count] [tps] [file].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.TarsParallelOkPerf [precompiled] [groupId] [generate] [count] [tps] [file].");
     }
 
     public static void main(String[] args)
             throws ContractException, IOException, InterruptedException {
         try {
             String configFileName = ConstantConfig.CONFIG_FILE_NAME;
-            URL configUrl = ParallelOkPerf.class.getClassLoader().getResource(configFileName);
+            URL configUrl = TarsParallelOkPerf.class.getClassLoader().getResource(configFileName);
             if (configUrl == null) {
                 System.out.println("The configFile " + configFileName + " doesn't exist!");
                 return;
@@ -80,14 +80,15 @@ public class ParallelOkPerf {
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
-            client = sdk.getClient(groupId);
+            client = sdk.getTarsClient(groupId);
+            tarsTransactionProcessor =
+                    new TarsTransactionProcessor(
+                            client, client.getCryptoSuite().getCryptoKeyPair(), groupId, "chain0");
 
             dagUserInfo.setFile(userFile);
             ThreadPoolService threadPoolService =
                     new ThreadPoolService(
                             "ParallelOkPerf", Runtime.getRuntime().availableProcessors());
-            shardingService =
-                    new ShardingService(client, client.getCryptoSuite().getCryptoKeyPair());
 
             if (perfType.compareToIgnoreCase("parallelok") == 0) {
                 parallelOkPerf(
@@ -141,14 +142,8 @@ public class ParallelOkPerf {
                 parallelOk =
                         ParallelOk.deploy(
                                 client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
-                String shardName = "shard" + parallelOk.getContractAddress();
-                try {
-                    shardingService.linkShard(shardName, parallelOk.getContractAddress());
-                } catch (ContractException e) {
-                }
+                parallelOk.setTransactionProcessor(tarsTransactionProcessor);
 
-                System.out.println(
-                        "====== ParallelOk userAdd, deploy success, address: " + shardName);
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.userAdd(BigInteger.valueOf(count), BigInteger.valueOf(qps));
                 break;
@@ -159,6 +154,8 @@ public class ParallelOkPerf {
                                 dagUserInfo.getContractAddr(),
                                 client,
                                 client.getCryptoSuite().getCryptoKeyPair());
+                parallelOk.setTransactionProcessor(tarsTransactionProcessor);
+
                 System.out.println(
                         "====== ParallelOk trans, load success, address: "
                                 + parallelOk.getContractAddress());
@@ -174,6 +171,8 @@ public class ParallelOkPerf {
                                 dagUserInfo.getContractAddr(),
                                 client,
                                 client.getCryptoSuite().getCryptoKeyPair());
+                parallelOk.setTransactionProcessor(tarsTransactionProcessor);
+
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.generateTransferTxs(
                         client.getGroup(),
