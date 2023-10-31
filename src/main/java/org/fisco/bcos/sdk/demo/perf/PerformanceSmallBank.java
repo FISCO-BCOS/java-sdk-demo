@@ -26,10 +26,11 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.IntStream;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
-import org.fisco.bcos.sdk.demo.contract.SmallBankPrecompiled;
+import org.fisco.bcos.sdk.demo.contract.SmallBank;
 import org.fisco.bcos.sdk.demo.perf.model.DagTransferUser;
 import org.fisco.bcos.sdk.demo.perf.model.DagUserInfo;
 import org.fisco.bcos.sdk.v3.BcosSDK;
@@ -48,13 +49,13 @@ public class PerformanceSmallBank {
         System.out.println(" Usage:");
         System.out.println("===== Performance SmallBank test===========");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceSmallBank [groupId] [precompiled/solidity] [add] [contractsNum] [count] [qps] [file] [parallel(true/false)].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceSmallBank [groupId] [add] [count] [qps] [file] [parallel(true/false)].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceSmallBank [groupId] [precompiled/solidity] [transfer] [contractsNum] [count] [qps] [file] [parallel(true/false)].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceSmallBank [groupId] [transfer] [count] [qps] [file] [parallel(true/false)].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceSmallBank [groupId] [precompiled/solidity] [save] [contractsNum] [count] [qps] [file] [parallel(true/false)].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceSmallBank [groupId] [save] [count] [qps] [file] [parallel(true/false)].");
         System.out.println(
-                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceSmallBank [groupId] [precompiled/solidity] [generate] [contractsNum] [count] [qps] [file] [parallel(true/false)].");
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceSmallBank [groupId] [generate] [count] [qps] [file] [parallel(true/false)].");
     }
 
     public static void main(String[] args)
@@ -66,25 +67,17 @@ public class PerformanceSmallBank {
                 System.out.println("The configFile " + configFileName + " doesn't exist!");
                 return;
             }
-            if (args.length < 8) {
+            if (args.length < 6) {
                 Usage();
                 return;
             }
 
             String groupId = args[0];
-            String type = args[1];
-            String command = args[2];
-            int contractsNum = Integer.valueOf(args[3]).intValue();
-            Integer count = Integer.valueOf(args[4]);
-            Integer qps = Integer.valueOf(args[5]);
-            String userFile = args[6];
-            boolean enableParallel = Boolean.valueOf(args[7]);
-
-            if (!type.equals("precompiled") && !type.equals("solidity")) {
-                Usage();
-                return;
-            }
-            boolean isPrecompiled = type.equals("precompiled");
+            String command = args[1];
+            Integer count = Integer.valueOf(args[2]);
+            Integer qps = Integer.valueOf(args[3]);
+            String userFile = args[4];
+            boolean enableParallel = Boolean.valueOf(args[5]);
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
@@ -95,17 +88,7 @@ public class PerformanceSmallBank {
             ThreadPoolService threadPoolService =
                     new ThreadPoolService(
                             "SmallBankClient", Runtime.getRuntime().availableProcessors());
-
-            start(
-                    groupId,
-                    isPrecompiled,
-                    command,
-                    contractsNum,
-                    count,
-                    qps,
-                    userFile,
-                    enableParallel,
-                    threadPoolService);
+            start(groupId, command, count, qps, userFile, enableParallel, threadPoolService);
 
             threadPoolService.getThreadPool().awaitTermination(0, TimeUnit.SECONDS);
             System.exit(0);
@@ -117,9 +100,7 @@ public class PerformanceSmallBank {
 
     public static void start(
             String groupId,
-            boolean isPrecompiled,
             String command,
-            int contractsNum,
             Integer count,
             Integer qps,
             String userFile,
@@ -128,9 +109,6 @@ public class PerformanceSmallBank {
             throws IOException, InterruptedException, ContractException {
         System.out.println(
                 "====== Start "
-                        + (isPrecompiled ? "precompiled" : "solidity")
-                        + " test, contracts num: "
-                        + contractsNum
                         + ", count: "
                         + count
                         + ", qps:"
@@ -141,30 +119,27 @@ public class PerformanceSmallBank {
                         + enableParallel);
 
         RateLimiter limiter = RateLimiter.create(qps.intValue());
-        SmallBankPrecompiled[] contracts = new SmallBankPrecompiled[contractsNum];
+        SmallBank smallBank;
 
         final Random random = new Random();
         random.setSeed(System.currentTimeMillis());
 
-        // create multi contracts
-        if (isPrecompiled) {
-            for (int i = 0; i < contractsNum; ++i) {
-                contracts[i] =
-                        SmallBankPrecompiled.load(
-                                i, client, client.getCryptoSuite().getCryptoKeyPair());
-                (contracts[i]).setEnableDAG(enableParallel);
-            }
-        }
-        long txtotal = 0;
         if (Objects.equals(command, "add")) {
-            txtotal = count * contractsNum;
-        } else if (Objects.equals(command, "transfer")) {
-            txtotal = count;
-        } else if (Objects.equals(command, "save")) {
-            txtotal = count * contractsNum;
-        } else if (Objects.equals(command, "generate")) {
-            txtotal = count;
+            smallBank =
+                    SmallBank.deploy(
+                            client, client.getCryptoSuite().getCryptoKeyPair(), enableParallel);
+            dagUserInfo.setContractAddr(smallBank.getContractAddress());
+            smallBank.setEnableDAG(enableParallel);
+        } else {
+            dagUserInfo.loadDagTransferUser();
+            smallBank =
+                    SmallBank.load(
+                            dagUserInfo.getContractAddr(),
+                            client,
+                            client.getCryptoSuite().getCryptoKeyPair());
+            smallBank.setEnableDAG(enableParallel);
         }
+        long txtotal = count;
 
         ProgressBar sendedBar =
                 new ProgressBarBuilder()
@@ -175,12 +150,6 @@ public class PerformanceSmallBank {
         ProgressBar receivedBar =
                 new ProgressBarBuilder()
                         .setTaskName("Receive:")
-                        .setInitialMax(txtotal)
-                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
-                        .build();
-        ProgressBar errorBar =
-                new ProgressBarBuilder()
-                        .setTaskName("Errors :")
                         .setInitialMax(txtotal)
                         .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                         .build();
@@ -206,54 +175,38 @@ public class PerformanceSmallBank {
                     dtu.setUser(user);
                     dtu.setAmount(amount);
 
-                    for (int j = 0; j < contractsNum; j++) {
-                        final int index = j;
-                        threadPoolService
-                                .getThreadPool()
-                                .execute(
-                                        new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                SmallBankPrecompiled contract = contracts[index];
-                                                long now = System.currentTimeMillis();
-                                                contract.updateBalance(
-                                                        user,
-                                                        amount,
-                                                        new TransactionCallback() {
-                                                            public void onResponse(
-                                                                    TransactionReceipt receipt) {
-                                                                long cost =
-                                                                        System.currentTimeMillis()
-                                                                                - now;
-                                                                collector.onMessage(receipt, cost);
-                                                                receivedBar.step();
-                                                                if (!receipt.isStatusOK()) {
-                                                                    errorBar.step();
-                                                                }
-                                                                transactionLatch.countDown();
-                                                                totalCost.addAndGet(
-                                                                        System.currentTimeMillis()
-                                                                                - now);
-                                                            }
-                                                        });
-                                                sendedBar.step();
-                                            }
-                                        });
-                    }
+                    threadPoolService
+                            .getThreadPool()
+                            .execute(
+                                    new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            long now = System.currentTimeMillis();
+                                            smallBank.updateBalance(
+                                                    user,
+                                                    amount,
+                                                    new TransactionCallback() {
+                                                        public void onResponse(
+                                                                TransactionReceipt receipt) {
+                                                            long cost =
+                                                                    System.currentTimeMillis()
+                                                                            - now;
+                                                            collector.onMessage(receipt, cost);
+                                                            receivedBar.step();
+                                                            transactionLatch.countDown();
+                                                            totalCost.addAndGet(
+                                                                    System.currentTimeMillis()
+                                                                            - now);
+                                                        }
+                                                    });
+                                            sendedBar.step();
+                                        }
+                                    });
                     dagUserInfo.addUser(dtu);
                 }
-                // save the user info
                 transactionLatch.await();
-                // if (collector.getReceived().intValue() != collector.getTotal().intValue()) {
-                //    Thread.sleep(2000);
-                // }
                 System.out.println("Sending transactions finished!");
                 dagUserInfo.writeDagTransferUser();
-                sendedBar.close();
-                receivedBar.close();
-                errorBar.close();
-                collector.report();
-                System.exit(0);
                 break;
 
             case "transfer":
@@ -261,71 +214,44 @@ public class PerformanceSmallBank {
                     System.out.println("Start userTransfer test...");
                     System.out.println(
                             "===================================================================");
-                    RateLimiter rateLimiter = RateLimiter.create(qps.intValue());
-                    dagUserInfo.loadDagTransferUser();
-                    List<DagTransferUser> allUser = dagUserInfo.getUserList();
-                    for (int i = 0; i < txtotal; ) {
-                        limiter.acquire();
-                        final int userindex = (i / contracts.length) % allUser.size();
-                        for (int j = 0; j < contracts.length && i < txtotal; j++, i++) {
-                            final int index = j % contracts.length;
-                            limiter.acquire();
-                            threadPoolService
-                                    .getThreadPool()
-                                    .execute(
-                                            new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    SmallBankPrecompiled contract =
-                                                            contracts[index];
-                                                    long now = System.currentTimeMillis();
-                                                    try {
-                                                        DagTransferUser from =
-                                                                dagUserInfo.getFrom(userindex);
-                                                        DagTransferUser to =
-                                                                dagUserInfo.getTo(userindex);
-                                                        int r = random.nextInt(10) + 1;
-                                                        BigInteger amount = BigInteger.valueOf(r);
-                                                        contract.sendPayment(
-                                                                from.getUser(),
-                                                                to.getUser(),
-                                                                amount,
-                                                                new TransactionCallback() {
-                                                                    public void onResponse(
-                                                                            TransactionReceipt
-                                                                                    receipt) {
-                                                                        long cost =
-                                                                                System
-                                                                                                .currentTimeMillis()
-                                                                                        - now;
-                                                                        collector.onMessage(
-                                                                                receipt, cost);
-                                                                        receivedBar.step();
-                                                                        if (!receipt.isStatusOK()) {
-                                                                            errorBar.step();
-                                                                        }
-                                                                        transactionLatch
-                                                                                .countDown();
-                                                                        totalCost.addAndGet(
-                                                                                System
-                                                                                                .currentTimeMillis()
-                                                                                        - now);
-                                                                    }
-                                                                });
-                                                        sendedBar.step();
-                                                    } catch (Exception e) {
-                                                        e.printStackTrace();
-                                                    }
-                                                }
-                                            });
-                        }
-                    }
+
+                    IntStream.range(0, (int) txtotal)
+                            .parallel()
+                            .forEach(
+                                    index -> {
+                                        limiter.acquire();
+                                        long now = System.currentTimeMillis();
+                                        try {
+                                            DagTransferUser from = dagUserInfo.getFrom(index);
+                                            DagTransferUser to = dagUserInfo.getTo(index);
+                                            BigInteger amount =
+                                                    BigInteger.valueOf(random.nextInt(10));
+                                            smallBank.sendPayment(
+                                                    from.getUser(),
+                                                    to.getUser(),
+                                                    amount,
+                                                    new TransactionCallback() {
+                                                        public void onResponse(
+                                                                TransactionReceipt receipt) {
+                                                            long cost =
+                                                                    System.currentTimeMillis()
+                                                                            - now;
+                                                            collector.onMessage(receipt, cost);
+                                                            receivedBar.step();
+                                                            transactionLatch.countDown();
+                                                            totalCost.addAndGet(
+                                                                    System.currentTimeMillis()
+                                                                            - now);
+                                                        }
+                                                    });
+                                            sendedBar.step();
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                    });
+
                     transactionLatch.await();
                     System.out.println("Sending transactions finished!");
-                    sendedBar.close();
-                    receivedBar.close();
-                    errorBar.close();
-                    collector.report();
                     break;
                 }
             case "save":
@@ -333,73 +259,58 @@ public class PerformanceSmallBank {
                     System.out.println("Start userSave test...");
                     System.out.println(
                             "===================================================================");
-                    RateLimiter rateLimiter = RateLimiter.create(qps.intValue());
                     dagUserInfo.loadDagTransferUser();
                     List<DagTransferUser> allUser = dagUserInfo.getUserList();
                     for (int i = 0; i < allUser.size(); i++) {
                         final int userIdx = i;
                         limiter.acquire();
-                        for (int j = 0; j < contracts.length; j++) {
-                            final int contractIdx = j;
-                            limiter.acquire();
-                            threadPoolService
-                                    .getThreadPool()
-                                    .execute(
-                                            new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    SmallBankPrecompiled contract =
-                                                            contracts[contractIdx];
-                                                    long now = System.currentTimeMillis();
-                                                    try {
-                                                        DagTransferUser from =
-                                                                dagUserInfo.getFrom(userIdx);
-                                                        BigInteger amount =
-                                                                BigInteger.valueOf(1000000000);
-                                                        contract.updateBalance(
-                                                                from.getUser(),
-                                                                amount,
-                                                                new TransactionCallback() {
-                                                                    public void onResponse(
-                                                                            TransactionReceipt
-                                                                                    receipt) {
-                                                                        long cost =
-                                                                                System
-                                                                                                .currentTimeMillis()
-                                                                                        - now;
-                                                                        collector.onMessage(
-                                                                                receipt, cost);
-                                                                        receivedBar.step();
-                                                                        if (!receipt.isStatusOK()) {
-                                                                            errorBar.step();
-                                                                        }
-                                                                        transactionLatch
-                                                                                .countDown();
-                                                                        totalCost.addAndGet(
-                                                                                System
-                                                                                                .currentTimeMillis()
-                                                                                        - now);
-                                                                    }
-                                                                });
-                                                        sendedBar.step();
-                                                    } catch (Exception e) {
-                                                        e.printStackTrace();
-                                                    }
+                        threadPoolService
+                                .getThreadPool()
+                                .execute(
+                                        new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                long now = System.currentTimeMillis();
+                                                try {
+                                                    DagTransferUser from =
+                                                            dagUserInfo.getFrom(userIdx);
+                                                    BigInteger amount =
+                                                            BigInteger.valueOf(1000000000);
+                                                    smallBank.updateBalance(
+                                                            from.getUser(),
+                                                            amount,
+                                                            new TransactionCallback() {
+                                                                public void onResponse(
+                                                                        TransactionReceipt
+                                                                                receipt) {
+                                                                    long cost =
+                                                                            System
+                                                                                            .currentTimeMillis()
+                                                                                    - now;
+                                                                    collector.onMessage(
+                                                                            receipt, cost);
+                                                                    receivedBar.step();
+                                                                    transactionLatch.countDown();
+                                                                    totalCost.addAndGet(
+                                                                            System
+                                                                                            .currentTimeMillis()
+                                                                                    - now);
+                                                                }
+                                                            });
+                                                    sendedBar.step();
+                                                } catch (Exception e) {
+                                                    e.printStackTrace();
                                                 }
-                                            });
-                        }
+                                            }
+                                        });
                     }
                     transactionLatch.await();
                     System.out.println("Sending transactions finished!");
-                    sendedBar.close();
-                    receivedBar.close();
-                    errorBar.close();
-                    collector.report();
                     break;
                 }
             case "generate":
                 {
-                    String txsFile = "smallbank." + contractsNum + "." + count + ".txt";
+                    String txsFile = "smallbank." + "." + count + ".txt";
                     System.out.println("Generating transactions -> " + txsFile);
                     dagUserInfo.loadDagTransferUser();
 
@@ -412,37 +323,26 @@ public class PerformanceSmallBank {
 
                     List<DagTransferUser> allUser = dagUserInfo.getUserList();
                     for (int i = 0; i < txtotal; ) {
-                        final int userindex = (i / contracts.length) % allUser.size();
-                        for (int j = 0; j < contracts.length && i < txtotal; j++, i++) {
-                            final int index = j % contracts.length;
+                        try {
+                            DagTransferUser from = dagUserInfo.getFrom(i);
+                            DagTransferUser to = dagUserInfo.getTo(i);
+                            int r = random.nextInt(10) + 1;
+                            BigInteger amount = BigInteger.valueOf(r);
 
-                            SmallBankPrecompiled contract = contracts[index];
-                            long now = System.currentTimeMillis();
-                            try {
-                                DagTransferUser from = dagUserInfo.getFrom(userindex);
-                                DagTransferUser to = dagUserInfo.getTo(userindex);
-                                int r = random.nextInt(10) + 1;
-                                BigInteger amount = BigInteger.valueOf(r);
+                            String txBytes =
+                                    smallBank.getSignedTransactionForSendPayment(
+                                            from.getUser(), to.getUser(), amount);
 
-                                String txBytes =
-                                        contract.getSignedTransactionForSendPayment(
-                                                from.getUser(), to.getUser(), amount);
+                            bufferedWriter.write(txBytes);
+                            bufferedWriter.newLine();
 
-                                bufferedWriter.write(txBytes);
-                                bufferedWriter.newLine();
-
-                                sendedBar.step();
-                                transactionLatch.countDown();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                            sendedBar.step();
+                            transactionLatch.countDown();
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
                     }
                     transactionLatch.await();
-                    sendedBar.close();
-                    receivedBar.close();
-                    errorBar.close();
-                    bufferedWriter.close();
                     System.out.println("Generate transactions finished! File name: " + txsFile);
                     break;
                 }
@@ -451,9 +351,8 @@ public class PerformanceSmallBank {
                 Usage();
                 break;
         }
-        // sendedBar.close();
-        // receivedBar.close();
-        // errorBar.close();
-        // collector.report();
+        sendedBar.close();
+        receivedBar.close();
+        collector.report();
     }
 }

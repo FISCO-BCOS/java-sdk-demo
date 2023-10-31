@@ -22,6 +22,7 @@ import org.fisco.bcos.sdk.demo.perf.parallel.DagPrecompiledDemo;
 import org.fisco.bcos.sdk.demo.perf.parallel.ParallelOkDemo;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.contract.precompiled.sharding.ShardingService;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
@@ -29,6 +30,7 @@ import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 public class ParallelOkPerf {
     private static Client client;
     private static DagUserInfo dagUserInfo = new DagUserInfo();
+    private static ShardingService shardingService;
 
     public static void Usage() {
         System.out.println(" Usage:");
@@ -62,8 +64,8 @@ public class ParallelOkPerf {
             if (args.length < 6) {
                 Usage();
                 return;
-            } else if (args.length == 7) {
-                isParallel = Boolean.parseBoolean(args[6]);
+            } else if (args.length == 8) {
+                isParallel = Boolean.parseBoolean(args[7]);
             }
             String perfType = args[0];
             String groupId = args[1];
@@ -84,6 +86,8 @@ public class ParallelOkPerf {
             ThreadPoolService threadPoolService =
                     new ThreadPoolService(
                             "ParallelOkPerf", Runtime.getRuntime().availableProcessors());
+            shardingService =
+                    new ShardingService(client, client.getCryptoSuite().getCryptoKeyPair());
 
             if (perfType.compareToIgnoreCase("parallelok") == 0) {
                 parallelOkPerf(
@@ -137,10 +141,14 @@ public class ParallelOkPerf {
                 parallelOk =
                         ParallelOk.deploy(
                                 client, client.getCryptoSuite().getCryptoKeyPair(), isParallel);
+                String shardName = "shard" + parallelOk.getContractAddress();
+                try {
+                    shardingService.linkShard(shardName, parallelOk.getContractAddress());
+                } catch (ContractException e) {
+                }
 
                 System.out.println(
-                        "====== ParallelOk userAdd, deploy success, address: "
-                                + parallelOk.getContractAddress());
+                        "====== ParallelOk userAdd, deploy success, address: " + shardName);
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.userAdd(BigInteger.valueOf(count), BigInteger.valueOf(qps));
                 break;
@@ -157,7 +165,7 @@ public class ParallelOkPerf {
 
                 System.out.println("Start transfer...");
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
-                parallelOkDemo.userTransfer(BigInteger.valueOf(count), BigInteger.valueOf(qps));
+                parallelOkDemo.userTransfer(count, BigInteger.valueOf(qps));
                 break;
             case "generate":
                 dagUserInfo.loadDagTransferUser();
@@ -168,8 +176,9 @@ public class ParallelOkPerf {
                                 client.getCryptoSuite().getCryptoKeyPair());
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.generateTransferTxs(
-                        BigInteger.valueOf(count),
-                        "parallelOKTxs.txt",
+                        client.getGroup(),
+                        count,
+                        "parallelOKTxs",
                         BigInteger.valueOf(qps),
                         BigInteger.valueOf(conflictPercent));
                 break;

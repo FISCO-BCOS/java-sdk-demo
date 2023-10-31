@@ -15,8 +15,11 @@ package org.fisco.bcos.sdk.demo.perf;
 
 import com.google.common.util.concurrent.RateLimiter;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -37,11 +40,13 @@ import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 public class PerformanceTable {
     private static AtomicLong uniqueID = new AtomicLong(0);
     private static final Set<String> supportCommands =
-            new HashSet<>(Arrays.asList("insert", "update", "remove", "select"));
+            new HashSet<>(
+                    Arrays.asList("insert", "update", "remove", "select", "create", "batchCreate"));
+    private static int FLAG_NUMBER = 100;
 
     private static void Usage() {
         System.out.println(" Usage:");
-        System.out.println("===== PerformanceTableLiquid test===========");
+        System.out.println("===== PerformanceTable test===========");
         System.out.println(
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTable [insert] [count] [tps] [groupId].");
         System.out.println(
@@ -50,6 +55,10 @@ public class PerformanceTable {
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTable [remove] [count] [tps] [groupId].");
         System.out.println(
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTable [select] [count] [tps] [groupId].");
+        System.out.println(
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTable [create] [count] [tps] [groupId] [mod].");
+        System.out.println(
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceTable [batchCreate] [count] [tps] [groupId] [batchNumber].");
     }
 
     public static void main(String[] args) {
@@ -65,14 +74,17 @@ public class PerformanceTable {
                 return;
             }
             String command = args[0];
-            int count = Integer.parseInt(args[1]);
+            int sendCount = Integer.parseInt(args[1]);
             int qps = Integer.parseInt(args[2]);
             String groupId = args[3];
+            if (args.length == 5) {
+                FLAG_NUMBER = Integer.parseInt(args[4]);
+            }
             System.out.println(
                     "====== PerformanceTable "
                             + command
                             + ", count: "
-                            + count
+                            + sendCount
                             + ", qps:"
                             + qps
                             + ", groupId: "
@@ -108,29 +120,42 @@ public class PerformanceTable {
                             + tableTest.getContractAddress()
                             + " ====== ");
 
-            CountDownLatch countDownLatch = new CountDownLatch(count);
+            int totalCount = sendCount;
+            if (command.equals("batchCreate")) {
+                sendCount = sendCount / FLAG_NUMBER;
+                totalCount = sendCount * FLAG_NUMBER;
+                System.out.println(
+                        "====== batchCreate, "
+                                + "batchSendCount: "
+                                + sendCount
+                                + ", eachBatchSendTx:"
+                                + FLAG_NUMBER
+                                + ", totalCount: "
+                                + totalCount);
+            }
+            CountDownLatch countDownLatch = new CountDownLatch(totalCount);
             RateLimiter limiter = RateLimiter.create(qps);
             ProgressBar sentBar =
                     new ProgressBarBuilder()
                             .setTaskName("Send   :")
-                            .setInitialMax(count)
+                            .setInitialMax(sendCount)
                             .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                             .build();
             ProgressBar receivedBar =
                     new ProgressBarBuilder()
                             .setTaskName("Receive:")
-                            .setInitialMax(count)
+                            .setInitialMax(totalCount)
                             .setStyle(ProgressBarStyle.UNICODE_BLOCK)
                             .build();
 
-            System.out.println("====== PerformanceTableLiquid " + command + " start ======");
+            System.out.println("====== PerformanceTable " + command + " start ======");
             ThreadPoolService threadPoolService =
                     new ThreadPoolService(
-                            "PerformanceTableLiquid", Runtime.getRuntime().availableProcessors());
+                            "PerformanceTable", Runtime.getRuntime().availableProcessors());
 
             Collector collector = new Collector();
-            collector.setTotal(count);
-            for (int i = 0; i < count; ++i) {
+            collector.setTotal(totalCount);
+            for (int i = 0; i < sendCount; ++i) {
                 limiter.acquire();
                 threadPoolService
                         .getThreadPool()
@@ -161,7 +186,7 @@ public class PerformanceTable {
             System.exit(0);
         } catch (Exception e) {
             System.out.println(
-                    "====== PerformanceTableLiquid test failed, error message: " + e.getMessage());
+                    "====== PerformanceTable test failed, error message: " + e.getMessage());
             e.printStackTrace();
             System.exit(0);
         }
@@ -180,6 +205,12 @@ public class PerformanceTable {
         }
         if (command.compareToIgnoreCase("select") == 0) {
             select(tableTest, callback);
+        }
+        if (command.compareToIgnoreCase("create") == 0) {
+            create(tableTest, callback);
+        }
+        if (command.compareToIgnoreCase("batchCreate") == 0) {
+            batchCreate(tableTest, callback);
         }
     }
 
@@ -217,6 +248,28 @@ public class PerformanceTable {
         } catch (Exception e) {
             receipt.setStatus(-1);
             callback.onResponse(receipt);
+        }
+    }
+
+    private static void create(TableTest tableTest, TransactionCallback callback) {
+        long nextID = new Random().nextInt();
+        String tableName = "t_test" + Math.abs(nextID);
+        String key = "key" + nextID;
+        List<String> fields = new ArrayList<>();
+        fields.add("name" + nextID);
+        fields.add("age" + nextID);
+        tableTest.createTable(tableName, key, fields, callback);
+    }
+
+    private static void batchCreate(TableTest tableTest, TransactionCallback callback) {
+        int nextID = new Random().nextInt();
+        for (int i = 0; i < FLAG_NUMBER; i++) {
+            String tableName = "t_test" + Math.abs(nextID);
+            String key = "key" + nextID;
+            List<String> fields = new ArrayList<>();
+            fields.add("name" + nextID);
+            fields.add("age" + nextID);
+            tableTest.createTable(tableName, key, fields, callback);
         }
     }
 }
