@@ -28,6 +28,7 @@ import me.tongfei.progressbar.ProgressBarStyle;
 import org.fisco.bcos.sdk.demo.contract.DmcTransfer;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.contract.precompiled.sharding.ShardingService;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
@@ -36,6 +37,7 @@ import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
 public class DMCTransferDag {
     private static Client client;
+    private static ShardingService shardingService;
 
     public static void Usage() {
         System.out.println(" Usage:");
@@ -72,7 +74,8 @@ public class DMCTransferDag {
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
-
+            shardingService =
+                    new ShardingService(client, client.getCryptoSuite().getCryptoKeyPair());
             ThreadPoolService threadPoolService =
                     new ThreadPoolService(
                             "ExecutorDagContractClient",
@@ -98,7 +101,7 @@ public class DMCTransferDag {
             throws IOException, InterruptedException, ContractException {
         System.out.println(
                 "====== Start "
-                        + "Executor DAG Contract test, contracts num is"
+                        + "Executor DAG Contract test, contracts num is "
                         + (startNodeNum + 5)
                         + ", tx count: "
                         + count
@@ -133,7 +136,13 @@ public class DMCTransferDag {
                                                 .getAccountConfig()
                                                 .setAccountAddress(sender);
                                         contracts[index] = contract;
-                                        contractsAddr[index] = contract.getContractAddress();
+                                        String address = contract.getContractAddress();
+                                        contractsAddr[index] = address;
+                                        try {
+                                            shardingService.linkShard(
+                                                    "dmctest" + address.substring(0, 4), address);
+                                        } catch (ContractException e) {
+                                        }
                                         contractLatch.countDown();
                                     } catch (ContractException e) {
                                         e.printStackTrace();

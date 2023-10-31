@@ -28,6 +28,7 @@ import me.tongfei.progressbar.ProgressBarStyle;
 import org.fisco.bcos.sdk.demo.contract.DmcTransfer;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.contract.precompiled.sharding.ShardingService;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
@@ -36,6 +37,7 @@ import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
 public class DMCTransferRing {
     private static Client client;
+    private static ShardingService shardingService;
 
     public static void Usage() {
         System.out.println(" Usage:");
@@ -73,6 +75,8 @@ public class DMCTransferRing {
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
             client = sdk.getClient(groupId);
+            shardingService =
+                    new ShardingService(client, client.getCryptoSuite().getCryptoKeyPair());
             if (nodeNum < 2) {
                 System.out.println(
                         "The number of nodes is too small to form a star network, and a larger number of nodes is required! ");
@@ -130,6 +134,14 @@ public class DMCTransferRing {
                                                 DmcTransfer.deploy(
                                                         client,
                                                         client.getCryptoSuite().getCryptoKeyPair());
+                                        String address = contract.getContractAddress();
+
+                                        try {
+                                            shardingService.linkShard(
+                                                    "dmctest" + address.substring(0, 4), address);
+                                        } catch (ContractException e) {
+                                        }
+
                                         String sender =
                                                 contract.addBalance(BigInteger.valueOf(initBalance))
                                                         .getFrom();
@@ -361,6 +373,7 @@ public class DMCTransferRing {
                             + ", expectBalance is "
                             + expectBalance);
         }
-        System.out.println("check finished, total balance equal expectBalance! ");
+        System.out.println(
+                "check finished, total balance equal expectBalance! " + total.intValue());
     }
 }

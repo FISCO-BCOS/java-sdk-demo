@@ -23,6 +23,7 @@ import org.fisco.bcos.sdk.v3.model.TransactionReceiptStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** @author monan */
 public class Collector {
     private static Logger logger = LoggerFactory.getLogger(Collector.class);
     private AtomicLong less50 = new AtomicLong(0);
@@ -60,7 +61,7 @@ public class Collector {
         return error;
     }
 
-    public void onRpcMessage(JsonRpcResponse response, Long cost) {
+    public void onRpcMessage(JsonRpcResponse<?> response, Long cost) {
         try {
             boolean errorMessage = false;
             if (response.getError() != null && response.getError().getCode() != 0) {
@@ -165,7 +166,7 @@ public class Collector {
         System.out.println("Avg time cost: " + totalCost.get() / total + "ms");
         System.out.println("Errors: " + error.get());
 
-        System.out.println("Time area:");
+        System.out.println("Time group:");
         System.out.println(
                 "0    < time <  50ms   : "
                         + less50

@@ -251,7 +251,7 @@ public class PerformanceKVTable {
 
         for (int i = 0; i < callCount; ++i) {
             List<Object> params = new ArrayList<>(1);
-            params.add(String.valueOf(atomicLong.getAndDecrement()));
+            params.add(String.valueOf(atomicLong.decrementAndGet()));
             threadPoolService
                     .getThreadPool()
                     .execute(
@@ -259,7 +259,6 @@ public class PerformanceKVTable {
                                 try {
                                     callLimiter.acquire();
                                     long now = System.currentTimeMillis();
-
                                     assembleTransactionProcessor.sendTransactionAsync(
                                             address,
                                             useKV ? KVTableTest.getABI() : MapTest.getABI(),
