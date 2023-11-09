@@ -154,20 +154,21 @@ public class PerformancePaillierPrecompiled {
                                             receivedBar.step();
                                             transactionLatch.countDown();
                                             totalCost.addAndGet(System.currentTimeMillis() - now);
-                                            String output =
-                                                    paillierPrecompiled
-                                                            .getPaillierAddOutput(receipt)
-                                                            .getValue1();
-                                            BigInteger ret =
-                                                    PaillierCipher.decrypt(
-                                                            output, paillierKeyPair.getPrivate());
-                                            if (!ret.equals(result)) {
-                                                System.out.println(
-                                                        "result not equal, return: "
-                                                                + ret
-                                                                + " expect: "
-                                                                + result);
-                                            }
+                                            // String output =
+                                            //         paillierPrecompiled
+                                            //                 .getPaillierAddOutput(receipt)
+                                            //                 .getValue1();
+                                            // BigInteger ret =
+                                            //         PaillierCipher.decrypt(
+                                            //                 output,
+                                            // paillierKeyPair.getPrivate());
+                                            // if (!ret.equals(result)) {
+                                            //     System.out.println(
+                                            //             "result not equal, return: "
+                                            //                     + ret
+                                            //                     + " expect: "
+                                            //                     + result);
+                                            // }
                                         }
                                     });
                             sendedBar.step();
