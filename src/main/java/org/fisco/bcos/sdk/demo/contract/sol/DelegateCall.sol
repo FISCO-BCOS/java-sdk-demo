@@ -1,10 +1,12 @@
-pragma solidity>=0.6.10 <0.8.20;
+pragma solidity ^0.8.11;
 
 
 contract DelegateCallDest {
     int public value = 0;
     address public sender;
     address public myAddress;
+
+    event Info(string, address, address);
 
     constructor() public {
         myAddress = address(this);
@@ -22,9 +24,38 @@ contract DelegateCallDest {
         (success, ret) = myAddress.call(abi.encodeWithSignature("recordSender()"));
     }
 
+    function mustRevert() public {
+        require(false, "DelegateCallDest revert");
+    }
+
+    function callMyAddressRevert() public returns(bytes memory) {
+        try DelegateCall(myAddress).mustRevert() {
+            return "no catch";
+        } catch (bytes memory reason) {
+            return reason;
+        }
+    }
+
+
+    function emitInfo() public {
+        emit Info("Dest, this, msg.sender", address(this), msg.sender);
+    }
+
     fallback() external {
         value += 1000;
     }
+}
+
+contract DelegateAtConstruct {
+    constructor(address addr) public {
+        addr.delegatecall(abi.encodeWithSignature("add()"));
+    }
+/*
+    function value() public returns(bytes memory) {
+        (bool ok, bytes memory result) = addr.delegatecall(abi.encodeWithSignature("value()"));
+        return result;
+    }
+    */
 }
 
 contract DelegateCall {
@@ -35,7 +66,10 @@ contract DelegateCall {
     bytes32 myCodeHash;
     address public delegateDest;
     address public latestSender;
+    address public latestOrigin;
 
+    event Info(string, address, address);
+    event InfoBytes(string, bytes, bytes32);
 
     constructor() public {
         myAddress = address(this);
@@ -50,13 +84,14 @@ contract DelegateCall {
 
     function recordSender() public {
         latestSender = msg.sender;
+        latestOrigin = tx.origin;
     }
 
     function testFailed() public {
         int v = value;
         address addr = address(0x1001);
         (bool ok, bytes memory result) = dCall(addr, "add()");
-        require(!ok, "testFailed must not ok");
+        require(ok, "addr not exist but must return ok to be the same as eth");
         require(v == value, "testFailed value must no change");
     }
 
@@ -76,6 +111,18 @@ contract DelegateCall {
     function testCallInDelegateCall() public {
         dCall(delegateDest, "callMyAddress()");
         require(address(this) == latestSender, "callInDelegateCall's msg.sender should be this contract");
+        require(tx.origin == latestOrigin, "callInDelegateCall's msg.sender should be this contract");
+    }
+
+    function emitInfo() public {
+        emit Info("Base, this, msg.sender", address(this), msg.sender);
+    }
+
+    function testEventInDelegateCall() public {
+        emitInfo();
+        dCall(delegateDest, "emitInfo()");
+        //delegateDest.call(abi.encodeWithSignature("emitInfo()"));
+        emitInfo();
     }
 
     function testDelegateCallSender() public {
@@ -91,6 +138,33 @@ contract DelegateCall {
         }
 
         require(address(this) == sender, "callcode's sender must be this address");
+    }
+
+    function testDelegateCallAtConstruct() public returns(address) {
+        DelegateAtConstruct test = new DelegateAtConstruct(delegateDest);
+        return address(test);
+    }
+
+    function mustRevert() public {
+        require(false, "Base revert");
+    }
+
+    function testCatchInDelegateCallThrow() public {
+        (bool ok, bytes memory result) = dCall(delegateDest, "callMyAddressRevert()");
+        require(ok, "testCatchInDelegateCallThrow must not ok");
+        emit InfoBytes("delegatecall result", result, keccak256(result));
+
+        // check the same as remix
+        require(keccak256(result) == bytes32(0x4dd31d082b4aaf0e899854bf1871e7f70e3794b3ec764ad291ab64cbdff7910d));
+
+        try this.mustRevert() {
+            emit Info("no catch", address(this), msg.sender);
+            require(false, "must catch revert");
+        } catch (bytes memory reason) {
+            emit InfoBytes("this call result", reason, keccak256(reason));
+            // check the same as remix
+            require(keccak256(reason) == bytes32(0x0e58f8cab8bcea7dbf8463f931105075f2375b58db9353a6a1bc982fa9e84acf));
+        }
     }
 
 
@@ -117,6 +191,8 @@ contract DelegateCall {
         testCallInDelegateCall();
         testDelegateCallSender();
         testCallcodeSender();
+        testEventInDelegateCall();
+        testCatchInDelegateCallThrow();
     }
 
 }
