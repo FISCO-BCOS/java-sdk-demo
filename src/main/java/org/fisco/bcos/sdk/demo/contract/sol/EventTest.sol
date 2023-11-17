@@ -2,6 +2,10 @@
 contract EventTest {
     event Echo(uint);
 
+    function check() public {
+        this.echoDFS();
+    }
+
     function echoDFS() public {
         this.dfs(1);
         // Event: {"Echo":[[4],[5],[2],[6],[7],[3],[1]]}
