@@ -40,23 +40,12 @@ contract CodeOp {
         return code;
     }
 
-    function check() public returns(bytes32, bytes32, bytes32){
+    function codeHashAt(address addr) public view returns(bytes32){
         bytes32 codeHash;
-        address addr = address(this);
         assembly {
             codeHash := extcodehash(addr)
         }
-        bytes memory code = addr.code;
-        bytes memory extcode = getCode(address(this));
-        bytes memory selfCode = getSelfCode();
-
-        require(keccak256(code) == codeHash, "code must same");
-        require(keccak256(extcode) == codeHash, "extcode must same");
-        require(keccak256(selfCode) == codeHash, "selfCode must same");
-
-        require(code.length == codeSize(), "codeSize must same");
-        require(code.length == extcodeSize(address(this)), "extcodeSize must same");
-        return (codeHash, keccak256(code), keccak256(extcode));
+        return codeHash;
     }
 
     function codeSize() public view returns(uint256) {
@@ -73,5 +62,34 @@ contract CodeOp {
             size := extcodesize(a)
         }
         return size;
+    }
+
+    function checkEthPrecompiledCode() public view returns(uint256){
+        require(extcodeSize(0x0000000000000000000000000000000000000001) == 0, "eth precompiled code size must be 0");
+        require(codeHashAt(0x0000000000000000000000000000000000000001) == bytes32(0), "eth precompiled code hash must be 0");
+    }
+
+    function checkSelfCode() public returns(bytes32, bytes32, bytes32) {
+        bytes32 codeHash = codeHashAt(address(this));
+        bytes memory code = address(this).code;
+        bytes memory extcode = getCode(address(this));
+        bytes memory selfCode = getSelfCode();
+
+        require(keccak256(code) == codeHash, "code must same");
+        require(keccak256(extcode) == codeHash, "extcode must same");
+        require(keccak256(selfCode) == codeHash, "selfCode must same");
+        return (codeHash, keccak256(code), keccak256(extcode));
+    }
+
+    function checkCodeSize() public {
+        bytes memory code = address(this).code;
+        require(code.length == codeSize(), "codeSize must same");
+        require(code.length == extcodeSize(address(this)), "extcodeSize must same");
+    }
+
+    function check() public {
+        checkSelfCode();
+        checkCodeSize();
+        checkEthPrecompiledCode();
     }
 }
