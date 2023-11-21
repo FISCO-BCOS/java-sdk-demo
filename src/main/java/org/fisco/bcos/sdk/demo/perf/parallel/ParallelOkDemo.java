@@ -236,6 +236,63 @@ public class ParallelOkDemo {
         }
     }
 
+    public void queryAccount(int count, BigInteger qps) throws InterruptedException, IOException {
+        System.out.println("Querying account info...");
+        RateLimiter limiter = RateLimiter.create(qps.intValue());
+        ProgressBar sendedBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Send   :")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        ProgressBar receivedBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Receive:")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        CountDownLatch transactionLatch = new CountDownLatch(count);
+        Collector collector = new Collector();
+        collector.setTotal(count);
+        Random random = new Random();
+        final List<DagTransferUser> allUsers = dagUserInfo.getUserList();
+        IntStream.range(0, count)
+                .parallel()
+                .forEach(
+                        index -> {
+                            limiter.acquire();
+                            try {
+                                BigInteger amount = BigInteger.valueOf(random.nextInt(100));
+                                String user = dagUserInfo.getFrom(index).getUser();
+                                long now = System.currentTimeMillis();
+                                BigInteger result = parallelOk.balanceOf(user);
+                                // allUsers.get(index).setAmount(result);
+                                long cost = System.currentTimeMillis() - now;
+                                TransactionReceipt receipt = new TransactionReceipt();
+                                receipt.setStatus(0);
+                                collector.onMessage(receipt, cost);
+                                receivedBar.step();
+                                transactionLatch.countDown();
+                            } catch (Exception e) {
+                                logger.error(
+                                        "call transfer failed, error info: {}", e.getMessage());
+                                TransactionReceipt receipt = new TransactionReceipt();
+                                receipt.setStatus(-1);
+                                receipt.setMessage(
+                                        "call transfer failed, error info: " + e.getMessage());
+                                collector.onMessage(receipt, Long.valueOf(0));
+                            }
+                            sendedBar.step();
+                        });
+        collector.sendFinished();
+        transactionLatch.await();
+        sendedBar.close();
+        receivedBar.close();
+        collector.report();
+        System.out.println("Sending query finished!");
+        System.exit(0);
+    }
+
     public void generateTransferTxs(
             String groupID, int count, String txsPath, BigInteger qps, BigInteger conflictPercent)
             throws InterruptedException, IOException {
@@ -288,10 +345,10 @@ public class ParallelOkDemo {
                                     DagTransferUser from = dagUserInfo.getFrom(index);
                                     DagTransferUser to = dagUserInfo.getTo(index);
                                     // if ((conflictPercent.intValue() > 0)
-                                    //         && (index
-                                    //                 <= (conflictPercent.intValue() * count)
-                                    //                         / 100)) {
-                                    //     to = dagUserInfo.getNext(index);
+                                    // && (index
+                                    // <= (conflictPercent.intValue() * count)
+                                    // / 100)) {
+                                    // to = dagUserInfo.getNext(index);
                                     // }
                                     Random random = new Random();
                                     int r = random.nextInt(100) + 1;
@@ -432,6 +489,7 @@ public class ParallelOkDemo {
                             }
                             sendedBar.step();
                         });
+        collector.sendFinished();
         transactionLatch.await();
         sendedBar.close();
         receivedBar.close();

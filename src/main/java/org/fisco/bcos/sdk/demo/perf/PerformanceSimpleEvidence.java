@@ -115,7 +115,7 @@ public class PerformanceSimpleEvidence {
                         + shards);
 
         RateLimiter limiter = RateLimiter.create(qps.intValue());
-
+        int realEvidenceLength = evidenceLength - 32;
         ShardingService shardingService =
                 new ShardingService(client, client.getCryptoSuite().getCryptoKeyPair());
         SimpleEvidenceFactory[] contracts = new SimpleEvidenceFactory[shards];
@@ -153,7 +153,7 @@ public class PerformanceSimpleEvidence {
                 .forEach(
                         index -> {
                             limiter.acquire();
-                            byte[] evidenceBuffer = new byte[evidenceLength];
+                            byte[] evidenceBuffer = new byte[realEvidenceLength];
                             random.nextBytes(evidenceBuffer);
                             String evidence = new String(evidenceBuffer);
                             int contractIndex = index % shards;
@@ -175,6 +175,7 @@ public class PerformanceSimpleEvidence {
                                     });
                             sendedBar.step();
                         });
+        collector.sendFinished();
         transactionLatch.await();
 
         sendedBar.close();

@@ -41,6 +41,8 @@ public class ParallelOkPerf {
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [transfer] [count] [tps] [file] [isParallel].");
         System.out.println(
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [generate] [count] [tps] [file] [isParallel].");
+        System.out.println(
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [parallelok] [groupId] [query] [count] [tps] [file].");
 
         System.out.println("===== DagTransafer test===========");
         System.out.println(
@@ -166,6 +168,21 @@ public class ParallelOkPerf {
                 System.out.println("Start transfer...");
                 parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
                 parallelOkDemo.userTransfer(count, BigInteger.valueOf(qps));
+                break;
+            case "query":
+                dagUserInfo.loadDagTransferUser();
+                parallelOk =
+                        ParallelOk.load(
+                                dagUserInfo.getContractAddr(),
+                                client,
+                                client.getCryptoSuite().getCryptoKeyPair());
+                System.out.println(
+                        "====== ParallelOk trans, load success, address: "
+                                + parallelOk.getContractAddress());
+
+                System.out.println("Start query...");
+                parallelOkDemo = new ParallelOkDemo(parallelOk, dagUserInfo, threadPoolService);
+                parallelOkDemo.queryAccount(count, BigInteger.valueOf(qps));
                 break;
             case "generate":
                 dagUserInfo.loadDagTransferUser();

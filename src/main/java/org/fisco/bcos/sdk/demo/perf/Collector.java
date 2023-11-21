@@ -40,6 +40,9 @@ public class Collector {
 
     private AtomicInteger error = new AtomicInteger(0);
     private Long startTimestamp = System.currentTimeMillis();
+    private Long sendFinishedTimestamp = 0L;
+    private Long firstReceiptTimestamp = System.currentTimeMillis();
+    private Long lastReceiptTimestamp = System.currentTimeMillis();
 
     public Integer getTotal() {
         return total;
@@ -127,6 +130,12 @@ public class Collector {
     }
 
     public void stat(boolean errorMessage, Long cost) {
+        if (received.incrementAndGet() == 1) {
+            firstReceiptTimestamp = System.currentTimeMillis();
+        }
+        if (received.get() == total) {
+            lastReceiptTimestamp = System.currentTimeMillis();
+        }
         if (errorMessage) {
             error.addAndGet(1);
         }
@@ -150,6 +159,10 @@ public class Collector {
         totalCost.addAndGet(cost);
     }
 
+    public void sendFinished() {
+        sendFinishedTimestamp = System.currentTimeMillis();
+    }
+
     public void report() {
         System.out.println("total");
 
@@ -159,7 +172,17 @@ public class Collector {
 
         System.out.println("Total transactions:  " + total);
         System.out.println("Total time: " + totalTime + "ms");
+        long sendTime = sendFinishedTimestamp - startTimestamp;
+        if (sendFinishedTimestamp != 0) {
+            System.out.println(
+                    "QPS                         : " + total / ((double) sendTime / 1000));
+        }
+        long receiptTime = lastReceiptTimestamp - firstReceiptTimestamp;
+        System.out.println(
+                "CTPS                        : " + total / ((double) receiptTime / 1000));
+
         System.out.println("TPS(include error requests): " + total / ((double) totalTime / 1000));
+
         System.out.println(
                 "TPS(exclude error requests): "
                         + (total - error.get()) / ((double) totalTime / 1000));

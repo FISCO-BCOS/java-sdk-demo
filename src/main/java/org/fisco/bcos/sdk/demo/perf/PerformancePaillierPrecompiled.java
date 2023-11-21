@@ -178,6 +178,7 @@ public class PerformancePaillierPrecompiled {
                                     });
                             sendedBar.step();
                         });
+        collector.sendFinished();
         transactionLatch.await();
 
         sendedBar.close();
@@ -269,6 +270,7 @@ public class PerformancePaillierPrecompiled {
                                     });
                             sendedBar.step();
                         });
+        collector.sendFinished();
         transactionLatch.await();
 
         sendedBar.close();
