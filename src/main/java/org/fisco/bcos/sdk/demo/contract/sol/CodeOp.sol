@@ -1,4 +1,4 @@
-pragma solidity ^0.8.11;
+pragma solidity >=0.6.0 <0.8.0;
 
 contract CodeOp {
     // CODESIZE
@@ -69,20 +69,18 @@ contract CodeOp {
         require(codeHashAt(0x0000000000000000000000000000000000000001) == bytes32(0), "eth precompiled code hash must be 0");
     }
 
-    function checkSelfCode() public returns(bytes32, bytes32, bytes32) {
+    function checkSelfCode() public returns(bytes32, bytes32) {
         bytes32 codeHash = codeHashAt(address(this));
-        bytes memory code = address(this).code;
         bytes memory extcode = getCode(address(this));
         bytes memory selfCode = getSelfCode();
 
-        require(keccak256(code) == codeHash, "code must same");
         require(keccak256(extcode) == codeHash, "extcode must same");
         require(keccak256(selfCode) == codeHash, "selfCode must same");
-        return (codeHash, keccak256(code), keccak256(extcode));
+        return (codeHash, keccak256(extcode));
     }
 
     function checkCodeSize() public {
-        bytes memory code = address(this).code;
+        bytes memory code = getSelfCode();
         require(code.length == codeSize(), "codeSize must same");
         require(code.length == extcodeSize(address(this)), "extcodeSize must same");
     }
