@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.11;
+pragma solidity >=0.6.0 <0.8.0;
+
 
 contract Factory {
     // Returns the address of the newly deployed contract
@@ -88,7 +88,7 @@ contract TestContract {
     address public owner;
     uint public foo;
 
-    constructor(address _owner, uint _foo) payable {
+    constructor(address _owner, uint _foo) public payable {
         owner = _owner;
         foo = _foo;
     }
