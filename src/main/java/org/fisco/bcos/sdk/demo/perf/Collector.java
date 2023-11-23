@@ -172,14 +172,14 @@ public class Collector {
 
         System.out.println("Total transactions:  " + total);
         System.out.println("Total time: " + totalTime + "ms");
-        long sendTime = sendFinishedTimestamp - startTimestamp;
-        if (sendFinishedTimestamp != 0) {
-            System.out.println(
-                    "QPS                         : " + total / ((double) sendTime / 1000));
-        }
-        long receiptTime = lastReceiptTimestamp - firstReceiptTimestamp;
-        System.out.println(
-                "CTPS                        : " + total / ((double) receiptTime / 1000));
+        // if (sendFinishedTimestamp != 0) {
+        //     long sendTime = sendFinishedTimestamp - startTimestamp;
+        //     System.out.println(
+        //             "QPS                         : " + total / ((double) sendTime / 1000));
+        // }
+        // long receiptTime = lastReceiptTimestamp - firstReceiptTimestamp;
+        // System.out.println(
+        //         "CTPS                        : " + total / ((double) receiptTime / 1000));
 
         System.out.println("TPS(include error requests): " + total / ((double) totalTime / 1000));
 

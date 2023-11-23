@@ -1,4 +1,5 @@
-pragma solidity ^0.6.0;
+pragma solidity >=0.6.10 <0.8.20;
+pragma experimental ABIEncoderV2;
 
 // A parallel contract example
 contract ParallelOk

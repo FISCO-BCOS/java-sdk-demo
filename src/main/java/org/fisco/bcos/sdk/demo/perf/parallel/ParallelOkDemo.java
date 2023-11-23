@@ -40,7 +40,10 @@ import org.fisco.bcos.sdk.demo.perf.collector.PerformanceCollector;
 import org.fisco.bcos.sdk.demo.perf.model.DagTransferUser;
 import org.fisco.bcos.sdk.demo.perf.model.DagUserInfo;
 import org.fisco.bcos.sdk.v3.client.protocol.request.JsonRpcRequest;
+import org.fisco.bcos.sdk.v3.codec.datatypes.Type;
+import org.fisco.bcos.sdk.v3.model.Response;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.callback.CallCallback;
 import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.utils.ObjectMapperFactory;
@@ -265,14 +268,31 @@ public class ParallelOkDemo {
                                 BigInteger amount = BigInteger.valueOf(random.nextInt(100));
                                 String user = dagUserInfo.getFrom(index).getUser();
                                 long now = System.currentTimeMillis();
-                                BigInteger result = parallelOk.balanceOf(user);
-                                // allUsers.get(index).setAmount(result);
-                                long cost = System.currentTimeMillis() - now;
-                                TransactionReceipt receipt = new TransactionReceipt();
-                                receipt.setStatus(0);
-                                collector.onMessage(receipt, cost);
-                                receivedBar.step();
-                                transactionLatch.countDown();
+                                parallelOk.balanceOf(
+                                        user,
+                                        new CallCallback() {
+                                            @Override
+                                            public void onResponse(List<Type> types) {
+                                                long cost = System.currentTimeMillis() - now;
+                                                TransactionReceipt transactionReceipt =
+                                                        new TransactionReceipt();
+                                                transactionReceipt.setStatus(0);
+                                                collector.onMessage(transactionReceipt, cost);
+                                                receivedBar.step();
+                                                transactionLatch.countDown();
+                                            }
+
+                                            @Override
+                                            public void onError(Response errorResponse) {
+                                                long cost = System.currentTimeMillis() - now;
+                                                TransactionReceipt transactionReceipt =
+                                                        new TransactionReceipt();
+                                                transactionReceipt.setStatus(16);
+                                                collector.onMessage(transactionReceipt, cost);
+                                                receivedBar.step();
+                                                transactionLatch.countDown();
+                                            }
+                                        });
                             } catch (Exception e) {
                                 logger.error(
                                         "call transfer failed, error info: {}", e.getMessage());
