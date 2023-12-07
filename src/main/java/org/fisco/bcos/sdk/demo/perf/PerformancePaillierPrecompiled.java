@@ -44,6 +44,8 @@ public class PerformancePaillierPrecompiled {
         System.out.println("===== PerformancePaillierPrecompiled test===========");
         System.out.println(
                 " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformancePaillierPrecompiled [add] [groupId] [PrivateKeyLen(512/1024)] [count] [qps].");
+        System.out.println(
+                " \t java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformancePaillierPrecompiled [rawAdd] [groupId] [PrivateKeyLen(512/1024)] [count] [qps].");
     }
 
     public static void main(String[] args)
@@ -78,6 +80,9 @@ public class PerformancePaillierPrecompiled {
             switch (command) {
                 case "add":
                     add(groupId, pkLen, count, qps);
+                    break;
+                case "rawAdd":
+                    rawAdd(groupId, pkLen, count, qps);
                     break;
                 default:
                     System.out.println("valid command are add, got : " + command);
@@ -142,7 +147,7 @@ public class PerformancePaillierPrecompiled {
                             int secondIndex = (index + numbers / 2) % numbers;
                             String first = data[firstIndex];
                             String second = data[secondIndex];
-                            BigInteger result = bigs[firstIndex].add(bigs[secondIndex]);
+                            // BigInteger result = bigs[firstIndex].add(bigs[secondIndex]);
                             paillierPrecompiled.paillierAdd(
                                     first,
                                     second,
@@ -173,6 +178,99 @@ public class PerformancePaillierPrecompiled {
                                     });
                             sendedBar.step();
                         });
+        collector.sendFinished();
+        transactionLatch.await();
+
+        sendedBar.close();
+        receivedBar.close();
+        collector.report();
+        System.out.println("Sending transactions finished!");
+    }
+
+    public static void rawAdd(String groupId, Integer pklen, int count, Integer qps)
+            throws IOException, InterruptedException, ContractException {
+        System.out.println(
+                "====== Start test, count: " + count + ", qps:" + qps + ", groupId: " + groupId);
+
+        RateLimiter limiter = RateLimiter.create(qps.intValue());
+
+        PaillierPrecompiled paillierPrecompiled =
+                PaillierPrecompiled.load(
+                        PAILLIER_ADDR, client, client.getCryptoSuite().getCryptoKeyPair());
+
+        final Random random = new Random();
+        random.setSeed(System.currentTimeMillis());
+
+        System.out.println("Prepare parameters...");
+
+        int numbers = 10000;
+        byte[][] data = new byte[numbers][];
+        BigInteger[] bigs = new BigInteger[numbers];
+        KeyPair paillierKeyPair = PaillierKeyPair.generateKeyPair(pklen);
+        for (int i = 0; i < numbers; i++) {
+            bigs[i] = new BigInteger(250, random);
+            data[i] = PaillierCipher.encryptAsBytes(bigs[i], paillierKeyPair.getPublic());
+        }
+        System.out.println("Sending transactions...");
+        ProgressBar sendedBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Send   :")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        ProgressBar receivedBar =
+                new ProgressBarBuilder()
+                        .setTaskName("Receive:")
+                        .setInitialMax(count)
+                        .setStyle(ProgressBarStyle.UNICODE_BLOCK)
+                        .build();
+        CountDownLatch transactionLatch = new CountDownLatch(count);
+        AtomicLong totalCost = new AtomicLong(0);
+        Collector collector = new Collector();
+        collector.setTotal(count);
+
+        IntStream.range(0, count)
+                .parallel()
+                .forEach(
+                        index -> {
+                            limiter.acquire();
+                            long now = System.currentTimeMillis();
+                            int firstIndex = index % numbers;
+                            int secondIndex = (index + numbers / 2) % numbers;
+                            byte[] first = data[firstIndex];
+                            byte[] second = data[secondIndex];
+                            // BigInteger result = bigs[firstIndex].add(bigs[secondIndex]);
+                            paillierPrecompiled.paillierAdd(
+                                    first,
+                                    second,
+                                    new TransactionCallback() {
+                                        @Override
+                                        public void onResponse(TransactionReceipt receipt) {
+                                            long cost = System.currentTimeMillis() - now;
+                                            collector.onMessage(receipt, cost);
+                                            receivedBar.step();
+                                            transactionLatch.countDown();
+                                            totalCost.addAndGet(System.currentTimeMillis() - now);
+                                            // String output =
+                                            //         paillierPrecompiled
+                                            //                 .getPaillierAddOutput(receipt)
+                                            //                 .getValue1();
+                                            // BigInteger ret =
+                                            //         PaillierCipher.decrypt(
+                                            //                 output,
+                                            // paillierKeyPair.getPrivate());
+                                            // if (!ret.equals(result)) {
+                                            //     System.out.println(
+                                            //             "result not equal, return: "
+                                            //                     + ret
+                                            //                     + " expect: "
+                                            //                     + result);
+                                            // }
+                                        }
+                                    });
+                            sendedBar.step();
+                        });
+        collector.sendFinished();
         transactionLatch.await();
 
         sendedBar.close();
