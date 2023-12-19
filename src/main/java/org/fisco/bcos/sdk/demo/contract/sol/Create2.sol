@@ -77,7 +77,7 @@ contract Create2 {
 
     function check() public {
         bytes memory bytecode = getBytecode(msg.sender, 66);
-        uint salt = 12;
+        uint salt = block.timestamp;
         address addr1 = getAddress(bytecode, salt);
         address addr2 = deploy(bytecode, salt);
         require(addr1 == addr2, "getAddress() and deploy() should be the same");
