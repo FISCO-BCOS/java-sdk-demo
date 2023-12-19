@@ -148,13 +148,18 @@ contract DelegateCall {
         require(false, "Base revert");
     }
 
+    function checkBytes(bytes memory origin, bytes32 hash, bytes32 smHash) public pure returns(bool) {
+        return keccak256(origin) == hash || keccak256(origin) == smHash;
+    }
+
     function testCatchInDelegateCallThrow() public {
         (bool ok, bytes memory result) = dCall(delegateDest, "callMyAddressRevert()");
         require(ok, "testCatchInDelegateCallThrow must not ok");
         emit InfoBytes("delegatecall result", result, keccak256(result));
 
         // check the same as remix
-        require(keccak256(result) == bytes32(0x4dd31d082b4aaf0e899854bf1871e7f70e3794b3ec764ad291ab64cbdff7910d));
+        require(checkBytes(result, bytes32(0x4dd31d082b4aaf0e899854bf1871e7f70e3794b3ec764ad291ab64cbdff7910d),
+            bytes32(0xc770ee3912bb8b54fdeb59371079323aac0cca9ca0355dfddc07d5ee38c8f35b)), "testCatchInDelegateCallThrow checkBytes failed");
 
         try this.mustRevert() {
             emit Info("no catch", address(this), msg.sender);
@@ -162,7 +167,8 @@ contract DelegateCall {
         } catch (bytes memory reason) {
             emit InfoBytes("this call result", reason, keccak256(reason));
             // check the same as remix
-            require(keccak256(reason) == bytes32(0x0e58f8cab8bcea7dbf8463f931105075f2375b58db9353a6a1bc982fa9e84acf));
+            require(checkBytes(reason, bytes32(0x0e58f8cab8bcea7dbf8463f931105075f2375b58db9353a6a1bc982fa9e84acf),
+                bytes32(0x340af06566b98237072abe7f5c4c5a7c39059c64f09ea1de31622cb74f3e3be5)), "testCatchInDelegateCallThrow this call result checkBytes failed");
         }
     }
 
