@@ -14,27 +14,6 @@
 package org.fisco.bcos.sdk.demo.perf.transactionv1;
 
 import com.google.common.util.concurrent.RateLimiter;
-import me.tongfei.progressbar.ProgressBar;
-import me.tongfei.progressbar.ProgressBarBuilder;
-import me.tongfei.progressbar.ProgressBarStyle;
-import org.fisco.bcos.sdk.demo.contract.transactionv1.SmallBank;
-import org.fisco.bcos.sdk.demo.perf.Collector;
-import org.fisco.bcos.sdk.demo.perf.ParallelOkPerf;
-import org.fisco.bcos.sdk.demo.perf.model.DagTransferUser;
-import org.fisco.bcos.sdk.demo.perf.model.DagUserInfo;
-import org.fisco.bcos.sdk.v3.BcosSDK;
-import org.fisco.bcos.sdk.v3.client.Client;
-import org.fisco.bcos.sdk.v3.crypto.signature.ECDSASignature;
-import org.fisco.bcos.sdk.v3.crypto.signature.SignatureResult;
-import org.fisco.bcos.sdk.v3.model.ConstantConfig;
-import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
-import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
-import org.fisco.bcos.sdk.v3.transaction.manager.transactionv2.ProxySignTransactionManager;
-import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
-import org.fisco.bcos.sdk.v3.transaction.signer.AsyncTransactionSignercInterface;
-import org.fisco.bcos.sdk.v3.transaction.signer.RemoteSignCallbackInterface;
-import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -48,6 +27,21 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
+import me.tongfei.progressbar.ProgressBar;
+import me.tongfei.progressbar.ProgressBarBuilder;
+import me.tongfei.progressbar.ProgressBarStyle;
+import org.fisco.bcos.sdk.demo.contract.transactionv1.SmallBank;
+import org.fisco.bcos.sdk.demo.perf.Collector;
+import org.fisco.bcos.sdk.demo.perf.ParallelOkPerf;
+import org.fisco.bcos.sdk.demo.perf.model.DagTransferUser;
+import org.fisco.bcos.sdk.demo.perf.model.DagUserInfo;
+import org.fisco.bcos.sdk.v3.BcosSDK;
+import org.fisco.bcos.sdk.v3.client.Client;
+import org.fisco.bcos.sdk.v3.model.ConstantConfig;
+import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
+import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
+import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
+import org.fisco.bcos.sdk.v3.utils.ThreadPoolService;
 
 public class PerformanceSmallBank {
     private static Client client;
@@ -133,17 +127,12 @@ public class PerformanceSmallBank {
         random.setSeed(System.currentTimeMillis());
 
         if (Objects.equals(command, "add")) {
-            smallBank =
-                    SmallBank.deploy(
-                            client, client.getCryptoSuite().getCryptoKeyPair());
+            smallBank = SmallBank.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
             dagUserInfo.setContractAddr(smallBank.getContractAddress());
             smallBank.setEnableDAG(enableParallel);
         } else {
             dagUserInfo.loadDagTransferUser();
-            smallBank =
-                    SmallBank.load(
-                            dagUserInfo.getContractAddr(),
-                            client);
+            smallBank = SmallBank.load(dagUserInfo.getContractAddr(), client);
             smallBank.setEnableDAG(enableParallel);
         }
         long txtotal = count;
@@ -194,14 +183,12 @@ public class PerformanceSmallBank {
                                                     public void onResponse(
                                                             TransactionReceipt receipt) {
                                                         long cost =
-                                                                System.currentTimeMillis()
-                                                                        - now;
+                                                                System.currentTimeMillis() - now;
                                                         collector.onMessage(receipt, cost);
                                                         receivedBar.step();
                                                         transactionLatch.countDown();
                                                         totalCost.addAndGet(
-                                                                System.currentTimeMillis()
-                                                                        - now);
+                                                                System.currentTimeMillis() - now);
                                                     }
                                                 });
                                         sendedBar.step();
@@ -213,87 +200,38 @@ public class PerformanceSmallBank {
                 dagUserInfo.writeDagTransferUser();
                 break;
 
-            case "transfer": {
-                System.out.println("Start userTransfer test...");
-                System.out.println(
-                        "===================================================================");
+            case "transfer":
+                {
+                    System.out.println("Start userTransfer test...");
+                    System.out.println(
+                            "===================================================================");
 
-                IntStream.range(0, (int) txtotal)
-                        .parallel()
-                        .forEach(
-                                index -> {
-                                    limiter.acquire();
-                                    long now = System.currentTimeMillis();
-                                    try {
-                                        DagTransferUser from = dagUserInfo.getFrom(index);
-                                        DagTransferUser to = dagUserInfo.getTo(index);
-                                        BigInteger amount =
-                                                BigInteger.valueOf(random.nextInt(10));
-                                        smallBank.sendPayment(
-                                                from.getUser(),
-                                                to.getUser(),
-                                                amount,
-                                                new TransactionCallback() {
-                                                    public void onResponse(
-                                                            TransactionReceipt receipt) {
-                                                        long cost =
-                                                                System.currentTimeMillis()
-                                                                        - now;
-                                                        collector.onMessage(receipt, cost);
-                                                        receivedBar.step();
-                                                        transactionLatch.countDown();
-                                                        totalCost.addAndGet(
-                                                                System.currentTimeMillis()
-                                                                        - now);
-                                                    }
-                                                });
-                                        sendedBar.step();
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                });
-
-                transactionLatch.await();
-                System.out.println("Sending transactions finished!");
-                break;
-            }
-            case "save": {
-                System.out.println("Start userSave test...");
-                System.out.println(
-                        "===================================================================");
-                dagUserInfo.loadDagTransferUser();
-                List<DagTransferUser> allUser = dagUserInfo.getUserList();
-                for (int i = 0; i < allUser.size(); i++) {
-                    final int userIdx = i;
-                    limiter.acquire();
-                    threadPoolService
-                            .getThreadPool()
-                            .execute(
-                                    () -> {
+                    IntStream.range(0, (int) txtotal)
+                            .parallel()
+                            .forEach(
+                                    index -> {
+                                        limiter.acquire();
                                         long now = System.currentTimeMillis();
                                         try {
-                                            DagTransferUser from =
-                                                    dagUserInfo.getFrom(userIdx);
+                                            DagTransferUser from = dagUserInfo.getFrom(index);
+                                            DagTransferUser to = dagUserInfo.getTo(index);
                                             BigInteger amount =
-                                                    BigInteger.valueOf(1000000000);
-                                            smallBank.updateBalance(
+                                                    BigInteger.valueOf(random.nextInt(10));
+                                            smallBank.sendPayment(
                                                     from.getUser(),
+                                                    to.getUser(),
                                                     amount,
                                                     new TransactionCallback() {
                                                         public void onResponse(
-                                                                TransactionReceipt
-                                                                        receipt) {
+                                                                TransactionReceipt receipt) {
                                                             long cost =
-                                                                    System
-                                                                            .currentTimeMillis()
+                                                                    System.currentTimeMillis()
                                                                             - now;
-                                                            collector.onMessage(
-                                                                    receipt, cost);
+                                                            collector.onMessage(receipt, cost);
                                                             receivedBar.step();
                                                             transactionLatch.countDown();
                                                             totalCost.addAndGet(
-                                                                    System
-                                                                            .currentTimeMillis()
+                                                                    System.currentTimeMillis()
                                                                             - now);
                                                         }
                                                     });
@@ -302,48 +240,94 @@ public class PerformanceSmallBank {
                                             e.printStackTrace();
                                         }
                                     });
+
+                    transactionLatch.await();
+                    System.out.println("Sending transactions finished!");
+                    break;
                 }
-                transactionLatch.await();
-                System.out.println("Sending transactions finished!");
-                break;
-            }
-            case "generate": {
-                String txsFile = "smallbank." + "." + count + ".txt";
-                System.out.println("Generating transactions -> " + txsFile);
-                dagUserInfo.loadDagTransferUser();
-
-                File accountFile = new File(txsFile);
-                if (!accountFile.exists()) {
-                    accountFile.createNewFile();
-                }
-                FileWriter fileWriter = new FileWriter(accountFile.getName(), true);
-                BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-
-                List<DagTransferUser> allUser = dagUserInfo.getUserList();
-                for (int i = 0; i < txtotal; ) {
-                    try {
-                        DagTransferUser from = dagUserInfo.getFrom(i);
-                        DagTransferUser to = dagUserInfo.getTo(i);
-                        int r = random.nextInt(10) + 1;
-                        BigInteger amount = BigInteger.valueOf(r);
-
-                        String txBytes =
-                                smallBank.getSignedTransactionForSendPayment(
-                                        from.getUser(), to.getUser(), amount);
-
-                        bufferedWriter.write(txBytes);
-                        bufferedWriter.newLine();
-
-                        sendedBar.step();
-                        transactionLatch.countDown();
-                    } catch (Exception e) {
-                        e.printStackTrace();
+            case "save":
+                {
+                    System.out.println("Start userSave test...");
+                    System.out.println(
+                            "===================================================================");
+                    dagUserInfo.loadDagTransferUser();
+                    List<DagTransferUser> allUser = dagUserInfo.getUserList();
+                    for (int i = 0; i < allUser.size(); i++) {
+                        final int userIdx = i;
+                        limiter.acquire();
+                        threadPoolService
+                                .getThreadPool()
+                                .execute(
+                                        () -> {
+                                            long now = System.currentTimeMillis();
+                                            try {
+                                                DagTransferUser from = dagUserInfo.getFrom(userIdx);
+                                                BigInteger amount = BigInteger.valueOf(1000000000);
+                                                smallBank.updateBalance(
+                                                        from.getUser(),
+                                                        amount,
+                                                        new TransactionCallback() {
+                                                            public void onResponse(
+                                                                    TransactionReceipt receipt) {
+                                                                long cost =
+                                                                        System.currentTimeMillis()
+                                                                                - now;
+                                                                collector.onMessage(receipt, cost);
+                                                                receivedBar.step();
+                                                                transactionLatch.countDown();
+                                                                totalCost.addAndGet(
+                                                                        System.currentTimeMillis()
+                                                                                - now);
+                                                            }
+                                                        });
+                                                sendedBar.step();
+                                            } catch (Exception e) {
+                                                e.printStackTrace();
+                                            }
+                                        });
                     }
+                    transactionLatch.await();
+                    System.out.println("Sending transactions finished!");
+                    break;
                 }
-                transactionLatch.await();
-                System.out.println("Generate transactions finished! File name: " + txsFile);
-                break;
-            }
+            case "generate":
+                {
+                    String txsFile = "smallbank." + "." + count + ".txt";
+                    System.out.println("Generating transactions -> " + txsFile);
+                    dagUserInfo.loadDagTransferUser();
+
+                    File accountFile = new File(txsFile);
+                    if (!accountFile.exists()) {
+                        accountFile.createNewFile();
+                    }
+                    FileWriter fileWriter = new FileWriter(accountFile.getName(), true);
+                    BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+
+                    List<DagTransferUser> allUser = dagUserInfo.getUserList();
+                    for (int i = 0; i < txtotal; ) {
+                        try {
+                            DagTransferUser from = dagUserInfo.getFrom(i);
+                            DagTransferUser to = dagUserInfo.getTo(i);
+                            int r = random.nextInt(10) + 1;
+                            BigInteger amount = BigInteger.valueOf(r);
+
+                            String txBytes =
+                                    smallBank.getSignedTransactionForSendPayment(
+                                            from.getUser(), to.getUser(), amount);
+
+                            bufferedWriter.write(txBytes);
+                            bufferedWriter.newLine();
+
+                            sendedBar.step();
+                            transactionLatch.countDown();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    transactionLatch.await();
+                    System.out.println("Generate transactions finished! File name: " + txsFile);
+                    break;
+                }
             default:
                 System.out.println("invalid command: " + command);
                 Usage();
