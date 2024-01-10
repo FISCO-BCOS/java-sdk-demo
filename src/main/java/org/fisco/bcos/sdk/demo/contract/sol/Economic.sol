@@ -80,8 +80,8 @@ library IterableMapping {
 }
 
 contract Economic {
-    BalancePrecompiled balancePrecompiled = BalancePrecompiled(address(bytes20(bytes("0x0000000000000000000000000000000000001011"))));
-    CommitteeManager committeeMgr = CommitteeManager(address(bytes20(bytes("0x0000000000000000000000000000000000010001"))));
+    BalancePrecompiled balancePrecompiled = BalancePrecompiled(0x0000000000000000000000000000000000001011);
+    CommitteeManager committeeMgr = CommitteeManager(0x0000000000000000000000000000000000010001);
 
     address owner;
     itmap chargersMap;
