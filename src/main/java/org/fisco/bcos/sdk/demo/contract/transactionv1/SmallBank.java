@@ -61,6 +61,11 @@ public class SmallBank extends Contract {
         super(getBinary(client.getCryptoSuite()), contractAddress, client, transactionManager);
     }
 
+    protected SmallBank(String contractAddress, Client client, CryptoKeyPair credential) {
+        super(getBinary(client.getCryptoSuite()), contractAddress, client, credential);
+        this.transactionManager = new ProxySignTransactionManager(client);
+    }
+
     public static String getBinary(CryptoSuite cryptoSuite) {
         return (cryptoSuite.getCryptoTypeConfig() == CryptoType.ECDSA_TYPE ? BINARY : SM_BINARY);
     }
