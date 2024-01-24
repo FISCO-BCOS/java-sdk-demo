@@ -101,11 +101,14 @@ googleJavaFormat {
 
 dependencies {
     api ("org.fisco-bcos.java-sdk:fisco-bcos-java-sdk:${javaSDKVersion}")
-    api('org.fisco-bcos.code-generator:bcos-code-generator:1.0.0') {
+    api('org.fisco-bcos.code-generator:bcos-code-generator:1.2.0') {
         exclude group : "org.fisco-bcos.java-sdk"
         exclude group : "org.slf4j"
+        exclude group : " com.fasterxml.jackson.core"
     }
-    api ("org.fisco-bcos:solcJ:${solcJVersion}")
+    api ("org.fisco-bcos:solcJ:${solcJVersion}"){
+        exclude group : " com.fasterxml.jackson.core"
+    }
     api ("com.google.guava:guava:${guavaVersion}")
     api ("org.apache.commons:commons-collections4:${commonsCollections4Version}")
     api ("me.tongfei:progressbar:0.9.2")
