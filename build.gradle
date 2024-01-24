@@ -100,6 +100,9 @@ googleJavaFormat {
 }
 
 dependencies {
+    implementation ('com.fasterxml.jackson.core:jackson-databind:2.14.3'){
+        force true
+    }
     api ("org.fisco-bcos.java-sdk:fisco-bcos-java-sdk:${javaSDKVersion}")
     api('org.fisco-bcos.code-generator:bcos-code-generator:1.2.0') {
         exclude group : "org.fisco-bcos.java-sdk"
