@@ -49,7 +49,7 @@ public class EconomicTest {
             BlockNumber blockNumber = client.getBlockNumber();
             System.out.println("Current BlockNumber : " + blockNumber.getBlockNumber());
 
-            CryptoSuite cryptoSuite = new CryptoSuite(CryptoType.ECDSA_TYPE);
+            CryptoSuite cryptoSuite = new CryptoSuite(client.getCryptoType());
             cryptoSuite.loadAccount("pem", committeePath, "");
             CryptoKeyPair committee = cryptoSuite.getCryptoKeyPair();
             // CryptoKeyPair deployOwner = client.getCryptoSuite().getCryptoKeyPair();
