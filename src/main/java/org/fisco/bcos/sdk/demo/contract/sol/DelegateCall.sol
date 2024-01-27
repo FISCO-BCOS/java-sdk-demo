@@ -49,12 +49,12 @@ contract DelegateAtConstruct {
     constructor(address addr) public {
         addr.delegatecall(abi.encodeWithSignature("add()"));
     }
-/*
-    function value() public returns(bytes memory) {
-        (bool ok, bytes memory result) = addr.delegatecall(abi.encodeWithSignature("value()"));
-        return result;
-    }
-    */
+    /*
+        function value() public returns(bytes memory) {
+            (bool ok, bytes memory result) = addr.delegatecall(abi.encodeWithSignature("value()"));
+            return result;
+        }
+        */
 }
 
 contract DelegateCall {

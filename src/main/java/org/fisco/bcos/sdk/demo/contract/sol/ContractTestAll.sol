@@ -5,6 +5,11 @@ import "./EventTest.sol";
 import "./LibraryTest.sol";
 import "./ProxyTest.sol";
 import "./StaticCall.sol";
+import "./TablePrecompiledTest.sol";
+import "./ECRecoverTest.sol";
+import "./DeployTreeTest.sol"; // DMC
+import "./BalanceTest.sol";
+import "./BalancePrecompiledTest.sol";
 
 contract ContractTestAll {
 
@@ -12,8 +17,13 @@ contract ContractTestAll {
         try ContractTestAll(addr).check() { // just a little trick to call check() in the target contract
             // success
         } catch (bytes memory reason) {
-            require(false, name);
+            revert(string(abi.encodePacked(name, " check failed: ", reason)));
         }
+        return; // TODO: disable this
+        // use proxy to call check()
+        Proxy proxy = new ProxyImpl(addr);
+        (bool success, bytes memory reason) = address(proxy).call(abi.encodeWithSignature("check()"));
+        require(success, string(abi.encodePacked(name, " proxy check failed: ", reason)));
     }
 
     function check() public {
@@ -24,5 +34,11 @@ contract ContractTestAll {
         checkOne("LibraryTest", address(new LibraryTest()));
         checkOne("ProxyTest", address(new ProxyTest()));
         checkOne("StaticCall", address(new StaticCall()));
+        checkOne("TablePrecompiledTest", address(new TablePrecompiledTest()));
+        checkOne("ECRecoverTest", address(new ECRecoverTest()));
+        checkOne("DeployTreeTest", address(new DeployTreeTest())); // DMC
+        //checkOne("BalanceTest", address(new BalanceTest()));
+        //checkOne("BalancePrecompiledTest", address(new BalancePrecompiledTest()));
+        // gas price test
     }
 }
