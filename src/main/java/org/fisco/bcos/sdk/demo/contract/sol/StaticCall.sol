@@ -1,9 +1,16 @@
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity >=0.6.0 <0.8.12;
 
 contract StaticCall {
     HelloWorld helloWorld = new HelloWorld();
     event Result(bytes);
     event Result(uint);
+
+    modifier initIfNot() {
+        if (address(helloWorld) == address(0)) {
+            helloWorld = new HelloWorld();
+        }
+        _;
+    }
 
     function staticCallASM(address target, bytes memory data)
     internal
@@ -77,7 +84,7 @@ contract StaticCall {
         require(ok, "addr not exist but must return ok to be the same as eth");
     }
 
-    function check() public {
+    function check() public initIfNot {
         (bool ok, bytes memory result) = address(helloWorld).staticcall(abi.encodeWithSignature("get()"));
         require(ok);
 

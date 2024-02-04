@@ -41,6 +41,8 @@ abstract contract Proxy {
 }
 
 contract ProxyImpl is Proxy {
+    // put implementation address as far as possible to make sure that it will not be at the same location as in the Proxy contract
+    address[1024] private gaps_;
     address public implementation_;
 
     constructor(address implementation) public {

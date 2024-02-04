@@ -5,12 +5,9 @@ pragma experimental ABIEncoderV2;
 import "./TableTestV320.sol";
 
 contract TablePrecompiledTest {
-    TableTestV320 test;
-    constructor () public {
-        test = new TableTestV320();
-    }
 
     function check() public {
+        TableTestV320 test = new TableTestV320();
         test.select(1, 100); // should not revert
     }
 

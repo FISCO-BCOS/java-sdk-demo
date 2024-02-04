@@ -1,4 +1,4 @@
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity >=0.6.0 <0.8.12;
 
 contract BalancePrecompiled {
     function getBalance(address account) public view returns (uint256) {}
@@ -23,13 +23,25 @@ contract BalancePrecompiledTest {
     BalancePrecompiled private balancePrecompiled = BalancePrecompiled(0x0000000000000000000000000000000000001011);
 
     modifier onlyBalanceCaller() {
-        require(isBalanceCaller(msg.sender), "only balance caller can call");
+        balancePrecompiled = BalancePrecompiled(0x0000000000000000000000000000000000001011);
+        require(isBalanceCaller(tx.origin), "Permission denied. This account is not balance governor.");
         _;
     }
 
-    constructor() public {
-        balancePrecompiled.registerCaller(address(this));
-        balancePrecompiled.registerCaller(msg.sender);
+    constructor() public onlyBalanceCaller {
+        initIfNotInit();
+    }
+
+    function initIfNotInit() public onlyBalanceCaller {
+        balancePrecompiled = BalancePrecompiled(0x0000000000000000000000000000000000001011);
+        if (!isBalanceCaller(address(this))) {
+            balancePrecompiled.registerCaller(address(this));
+        }
+        if (msg.sender != tx.origin) {
+            if (!isBalanceCaller(msg.sender)) {
+                balancePrecompiled.registerCaller(msg.sender); // register if msg.sender is contract
+            }
+        }
     }
 
     function isBalanceCaller(address account) public view returns (bool) {
@@ -51,7 +63,7 @@ contract BalancePrecompiledTest {
 
         // double register should revert
         try balancePrecompiled.registerCaller(address(this)) {
-            revert("should revert");
+            revert("should revert 1");
         } catch (bytes memory reason) {
         }
 
@@ -64,32 +76,41 @@ contract BalancePrecompiledTest {
     function testClearBalanceCaller() public onlyBalanceCaller {
         address[] memory list = balancePrecompiled.listCaller();
         for (uint256 i = 0; i < list.length; i++) {
-            if (list[i] == msg.sender || list[i] == address(this)) {
+            if (list[i] == msg.sender || list[i] == address(this) || list[i] == tx.origin) {
                 continue;
             }
             balancePrecompiled.unregisterCaller(list[i]);
             require(!isBalanceCaller(list[i]), "should not be balance caller");
         }
-        require(balancePrecompiled.listCaller().length == 2, "should only have 2 balance caller");
+        require(balancePrecompiled.listCaller().length <= 3, "should be 3 balance caller");
     }
 
     function testRegisterManyCaller() public onlyBalanceCaller returns(address[] memory){
-        for (uint256 i = 0; i < 100; i++) {
+        uint256 currentLength = balancePrecompiled.listCaller().length;
+
+        for (uint256 i = currentLength; i < 500; i++) {
             address fakeAddr = address(block.timestamp + i);
             balancePrecompiled.registerCaller(fakeAddr);
             require(isBalanceCaller(fakeAddr), "should be balance caller");
         }
 
+        // must throw if register more than 500
+        try balancePrecompiled.registerCaller(address(block.timestamp + 500)) {
+            revert("should revert 1");
+        } catch (bytes memory reason) {
+        }
+
         return balancePrecompiled.listCaller();
     }
 
-    function testAddBalance() public onlyBalanceCaller {
+    function testAddBalance() public onlyBalanceCaller returns (uint256) {
         address user = address(block.timestamp);
         balancePrecompiled.addBalance(user, uint256(-1));
-
+        return balancePrecompiled.getBalance(user);
         // must revert if add 1
         try balancePrecompiled.addBalance(user, 1) {
-            revert("should revert");
+            return balancePrecompiled.getBalance(user);
+            revert("should revert 2");
         } catch (bytes memory reason) {
         }
 
@@ -102,26 +123,29 @@ contract BalancePrecompiledTest {
 
         // test overflow
         try balancePrecompiled.addBalance(user2, uint256(-1)) {
-            revert("should revert");
+            revert("should revert 3");
         } catch (bytes memory reason) {
         }
     }
 
     function testSubBalance() public onlyBalanceCaller {
         address user = address(block.timestamp);
+        // clear user balance
+        balancePrecompiled.subBalance(user, balancePrecompiled.getBalance(user));
+
         balancePrecompiled.addBalance(user, 100);
         balancePrecompiled.subBalance(user, 1);
         require(balancePrecompiled.getBalance(user) == 99, "balance should be decreased by 1");
 
         // must revert if sub 1
         try balancePrecompiled.subBalance(user, 100) {
-            revert("should revert");
+            revert("should revert 4");
         } catch (bytes memory reason) {
         }
 
         // test overflow
         try balancePrecompiled.subBalance(user, uint256(-1)) {
-            revert("should revert");
+            revert("should revert 5");
         } catch (bytes memory reason) {
         }
 
@@ -150,14 +174,20 @@ contract BalancePrecompiledTest {
         require(balancePrecompiled.getBalance(B) == uint256(-1), "balance should be uint256(-1)");
     }
 
-    function check() public onlyBalanceCaller {
-        //testRegisterAndUnregisterCaller();
-        //testRegisterManyCaller();
+    function getCallerSize() public view returns (uint256) {
+        return balancePrecompiled.listCaller().length;
+    }
+
+    function check() public {
+        initIfNotInit();
+
+        testRegisterAndUnregisterCaller();
+        testRegisterManyCaller();
         testClearBalanceCaller();
 
         testAddBalance();
         testSubBalance();
-        //testTransferBalance();
+        testTransferBalance();
     }
 
 }

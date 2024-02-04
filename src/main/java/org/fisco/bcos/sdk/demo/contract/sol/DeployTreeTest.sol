@@ -1,4 +1,4 @@
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity >=0.6.0 <0.8.12;
 
 interface INode {
     function init(uint i, uint limit, bool enableRevert) external;
@@ -210,6 +210,8 @@ contract DeployTreeTest {
     }
 
     function check() public {
+        factory = new NodeFactory();
+
         testDeploy();
         testRevert();
         testSetTreeValue();
