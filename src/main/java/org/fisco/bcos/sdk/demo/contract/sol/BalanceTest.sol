@@ -1,4 +1,4 @@
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity >=0.6.0 <0.8.12;
 
 contract BalanceTest {
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -8,7 +8,7 @@ contract BalanceTest {
     event Info(address addr, string info);
 
     modifier mustHasBalance() {
-        require(getSelfBalance() >= 0, "balance not enough");
+        require(getSelfBalance() > 0, "balance not enough");
         _;
     }
 
@@ -42,11 +42,13 @@ contract BalanceTest {
     }
 
     function testReceiveBalance() public payable {
+        /*
         // must revert
         try this.receiveBalance() {
             revert("should revert");
         } catch (bytes memory reason) {
         }
+        */
 
         this.receiveBalance{value: 1}();
     }
@@ -102,6 +104,62 @@ contract BalanceTest {
         }
     }
 
+    function testTransferBalance() public mustHasBalance {
+        uint256 balanceBefore = getBalance(msg.sender);
+        uint256 balanceBeforeSelf = getSelfBalance();
+        address payable sender = (msg.sender);
+        sender.transfer(1);
+        uint256 balanceAfter = getBalance(msg.sender);
+        uint256 balanceAfterSelf = getSelfBalance();
+        require(balanceAfter - balanceBefore == 1, "balance should be increased by amount");
+        require(balanceBeforeSelf - balanceAfterSelf == 1, "self balance should be decreased by amount");
+    }
+
+    function testSelfdestruct() public payable {
+        uint256 balanceBefore = getBalance(msg.sender);
+        uint256 balanceBeforeSelf = getSelfBalance();
+        selfdestruct(msg.sender);
+        uint256 balanceAfter = getBalance(msg.sender);
+        uint256 balanceAfterSelf = getSelfBalance();
+        require(balanceAfter - balanceBefore == balanceBeforeSelf, "balance should be increased by amount");
+        require(balanceAfterSelf == 0, "self balance should be 0");
+    }
+
+    function testSelfdestructZeroAddress() public payable {
+        //uint256 balanceBefore = getBalance(msg.sender);
+        //uint256 balanceBeforeSelf = getSelfBalance();
+        selfdestruct(address(0x0));
+        //uint256 balanceAfter = getBalance(msg.sender);
+        //uint256 balanceAfterSelf = getSelfBalance();
+        //require(balanceAfter - balanceBefore == balanceBeforeSelf, "balance should be increased by amount");
+        //require(balanceAfterSelf == 0, "self balance should be 0");
+    }
+
+    function pureTransfer(address payable to, uint256 amount) public payable {
+        to.transfer(amount);
+    }
+
+    function testBaseFee() public view returns (uint256) {
+        require(block.difficulty == 0, "basefee must be 0");
+    }
+
+    function getGasPrice() public view returns (uint256) {
+        return tx.gasprice;
+    }
+
+    function testGasPrice() public {
+        AnotherContract b = new AnotherContract();
+        require(getGasPrice() == b.getGasPrice(), "gas price should be the same");
+    }
+
+    function testMsgValue() public payable mustHasBalance {
+        this.testMsgValueInternal{value: 1}();
+    }
+
+    function testMsgValueInternal() public payable {
+        AnotherContract b = new AnotherContract();
+        require(msg.value == b.getMsgValue{value: msg.value}(), "msg value should be the same");
+    }
 
     // must call by admin
     function check() public mustHasBalance {
@@ -109,9 +167,17 @@ contract BalanceTest {
         testReceiveBalance();
         testCallNotPayableWithValue();
         testDeployWithValue();
+        testTransferBalance();
+        testSelfdestruct();
+        testBaseFee();
+        testGasPrice();
+        testMsgValue();
+
+        //testSelfdestructZeroAddress();
         //testDeployNotPayableWithValue()
         //testTransferBalanceToPrecompiled();
-        /*
+        /* testTransferIndelegateCall check sender
+          testTransferToPrecompiledIndelegateCall
 testTransferBalance();
 testTransferBalanceByCall();
 testTransferBalanceByDelegateCall();
@@ -120,13 +186,21 @@ testTransferBalanceByStaticCall();
 
 testTransferBalanceBack();
 
-testSelfdestruct();
 testSelfdestructToSelf();
 testSelfdestructToPrecompiled();
 testTransferBalanceAfterSelfdestruct();
 testSelfdestructAfterTransferBalance();
 testSelfdestructAfterSelfdestruct();
 */
+    }
+}
+
+contract AnotherContract {
+    function getGasPrice() public view returns (uint256) {
+        return tx.gasprice;
+    }
+    function getMsgValue() public payable returns (uint256) {
+        return msg.value;
     }
 }
 

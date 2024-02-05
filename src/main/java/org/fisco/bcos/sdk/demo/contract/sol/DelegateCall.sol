@@ -1,4 +1,4 @@
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity >=0.6.0 <0.8.12;
 
 contract DelegateCallDest {
     int public value = 0;
@@ -57,6 +57,8 @@ contract DelegateAtConstruct {
         */
 }
 
+contract EmptyContract {}
+
 contract DelegateCall {
     int public value = 0;
     address public sender;
@@ -70,66 +72,102 @@ contract DelegateCall {
     event Info(string, address, address);
     event InfoBytes(string, bytes, bytes32);
 
-    constructor() public {
-        myAddress = address(this);
-        delegateDest = address(new DelegateCallDest());
+    modifier initIfNotInit() {
+        if (myAddress == address(0)) {
+            myAddress = address(this);
+        }
+        if (delegateDest == address(0)) {
+            delegateDest = address(new DelegateCallDest());
+        }
+        _;
     }
 
-    function add() public returns(bytes memory) {
+    constructor() public initIfNotInit {
+    }
+
+    function add() public initIfNotInit returns(bytes memory) {
         sender = msg.sender;
         value += 1;
         return "1";
     }
 
-    function recordSender() public {
+    function recordSender() public initIfNotInit{
         latestSender = msg.sender;
         latestOrigin = tx.origin;
     }
 
-    function testFailed() public {
+    function testCallNoAddress() public initIfNotInit{
         int v = value;
         address addr = address(0x1001);
         (bool ok, bytes memory result) = dCall(addr, "add()");
         require(ok, "addr not exist but must return ok to be the same as eth");
-        require(v == value, "testFailed value must no change");
+        require(v == value, "testCallNoAddress value must no change");
     }
 
-    function testSuccess() public{
+    function testCallNoSelector() public initIfNotInit{
+        // has addr but selector is not exist
+        address emptyContract = address(new EmptyContract());
+        (bool ok, bytes memory result) = dCall(emptyContract, "notExistsFunction()");
+        require(!ok, "testSuccess must not ok");
+    }
+
+    function testSuccess() public initIfNotInit {
         int v = value;
         (bool ok, bytes memory result) = dCall(delegateDest, "add()");
         require(ok, "testSuccess must ok");
         require(v + 2 == value, "testSuccess value must +2");
     }
 
-    function testFallback() public returns(bytes memory){
+    function testFallback() public initIfNotInit returns(bytes memory){
         int v = value;
         (bool ok, bytes memory result) = dCall(delegateDest, "triggerFallback()");
         require(v + 1000 == value, "testFallback value must +1000");
     }
 
-    function testCallInDelegateCall() public {
-        dCall(delegateDest, "callMyAddress()");
-        require(address(this) == latestSender, "callInDelegateCall's msg.sender should be this contract");
-        require(tx.origin == latestOrigin, "callInDelegateCall's msg.sender should be this contract");
+    function address2HexString(address x) internal pure returns (string memory) {
+        bytes memory s = new bytes(40);
+        for (uint i = 0; i < 20; i++) {
+            bytes1 b = bytes1(uint8(uint(uint160(x)) / (2**(8*(19 - i)))));
+            bytes1 hi = bytes1(uint8(b) / 16);
+            bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
+            s[2*i] = char(hi);
+            s[2*i+1] = char(lo);
+        }
+        return string(s);
     }
 
-    function emitInfo() public {
+    function char(bytes1 b) internal pure returns (bytes1 c) {
+        if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
+        else return bytes1(uint8(b) + 0x57);
+    }
+
+    function dumpInfo(string memory msg, address addr1, address addr2) public pure returns(string memory) {
+        return string(abi.encodePacked(msg, address2HexString(addr1), " | ", address2HexString(addr2)));
+    }
+
+    function testCallInDelegateCall() public initIfNotInit {
+        dCall(delegateDest, "callMyAddress()");
+        require(address(this) == latestSender, dumpInfo("callInDelegateCall's msg.sender should be this contract ", address(this), latestSender));
+        require(tx.origin == latestOrigin, dumpInfo("callInDelegateCall's tx.origin should be this contract ", address(tx.origin), latestOrigin));
+    }
+
+    function emitInfo() public initIfNotInit {
         emit Info("Base, this, msg.sender", address(this), msg.sender);
     }
 
-    function testEventInDelegateCall() public {
+    function testEventInDelegateCall() public initIfNotInit {
         emitInfo();
         dCall(delegateDest, "emitInfo()");
         //delegateDest.call(abi.encodeWithSignature("emitInfo()"));
         emitInfo();
     }
 
-    function testDelegateCallSender() public {
+    function testDelegateCallSender() public initIfNotInit {
         dCall(delegateDest, "add()");
         require(msg.sender == sender, "delegatecall's sender must be msg.sender");
     }
 
-    function testCallcodeSender() public {
+    function testCallcodeSender() public initIfNotInit {
         address addr = delegateDest;
         bytes memory payload = abi.encodeWithSignature("add()");
         assembly {
@@ -139,12 +177,12 @@ contract DelegateCall {
         require(address(this) == sender, "callcode's sender must be this address");
     }
 
-    function testDelegateCallAtConstruct() public returns(address) {
+    function testDelegateCallAtConstruct() public initIfNotInit returns(address) {
         DelegateAtConstruct test = new DelegateAtConstruct(delegateDest);
         return address(test);
     }
 
-    function mustRevert() public {
+    function mustRevert() public initIfNotInit {
         require(false, "Base revert");
     }
 
@@ -152,7 +190,7 @@ contract DelegateCall {
         return keccak256(origin) == hash || keccak256(origin) == smHash;
     }
 
-    function testCatchInDelegateCallThrow() public {
+    function testCatchInDelegateCallThrow() public initIfNotInit {
         (bool ok, bytes memory result) = dCall(delegateDest, "callMyAddressRevert()");
         require(ok, "testCatchInDelegateCallThrow must not ok");
         emit InfoBytes("delegatecall result", result, keccak256(result));
@@ -172,25 +210,26 @@ contract DelegateCall {
         }
     }
 
-
     function dCall(address addr, string memory func) private returns(bool, bytes memory) {
         return addr.delegatecall(abi.encodeWithSignature(func));
     }
 
-    function codesizeAt(address addr) public returns(uint){
+    function codesizeAt(address addr) public initIfNotInit returns(uint){
         uint len;
         assembly { len := extcodesize(addr) }
         return len;
     }
 
-    function codehashAt(address addr) public returns(bytes32){
+    function codehashAt(address addr) public view returns(bytes32){
         bytes32 codeHash;
         assembly { codeHash := extcodehash(addr) }
         return codeHash;
     }
 
-    function check() public {
-        testFailed();
+
+    function check() public initIfNotInit {
+        testCallNoAddress();
+        testCallNoSelector();
         testSuccess();
         testFallback();
         testCallInDelegateCall();
