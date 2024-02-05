@@ -147,7 +147,7 @@ contract BalanceTest {
         return tx.gasprice;
     }
 
-    function testGasPrice() public {
+    function testGasPrice() public payable{
         AnotherContract b = new AnotherContract();
         require(getGasPrice() == b.getGasPrice(), "gas price should be the same");
     }
@@ -162,16 +162,17 @@ contract BalanceTest {
     }
 
     // must call by admin
-    function check() public mustHasBalance {
+    function check() public mustHasBalance payable {
         testSelfBalance();
         testReceiveBalance();
         testCallNotPayableWithValue();
         testDeployWithValue();
         testTransferBalance();
-        testSelfdestruct();
         testBaseFee();
         testGasPrice();
         testMsgValue();
+        testSelfdestruct();
+
 
         //testSelfdestructZeroAddress();
         //testDeployNotPayableWithValue()
