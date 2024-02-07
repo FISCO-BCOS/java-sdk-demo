@@ -29,8 +29,8 @@ import org.fisco.bcos.sdk.v3.crypto.keypair.CryptoKeyPair;
 import org.fisco.bcos.sdk.v3.model.CryptoType;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
-import org.fisco.bcos.sdk.v3.transaction.manager.transactionv2.ProxySignTransactionManager;
-import org.fisco.bcos.sdk.v3.transaction.manager.transactionv2.TransactionManager;
+import org.fisco.bcos.sdk.v3.transaction.manager.transactionv1.ProxySignTransactionManager;
+import org.fisco.bcos.sdk.v3.transaction.manager.transactionv1.TransactionManager;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 
 @SuppressWarnings("unchecked")

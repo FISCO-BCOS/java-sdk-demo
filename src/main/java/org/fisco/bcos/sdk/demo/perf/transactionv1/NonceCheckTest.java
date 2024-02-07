@@ -13,7 +13,7 @@ import org.fisco.bcos.sdk.v3.client.protocol.model.JsonTransactionResponse;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
-import org.fisco.bcos.sdk.v3.transaction.manager.transactionv2.ProxySignTransactionManager;
+import org.fisco.bcos.sdk.v3.transaction.manager.transactionv1.ProxySignTransactionManager;
 import org.fisco.bcos.sdk.v3.transaction.model.exception.ContractException;
 import org.fisco.bcos.sdk.v3.transaction.nonce.NonceAndBlockLimitProvider;
 import org.fisco.bcos.sdk.v3.transaction.nonce.RemoteBlockLimitCallbackInterface;
