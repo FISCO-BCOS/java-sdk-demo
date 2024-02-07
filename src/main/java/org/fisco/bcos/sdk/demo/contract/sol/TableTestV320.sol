@@ -2,16 +2,16 @@
 pragma solidity >=0.6.10 <0.8.20;
 pragma experimental ABIEncoderV2;
 
-import "./Table.sol";
+import "./TableV320.sol";
 import "./Cast.sol";
 
-contract TableTest {
+contract TableTestV320 {
     event CreateResult(int256 count);
     event InsertResult(int256 count);
     event UpdateResult(int256 count);
     event RemoveResult(int256 count);
 
-    Cast constant cast =  Cast(address(0x100f));
+    Cast constant cast =  Cast(address(0x100f));  
     TableManager constant tm =  TableManager(address(0x1002));
     Table table;
     string constant TABLE_NAME = "t_testV320";
@@ -27,6 +27,10 @@ contract TableTest {
         address t_address = tm.openTable(TABLE_NAME);
         require(t_address!=address(0x0),"");
         table = Table(t_address);
+    }
+
+    function getTableAddress() public view returns (address){
+        return address(table);
     }
 
     function select(int64 id) public view returns (string memory, string memory)

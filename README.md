@@ -101,14 +101,11 @@ $ java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.ParallelOkPerf [pre
 
 
 # KVTable合约压测
-# 压测KV set
+# 压测KV
 # count: 压测的交易总量
 # tps: 压测QPS
 # groupId: 压测群组
-$ java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceKVTable [set] [count] [tps] [groupId]
-# 压测KV get
-# (参数解释同上)
-$ java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceKVTable [get] [count] [tps] [groupId]
+$ java -cp 'conf/:lib/*:apps/*' org.fisco.bcos.sdk.demo.perf.PerformanceKVTable [count] [tps] [groupId] [useKVTable] [valueLength]
 ```
 
 **以下是WASM环境的压力测试**
