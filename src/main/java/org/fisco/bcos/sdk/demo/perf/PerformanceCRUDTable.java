@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 import me.tongfei.progressbar.ProgressBar;
@@ -48,6 +47,8 @@ public class PerformanceCRUDTable {
     private static int length = 256;
     private static String PrimaryKey;
 
+    private static String TableName;
+
     private static void Usage() {
         System.out.println(" Usage:");
         System.out.println("===== PerformanceCRUDTable test===========");
@@ -74,7 +75,8 @@ public class PerformanceCRUDTable {
             if (args.length == 5) {
                 length = Integer.parseInt(args[4]);
             }
-            PrimaryKey = String.valueOf(new Random().nextInt());
+            PrimaryKey = String.valueOf(System.currentTimeMillis());
+            TableName = "t_" + System.currentTimeMillis();
             System.out.println(
                     "====== PerformanceCRUDTable "
                             + "count: "
@@ -88,7 +90,9 @@ public class PerformanceCRUDTable {
                             + ", valueLength:"
                             + length
                             + ", PrimaryKey:"
-                            + PrimaryKey);
+                            + PrimaryKey
+                            + "TableName:"
+                            + TableName);
 
             String configFile = configUrl.getPath();
             BcosSDK sdk = BcosSDK.build(configFile);
@@ -118,7 +122,8 @@ public class PerformanceCRUDTable {
         if (useKV) {
             System.out.println("====== Deploy TableTest ====== ");
             multiTableTest =
-                    MultiTableTest.deploy(client, client.getCryptoSuite().getCryptoKeyPair());
+                    MultiTableTest.deploy(
+                            client, client.getCryptoSuite().getCryptoKeyPair(), TableName);
             if (!multiTableTest.getDeployReceipt().isStatusOK()) {
                 throw new ContractException(
                         "deploy failed: " + multiTableTest.getDeployReceipt().getMessage());
