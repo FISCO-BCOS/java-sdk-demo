@@ -25,7 +25,6 @@ import org.fisco.bcos.sdk.v3.contract.precompiled.callback.PrecompiledCallback;
 import org.fisco.bcos.sdk.v3.crypto.CryptoSuite;
 import org.fisco.bcos.sdk.v3.crypto.keypair.CryptoKeyPair;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
-import org.fisco.bcos.sdk.v3.model.CryptoType;
 import org.fisco.bcos.sdk.v3.model.RetCode;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
@@ -115,7 +114,7 @@ public class PerformanceBalance {
                         + committeePath);
         RateLimiter limiter = RateLimiter.create(qps);
         // get governor cryptoSuite
-        CryptoSuite cryptoSuite = new CryptoSuite(CryptoType.ECDSA_TYPE);
+        CryptoSuite cryptoSuite = new CryptoSuite(client.getCryptoType());
         cryptoSuite.loadAccount("pem", committeePath, "");
         CryptoKeyPair committee = cryptoSuite.getCryptoKeyPair();
         BalanceService balanceService = new BalanceService(client, committee);
@@ -157,7 +156,7 @@ public class PerformanceBalance {
                 CryptoSuite[] cryptoSuites = new CryptoSuite[userCount];
                 IntStream.range(0, userCount)
                         .parallel()
-                        .forEach(i -> cryptoSuites[i] = new CryptoSuite(CryptoType.ECDSA_TYPE));
+                        .forEach(i -> cryptoSuites[i] = new CryptoSuite(client.getCryptoType()));
 
                 // init eoa accounts, use async
                 System.out.println("===2. init eoa accounts===");
@@ -290,8 +289,8 @@ public class PerformanceBalance {
             case "contractTransfer":
                 // create contract accounts
                 System.out.println("===1. create contract accounts===");
-                if (userCount < 2) {
-                    System.out.println("userCount must be greater than 2");
+                if (userCount % 10 != 0) {
+                    System.out.println("userCount must be multiple of 10");
                     return;
                 }
                 List<String> contractsAddress = new ArrayList<>();
@@ -467,7 +466,7 @@ public class PerformanceBalance {
                 CryptoSuite[] eoaCryptoSuites = new CryptoSuite[userCount];
                 IntStream.range(0, userCount)
                         .parallel()
-                        .forEach(i -> eoaCryptoSuites[i] = new CryptoSuite(CryptoType.ECDSA_TYPE));
+                        .forEach(i -> eoaCryptoSuites[i] = new CryptoSuite(client.getCryptoType()));
 
                 // init eoa accounts, use async
                 System.out.println("===2. init eoa accounts===");
