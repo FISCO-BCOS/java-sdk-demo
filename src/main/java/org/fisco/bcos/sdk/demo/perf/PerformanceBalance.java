@@ -25,7 +25,6 @@ import org.fisco.bcos.sdk.v3.contract.precompiled.callback.PrecompiledCallback;
 import org.fisco.bcos.sdk.v3.crypto.CryptoSuite;
 import org.fisco.bcos.sdk.v3.crypto.keypair.CryptoKeyPair;
 import org.fisco.bcos.sdk.v3.model.ConstantConfig;
-import org.fisco.bcos.sdk.v3.model.CryptoType;
 import org.fisco.bcos.sdk.v3.model.RetCode;
 import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.fisco.bcos.sdk.v3.model.callback.TransactionCallback;
@@ -115,7 +114,7 @@ public class PerformanceBalance {
                         + committeePath);
         RateLimiter limiter = RateLimiter.create(qps);
         // get governor cryptoSuite
-        CryptoSuite cryptoSuite = new CryptoSuite(CryptoType.ECDSA_TYPE);
+        CryptoSuite cryptoSuite = new CryptoSuite(client.getCryptoType());
         cryptoSuite.loadAccount("pem", committeePath, "");
         CryptoKeyPair committee = cryptoSuite.getCryptoKeyPair();
         BalanceService balanceService = new BalanceService(client, committee);
@@ -157,27 +156,31 @@ public class PerformanceBalance {
                 CryptoSuite[] cryptoSuites = new CryptoSuite[userCount];
                 IntStream.range(0, userCount)
                         .parallel()
-                        .forEach(i -> cryptoSuites[i] = new CryptoSuite(CryptoType.ECDSA_TYPE));
+                        .forEach(i -> cryptoSuites[i] = new CryptoSuite(client.getCryptoType()));
 
                 // init eoa accounts, use async
                 System.out.println("===2. init eoa accounts===");
                 for (int i = 0; i < userCount; i++) {
+                    CompletableFuture<RetCode> retCodeCompletableFuture = new CompletableFuture<>();
                     balanceService.addBalanceAsync(
                             cryptoSuites[i].getCryptoKeyPair().getAddress(),
                             "100000000",
                             Convert.Unit.WEI,
-                            new PrecompiledCallback() {
-                                @Override
-                                public void onResponse(RetCode retCode) {
-                                    if (!(retCode.getCode() == 0)) {
-                                        System.out.println(
-                                                "init eoa account failed, status: "
-                                                        + retCode.getCode()
-                                                        + ", message: "
-                                                        + retCode.getMessage());
-                                    }
-                                }
+                            retCode -> {
+                                retCodeCompletableFuture.complete(retCode);
                             });
+                    try {
+                        RetCode retCode = retCodeCompletableFuture.get();
+                        if (!(retCode.getCode() == 0)) {
+                            System.out.println(
+                                    "init eoa account failed, status: "
+                                            + retCode.getCode()
+                                            + ", message: "
+                                            + retCode.getMessage());
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 // start eoa transfer
@@ -286,15 +289,15 @@ public class PerformanceBalance {
             case "contractTransfer":
                 // create contract accounts
                 System.out.println("===1. create contract accounts===");
-                if (userCount < 2) {
-                    System.out.println("userCount must be greater than 2");
+                if (userCount % 10 != 0) {
+                    System.out.println("userCount must be multiple of 10");
                     return;
                 }
                 List<String> contractsAddress = new ArrayList<>();
 
                 List<CompletableFuture<List<String>>> allFutures = new ArrayList<>();
 
-                int batchSize = 100;
+                int batchSize = 10;
                 int numTasks = userCount / batchSize;
 
                 for (int i = 0; i < numTasks; i++) {
@@ -337,22 +340,26 @@ public class PerformanceBalance {
                 // init contract balance
                 System.out.println("===2. init contract balance===");
                 for (int i = 0; i < userCount; i++) {
+                    CompletableFuture<RetCode> retCodeCompletableFuture = new CompletableFuture<>();
                     balanceService.addBalanceAsync(
                             contractsAddress.get(i),
                             "100000000",
                             Convert.Unit.WEI,
-                            new PrecompiledCallback() {
-                                @Override
-                                public void onResponse(RetCode retCode) {
-                                    if (!(retCode.getCode() == 0)) {
-                                        System.out.println(
-                                                "init contract account failed, status: "
-                                                        + retCode.getCode()
-                                                        + ", message: "
-                                                        + retCode.getMessage());
-                                    }
-                                }
+                            retCode -> {
+                                retCodeCompletableFuture.complete(retCode);
                             });
+                    try {
+                        RetCode retCode = retCodeCompletableFuture.get();
+                        if (!(retCode.getCode() == 0)) {
+                            System.out.println(
+                                    "init contract account failed, status: "
+                                            + retCode.getCode()
+                                            + ", message: "
+                                            + retCode.getMessage());
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 // start contract transfer
@@ -459,31 +466,35 @@ public class PerformanceBalance {
                 CryptoSuite[] eoaCryptoSuites = new CryptoSuite[userCount];
                 IntStream.range(0, userCount)
                         .parallel()
-                        .forEach(i -> eoaCryptoSuites[i] = new CryptoSuite(CryptoType.ECDSA_TYPE));
+                        .forEach(i -> eoaCryptoSuites[i] = new CryptoSuite(client.getCryptoType()));
 
                 // init eoa accounts, use async
                 System.out.println("===2. init eoa accounts===");
                 for (int i = 0; i < userCount; i++) {
+                    CompletableFuture<RetCode> retCodeCompletableFuture = new CompletableFuture<>();
                     balanceService.addBalanceAsync(
                             eoaCryptoSuites[i].getCryptoKeyPair().getAddress(),
                             "100000000",
                             Convert.Unit.WEI,
-                            new PrecompiledCallback() {
-                                @Override
-                                public void onResponse(RetCode retCode) {
-                                    if (!(retCode.getCode() == 0)) {
-                                        System.out.println(
-                                                "init eoa account failed, status: "
-                                                        + retCode.getCode()
-                                                        + ", message: "
-                                                        + retCode.getMessage());
-                                    }
-                                }
+                            retCode -> {
+                                retCodeCompletableFuture.complete(retCode);
                             });
+                    try {
+                        RetCode retCode = retCodeCompletableFuture.get();
+                        if (!(retCode.getCode() == 0)) {
+                            System.out.println(
+                                    "init eoa account failed, status: "
+                                            + retCode.getCode()
+                                            + ", message: "
+                                            + retCode.getMessage());
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 // PerformanceBalancePrecompiled Test
-                System.out.println("===2. PerformanceBalancePrecompiled Test===");
+                System.out.println("===3. PerformanceBalancePrecompiled Test===");
                 Collector collector2 = new Collector();
                 collector2.setTotal(total);
                 for (int i = 0; i < total; i++) {
