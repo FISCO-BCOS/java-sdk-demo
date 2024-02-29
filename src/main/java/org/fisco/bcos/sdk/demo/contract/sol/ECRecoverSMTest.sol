@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.6.0 <0.8.12;
 
-contract ECRecoverTest {
+contract ECRecoverSMTest {
     event Address(address addr);
 
     function genValidParams() private pure returns(bytes memory){
