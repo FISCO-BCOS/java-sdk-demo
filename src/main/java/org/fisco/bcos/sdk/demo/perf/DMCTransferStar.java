@@ -175,9 +175,10 @@ public class DMCTransferStar {
                                     myContractAddress.add(contractsAddr[index]);
 
                                     contracts[index].addNextCall(userAddress, myContractAddress);
-                                    contracts[index].addNextCall(contractsAddr[index], starCenterAddr);
+                                    contracts[index].addNextCall(
+                                            contractsAddr[index], starCenterAddr);
 
-                                    //contracts[index].addNextCall(userAddress, starCenterAddr);
+                                    // contracts[index].addNextCall(userAddress, starCenterAddr);
                                     callRelationshipLatch.countDown();
                                 }
                             });
