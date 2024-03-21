@@ -289,8 +289,8 @@ public class DMCTransferStar {
                             + total.intValue()
                             + ", expectBalance is "
                             + expectBalance.intValue());
-        } else {
-            System.out.println("check finished, total balance equal expectBalance !");
+            System.exit(1);
         }
+        System.out.println("check finished, total balance equal expectBalance !");
     }
 }

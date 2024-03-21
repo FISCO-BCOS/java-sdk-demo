@@ -276,6 +276,7 @@ public class DMCTransferMyself {
                             + total.intValue()
                             + ", expectBalance is "
                             + expectBalance.intValue());
+            System.exit(1);
         }
         System.out.println("check finished! check finished, total balance equal expectBalance! ");
     }

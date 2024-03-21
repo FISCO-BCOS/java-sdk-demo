@@ -372,6 +372,7 @@ public class DMCTransferRing {
                             + total.toString()
                             + ", expectBalance is "
                             + expectBalance);
+            System.exit(1);
         }
         System.out.println(
                 "check finished, total balance equal expectBalance! " + total.intValue());
