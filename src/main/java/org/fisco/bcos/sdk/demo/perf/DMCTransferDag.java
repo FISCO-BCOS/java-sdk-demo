@@ -280,6 +280,7 @@ public class DMCTransferDag {
                             + total.toString()
                             + ", expectBalance is "
                             + expectBalance.toString());
+            System.exit(1);
         }
         System.out.println("check finished, total balance equal expectBalance!");
     }
