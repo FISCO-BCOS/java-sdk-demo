@@ -85,7 +85,7 @@ contract RecursiveNode {
     }
 
     function recursiveCheck(address[] memory contracts, uint i, Info memory info) public payable {
-        return;
+
         if (i >= contracts.length) {
             return;
         }

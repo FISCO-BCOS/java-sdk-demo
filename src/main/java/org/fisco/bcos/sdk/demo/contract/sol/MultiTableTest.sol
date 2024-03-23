@@ -4,13 +4,12 @@ pragma experimental ABIEncoderV2;
 
 import "./Table.sol";
 
-contract TableTest {
-
+contract MultiTableTest {
 
     TableManager constant tm =  TableManager(address(0x1002));
     Table table;
-    string constant TABLE_NAME = "t_test";
-    constructor () public{
+    string TABLE_NAME = "t_test";
+    constructor (string memory name) public  {
         // create table
         string[] memory columnNames = new string[](10);
         columnNames[0] = "v0";
@@ -24,7 +23,7 @@ contract TableTest {
         columnNames[8] = "v8";
         columnNames[9] = "v9";
         TableInfo memory tf = TableInfo("key", columnNames);
-
+        TABLE_NAME = name;
         tm.createTable(TABLE_NAME, tf);
         address t_address = tm.openTable(TABLE_NAME);
         require(t_address!=address(0x0),"");

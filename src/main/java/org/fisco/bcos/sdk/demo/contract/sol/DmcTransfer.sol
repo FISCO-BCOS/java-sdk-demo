@@ -41,8 +41,12 @@ contract DmcTransfer {
             } catch {
                 if (allowRevert){
                     revert();
-                } else{
+                } else {
                     _balance = _balance + shareMoney;
+                    // if callMyself, update balance
+                    if (toAddr == address(this)){
+                        m_balance = _balance;
+                    }
                 }
             }
         }

@@ -171,14 +171,21 @@ public class DMCTransferStar {
                             new Runnable() {
 
                                 public void run() {
+                                    List<String> myContractAddress = new ArrayList<>();
+                                    myContractAddress.add(contractsAddr[index]);
 
-                                    contracts[index].addNextCall(userAddress, starCenterAddr);
+                                    contracts[index].addNextCall(userAddress, myContractAddress);
+                                    contracts[index].addNextCall(
+                                            contractsAddr[index], starCenterAddr);
+
+                                    // contracts[index].addNextCall(userAddress, starCenterAddr);
                                     callRelationshipLatch.countDown();
                                 }
                             });
         }
         callRelationshipLatch.await();
         System.out.println("Create contract and generate call relationship finished!");
+        System.out.println("starCenterAddr: " + starCenterAddr);
 
         System.out.println("Sending transactions...");
         ProgressBar sendedBar =
@@ -221,7 +228,7 @@ public class DMCTransferStar {
                                         DmcTransfer contract = contracts[fromIndex];
                                         long now = System.currentTimeMillis();
                                         contract.takeShare(
-                                                BigInteger.valueOf(2),
+                                                BigInteger.valueOf(3),
                                                 allowRevert,
                                                 new TransactionCallback() {
                                                     @Override
@@ -238,7 +245,7 @@ public class DMCTransferStar {
                                                         transactionLatch.countDown();
                                                         totalCost.addAndGet(
                                                                 System.currentTimeMillis() - now);
-                                                        expectBalance.addAndGet(2);
+                                                        expectBalance.addAndGet(3);
                                                     }
                                                 });
 
@@ -283,6 +290,7 @@ public class DMCTransferStar {
                             + total.intValue()
                             + ", expectBalance is "
                             + expectBalance.intValue());
+            System.exit(1);
         }
         System.out.println("check finished, total balance equal expectBalance !");
     }
