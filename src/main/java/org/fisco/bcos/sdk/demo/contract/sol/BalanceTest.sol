@@ -91,7 +91,6 @@ contract BalanceTest {
             }
         }
 
-        return;
         // foreach errorAddresses
         for (uint256 i = 0; i < errorAddresses.length; i++) {
             address payable addr = errorAddresses[i];
@@ -113,6 +112,19 @@ contract BalanceTest {
         uint256 balanceAfterSelf = getSelfBalance();
         require(balanceAfter - balanceBefore == 1, "balance should be increased by amount");
         require(balanceBeforeSelf - balanceAfterSelf == 1, "self balance should be decreased by amount");
+    }
+
+    event Info2(string info, address addr, uint256 value);
+    function testTransferBalanceToOrigin() public mustHasBalance {
+        uint256 balanceBefore = getBalance(tx.origin);
+        uint256 balanceBeforeSelf = getSelfBalance();
+        address payable origin = payable(tx.origin);
+        origin.transfer(1);
+        uint256 balanceAfter = getBalance(tx.origin);
+        uint256 balanceAfterSelf = getSelfBalance();
+        require(balanceAfter - balanceBefore == 1, "balance should be increased by amount");
+        require(balanceBeforeSelf - balanceAfterSelf == 1, "self balance should be decreased by amount");
+        Info2("testTransferBalanceToOrigin", tx.origin, balanceAfter);
     }
 
     function testSelfdestruct() public payable {
@@ -168,15 +180,14 @@ contract BalanceTest {
         testCallNotPayableWithValue();
         testDeployWithValue();
         testTransferBalance();
+        testTransferBalanceToOrigin();
         testBaseFee();
         testGasPrice();
         testMsgValue();
+        testTransferBalanceToPrecompiled();
         testSelfdestruct();
-
-
         //testSelfdestructZeroAddress();
-        //testDeployNotPayableWithValue()
-        //testTransferBalanceToPrecompiled();
+
         /* testTransferIndelegateCall check sender
           testTransferToPrecompiledIndelegateCall
 testTransferBalance();

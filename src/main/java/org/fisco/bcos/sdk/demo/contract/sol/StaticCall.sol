@@ -82,6 +82,7 @@ contract StaticCall {
     function testEmptyAddr() public {
         (bool ok, bytes memory result) = address(0x10016666666).staticcall(abi.encodeWithSignature("get()"));
         require(ok, "addr not exist but must return ok to be the same as eth");
+        require(result.length == 0, "result must be empty");
     }
 
     function check() public initIfNot {

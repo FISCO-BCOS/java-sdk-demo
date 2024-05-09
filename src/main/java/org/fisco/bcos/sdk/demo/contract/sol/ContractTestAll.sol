@@ -11,16 +11,14 @@ import "./ECRecoverTest.sol";
 import "./DeployTreeTest.sol"; // DMC
 import "./BalanceTest.sol";
 import "./BalancePrecompiledTest.sol";
+import "./BalanceReceiveTest.sol";
 
 contract ContractTestAll {
 
     function checkOne(string memory name, address addr, bool needProxyCheck, uint256 callValue) private {
 
-        try ContractTestAll(addr).check{value: callValue}() { // just a little trick to call check() in the target contract
-            // success
-        } catch (bytes memory reason) {
-            revert(string(abi.encodePacked(name, " check failed: ", reason)));
-        }
+        (bool success, bytes memory reason) = address(addr).call{value: callValue}(abi.encodeWithSignature("check()"));
+        require(success, string(abi.encodePacked(name, " check failed: ", reason)));
 
         if (!needProxyCheck) {
             return;
@@ -28,7 +26,7 @@ contract ContractTestAll {
 
         // use proxy to call check()
         Proxy proxy = new ProxyImpl(addr);
-        (bool success, bytes memory reason) = address(proxy).call{value: callValue}(abi.encodeWithSignature("check()"));
+        (success, reason) = address(proxy).call{value: callValue}(abi.encodeWithSignature("check()"));
         require(success, string(abi.encodePacked(name, " proxy check failed: ", reason)));
     }
 
@@ -49,5 +47,9 @@ contract ContractTestAll {
         checkOne("DeployTreeTest", address(new DeployTreeTest()), true, 0); // DMC
         checkOne("BalanceTest", address(new BalanceTest()), true, callValue);
         checkOne("BalancePrecompiledTest", address(new BalancePrecompiledTest()), false, 0);
+        checkOne("BalanceReceiveTest", address(new BalanceReceiveTest()), true, callValue);
     }
+
+    // fallback
+    fallback() external payable {}
 }
