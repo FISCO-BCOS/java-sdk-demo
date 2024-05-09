@@ -91,6 +91,7 @@ contract StaticCall {
 
         (ok, result) = address(helloWorld).staticcall(abi.encodeWithSignature("set(string)", "aaa"));
         require(!ok, "staticcall a state write function must return not ok");
+        require(result.length == 0, string(abi.encodePacked("staticcall failed for has result: ", result)));
 
         testEmptyAddr();
 
