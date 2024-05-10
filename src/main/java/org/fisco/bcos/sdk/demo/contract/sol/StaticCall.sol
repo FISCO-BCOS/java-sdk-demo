@@ -119,7 +119,8 @@ contract StaticCall {
         require(success, string(abi.encodePacked("checkOk() by proxy failed: ", reason)));
         emit Info("gas used on checkOk() by proxy: ", gasBefore - gasAfter);
 
-        // checkFailed will cost all gas so we need to put it at the end
+        // staticcall failed will cost half of the gas
+        // There are many staticcall failed in checkFailed(), will cost most of the gas. So we need to put it in the end.
         gasBefore = gasleft();
         (success, reason) = address(proxy).call(abi.encodeWithSignature("checkFailed()"));
         gasAfter = gasleft();
