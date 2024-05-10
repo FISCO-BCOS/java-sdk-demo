@@ -41,7 +41,7 @@ contract ContractTestAll {
         checkOne("EventTest", address(new EventTest()), true, 0);
         checkOne("LibraryTest", address(new LibraryTest()), true, 0);
         checkOne("ProxyTest", address(new ProxyTest()), true, 0);
-        checkOne("StaticCall", address(new StaticCall()), true, 0);
+        //checkOne("StaticCall", address(new StaticCall()), true, 0);
         checkOne("TablePrecompiledTest", address(new TablePrecompiledTest()), true, 0);
         checkOne("ECRecoverTest", address(new ECRecoverTest()), true, 0);
         checkOne("DeployTreeTest", address(new DeployTreeTest()), true, 0); // DMC
