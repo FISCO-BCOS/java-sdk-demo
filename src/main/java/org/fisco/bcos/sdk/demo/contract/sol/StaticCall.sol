@@ -1,5 +1,7 @@
 pragma solidity >=0.6.0 <0.8.12;
 
+import "./ProxyTest.sol";
+
 contract StaticCall {
     HelloWorld helloWorld = new HelloWorld();
     event Result(bytes);
@@ -82,20 +84,48 @@ contract StaticCall {
     function testEmptyAddr() public {
         (bool ok, bytes memory result) = address(0x10016666666).staticcall(abi.encodeWithSignature("get()"));
         require(ok, "addr not exist but must return ok to be the same as eth");
+        require(result.length == 0, "result must be empty");
     }
 
-    function check() public initIfNot {
+    function checkOk() public initIfNot {
         (bool ok, bytes memory result) = address(helloWorld).staticcall(abi.encodeWithSignature("get()"));
         require(ok);
 
-        (ok, result) = address(helloWorld).staticcall(abi.encodeWithSignature("set(string)", "aaa"));
-        require(!ok, "staticcall a state write function must return not ok");
+        testASMOk();
+    }
 
+    function checkFailed() public {
         testEmptyAddr();
 
-        testASMOk();
+        (bool ok, bytes memory result) = address(helloWorld).staticcall(abi.encodeWithSignature("set(string)", "aaa"));
+        require(!ok, "staticcall a state write function must return not ok");
+        require(result.length == 0, string(abi.encodePacked("staticcall failed for has result: ", result)));
+
         testASMFailed();
         testASMUintFailed();
+    }
+
+    event Info(string, uint256);
+    function check() public {
+        uint256 gasBefore = gasleft();
+        checkOk();
+        uint256 gasAfter = gasleft();
+        emit Info("gas used on checkOk(): ", gasBefore - gasAfter);
+
+        Proxy proxy = new ProxyImpl(address(this));
+        gasBefore = gasleft();
+        (bool success, bytes memory reason) = address(proxy).call(abi.encodeWithSignature("checkOk()"));
+        gasAfter = gasleft();
+        require(success, string(abi.encodePacked("checkOk() by proxy failed: ", reason)));
+        emit Info("gas used on checkOk() by proxy: ", gasBefore - gasAfter);
+
+        // staticcall failed will cost half of the gas
+        // There are many staticcall failed in checkFailed(), will cost most of the gas. So we need to put it in the end.
+        gasBefore = gasleft();
+        (success, reason) = address(proxy).call(abi.encodeWithSignature("checkFailed()"));
+        gasAfter = gasleft();
+        require(success, string(abi.encodePacked("checkFailed() by proxy failed: ", reason)));
+        emit Info("gas used on checkFailed() by proxy: ", gasBefore - gasAfter);
     }
 
     function get() public view returns (string memory) {

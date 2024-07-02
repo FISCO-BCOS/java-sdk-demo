@@ -11,25 +11,26 @@ import "./ECRecoverTest.sol";
 import "./DeployTreeTest.sol"; // DMC
 import "./BalanceTest.sol";
 import "./BalancePrecompiledTest.sol";
+import "./BalanceReceiveTest.sol";
 
 contract ContractTestAll {
+    event Info(string, uint256, uint256);
 
     function checkOne(string memory name, address addr, bool needProxyCheck, uint256 callValue) private {
+        uint256 gasBefore = gasleft();
+        (bool success, bytes memory reason) = address(addr).call{value: callValue}(abi.encodeWithSignature("check()"));
+        require(success, string(abi.encodePacked(name, " check failed: ", reason)));
 
-        try ContractTestAll(addr).check{value: callValue}() { // just a little trick to call check() in the target contract
-            // success
-        } catch (bytes memory reason) {
-            revert(string(abi.encodePacked(name, " check failed: ", reason)));
+        uint256 gasBeforeProxy = gasleft();
+
+        if (needProxyCheck) {
+            // use proxy to call check()
+            Proxy proxy = new ProxyImpl(addr);
+            (success, reason) = address(proxy).call{value: callValue}(abi.encodeWithSignature("check()"));
+            require(success, string(abi.encodePacked(name, " proxy check failed: ", reason)));
         }
-
-        if (!needProxyCheck) {
-            return;
-        }
-
-        // use proxy to call check()
-        Proxy proxy = new ProxyImpl(addr);
-        (bool success, bytes memory reason) = address(proxy).call{value: callValue}(abi.encodeWithSignature("check()"));
-        require(success, string(abi.encodePacked(name, " proxy check failed: ", reason)));
+        uint256 gasAfter = gasleft();
+        emit Info(string(abi.encodePacked(name, " gas used <non-proxy, proxy>")), gasBefore - gasBeforeProxy, gasBeforeProxy - gasAfter);
     }
 
     function check() public payable {
@@ -43,11 +44,16 @@ contract ContractTestAll {
         checkOne("EventTest", address(new EventTest()), true, 0);
         checkOne("LibraryTest", address(new LibraryTest()), true, 0);
         checkOne("ProxyTest", address(new ProxyTest()), true, 0);
-        //checkOne("StaticCall", address(new StaticCall()), true, 0);
         checkOne("TablePrecompiledTest", address(new TablePrecompiledTest()), true, 0);
         checkOne("ECRecoverTest", address(new ECRecoverTest()), true, 0);
         checkOne("DeployTreeTest", address(new DeployTreeTest()), true, 0); // DMC
         checkOne("BalanceTest", address(new BalanceTest()), true, callValue);
         checkOne("BalancePrecompiledTest", address(new BalancePrecompiledTest()), false, 0);
+        checkOne("BalanceReceiveTest", address(new BalanceReceiveTest()), true, callValue);
+
+        checkOne("StaticCall", address(new StaticCall()), false, 0); // must at last for gas will be used up by staticcall failed
     }
+
+    // fallback
+    fallback() external payable {}
 }
