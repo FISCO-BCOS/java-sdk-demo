@@ -1,4 +1,4 @@
-pragma solidity ^0.6.0;
+pragma solidity >=0.6.0 <0.8.12;
 pragma experimental ABIEncoderV2;
 
 contract ReceiveAndCallbackFunction {
