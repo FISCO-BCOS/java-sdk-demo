@@ -57,7 +57,7 @@ contract BalanceReceiveTest {
 
         OnlyFallbackFunction contractAddress = new OnlyFallbackFunction();
         // must success
-        try this.callTransfer(address(contractAddress), callValue) {
+        try this.callTransfer(payable(contractAddress), callValue) {
         } catch (bytes memory reason) {
             require(false, string(abi.encodePacked("checkOnlyFallbackFunction callTransfer with value failed: ", reason)));
         }
@@ -65,13 +65,13 @@ contract BalanceReceiveTest {
         require(address(contractAddress).balance == callValue, "checkReceive failed: balance not equal");
 
         // must failed transfer 0
-        try this.callTransfer(address(contractAddress), 0) {
+        try this.callTransfer(payable(contractAddress), 0) {
             require(false, "checkOnlyFallbackFunction callTransfer without value should revert");
         } catch {
         }
 
         // must success on fallback value is not 0
-        try this.callFallback(address(contractAddress), callValue) {
+        try this.callFallback(payable(contractAddress), callValue) {
         } catch (bytes memory reason) {
             require(false, string(abi.encodePacked("checkOnlyFallbackFunction callFallback with value failed: ", reason)));
         }
@@ -79,7 +79,7 @@ contract BalanceReceiveTest {
         require(address(contractAddress).balance == callValue * 2, "checkReceive failed: balance not equal");
 
         // must failed on fallback  value is 0
-        try this.callFallback(address(contractAddress), 0) {
+        try this.callFallback(payable(contractAddress), 0) {
             require(false, "checkOnlyFallbackFunction callFallback without value should revert");
         } catch {
         }
@@ -90,7 +90,7 @@ contract BalanceReceiveTest {
 
         OnlyReceiveFunction contractAddress = new OnlyReceiveFunction();
         // must success
-        try this.callTransfer(address(contractAddress), callValue) {
+        try this.callTransfer(payable(contractAddress), callValue) {
         } catch (bytes memory reason) {
             require(false, string(abi.encodePacked("checkOnlyReceiveFunction callTransfer with value failed: ", reason)));
         }
@@ -98,13 +98,13 @@ contract BalanceReceiveTest {
         require(address(contractAddress).balance == callValue, "checkReceive failed: balance not equal");
 
         // must failed transfer lesser than 10
-        try this.callTransfer(address(contractAddress), 1) {
+        try this.callTransfer(payable(contractAddress), 1) {
             require(false, "checkOnlyReceiveFunction callTransfer without value should revert");
         } catch {
         }
 
         // must failed on fallback value is over 10
-        try this.callFallback(address(contractAddress), callValue) {
+        try this.callFallback(payable(contractAddress), callValue) {
             require(false, "checkOnlyReceiveFunction callFallback with value should revert");
         } catch {
         }
@@ -112,7 +112,7 @@ contract BalanceReceiveTest {
         require(address(contractAddress).balance == callValue, "checkReceive failed: balance not equal");
 
         // must failed on fallback  value is lesser than 10
-        try this.callFallback(address(contractAddress), 1) {
+        try this.callFallback(payable(contractAddress), 1) {
             require(false, "checkOnlyReceiveFunction callFallback without value should revert");
         } catch {
         }
@@ -122,7 +122,7 @@ contract BalanceReceiveTest {
         uint256 callValue = 17;
         ReceiveAndCallbackFunction contractAddress = new ReceiveAndCallbackFunction();
         // must success
-        try this.callTransfer(address(contractAddress), callValue) {
+        try this.callTransfer(payable(contractAddress), callValue) {
         } catch (bytes memory reason) {
             require(false, string(abi.encodePacked("checkReceiveAndFallbackFunction callTransfer with value failed: ", reason)));
         }
@@ -130,7 +130,7 @@ contract BalanceReceiveTest {
         require(address(contractAddress).balance == callValue, "checkReceive failed: balance not equal");
 
         // must failed transfer 0
-        try this.callTransfer(address(contractAddress), 1) {
+        try this.callTransfer(payable(contractAddress), 1) {
             require(false, "checkReceiveAndFallbackFunction callTransfer without value should revert");
         } catch {
         }
@@ -139,7 +139,7 @@ contract BalanceReceiveTest {
         uint256 callValue2 = 5;
 
         // must success on fallback value is not 0
-        try this.callFallback(address(contractAddress), callValue2) {
+        try this.callFallback(payable(contractAddress), callValue2) {
         } catch (bytes memory reason) {
             require(false, string(abi.encodePacked("checkReceiveAndFallbackFunction callFallback with value failed: ", reason)));
         }
@@ -147,7 +147,7 @@ contract BalanceReceiveTest {
         require(address(contractAddress).balance == callValue + callValue2, "checkReceive failed: balance not equal");
 
         // must failed on fallback  value is 0
-        try this.callFallback(address(contractAddress), 0) {
+        try this.callFallback(payable(contractAddress), 0) {
             require(false, "checkReceiveAndFallbackFunction callFallback without value should revert");
         } catch {
         }
