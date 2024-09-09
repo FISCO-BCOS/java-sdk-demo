@@ -73,16 +73,16 @@ contract BalanceTest {
 
     function testTransferBalanceToPrecompiled() public mustHasBalance {
         // should be the same as eth
-        address payable[22] memory okAddresses = [address(0x0), address(0x2), address(0x3), address(0x4), address(0x5),
-            address(0x6), address(0xa), address(0xb), address(0xc), address(0xd), address(0xe), address(0xf),
-            address(0x10), address(0x11), address(0x12), address(0x13), address(0x14), address(0x15),
-            address(0x16), address(0x17), address(0x18), address(0x19)];
+        address [22] memory okAddresses = [address((0x0)), address(0x2), address(0x3), address(0x4), address(0x5),
+                        address(0x6), address(0xa), address(0xb), address(0xc), address(0xd), address(0xe), address(0xf),
+                        address(0x10), address(0x11), address(0x12), address(0x13), address(0x14), address(0x15),
+                        address(0x16), address(0x17), address(0x18), address(0x19)];
 
-        address payable[4] memory errorAddresses = [address(0x1), address(0x7), address(0x8), address(0x9)];
+        address [4] memory errorAddresses = [address(0x1), address(0x7), address(0x8), address(0x9)];
 
         // foreach okAddresses
         for (uint256 i = 0; i < okAddresses.length; i++) {
-            address payable addr = okAddresses[i];
+            address payable addr = payable (okAddresses[i]);
             try this.transfer(addr, 1) {
                 emit Info(addr, "success");
             } catch (bytes memory reason) {
@@ -93,7 +93,7 @@ contract BalanceTest {
 
         // foreach errorAddresses
         for (uint256 i = 0; i < errorAddresses.length; i++) {
-            address payable addr = errorAddresses[i];
+            address payable addr = payable (errorAddresses[i]);
             try this.transfer(addr, 1) {
                 emit Info(addr, "success");
                 revert("should revert");
@@ -106,7 +106,7 @@ contract BalanceTest {
     function testTransferBalance() public mustHasBalance {
         uint256 balanceBefore = getBalance(msg.sender);
         uint256 balanceBeforeSelf = getSelfBalance();
-        address payable sender = (msg.sender);
+        address payable sender = payable(msg.sender);
         sender.transfer(1);
         uint256 balanceAfter = getBalance(msg.sender);
         uint256 balanceAfterSelf = getSelfBalance();
@@ -124,13 +124,13 @@ contract BalanceTest {
         uint256 balanceAfterSelf = getSelfBalance();
         require(balanceAfter - balanceBefore == 1, "balance should be increased by amount");
         require(balanceBeforeSelf - balanceAfterSelf == 1, "self balance should be decreased by amount");
-        Info2("testTransferBalanceToOrigin", tx.origin, balanceAfter);
+        emit Info2("testTransferBalanceToOrigin", tx.origin, balanceAfter);
     }
 
     function testSelfdestruct() public payable {
         uint256 balanceBefore = getBalance(msg.sender);
         uint256 balanceBeforeSelf = getSelfBalance();
-        selfdestruct(msg.sender);
+        selfdestruct(payable(msg.sender));
         uint256 balanceAfter = getBalance(msg.sender);
         uint256 balanceAfterSelf = getSelfBalance();
         require(balanceAfter - balanceBefore == balanceBeforeSelf, "balance should be increased by amount");
@@ -140,7 +140,7 @@ contract BalanceTest {
     function testSelfdestructZeroAddress() public payable {
         //uint256 balanceBefore = getBalance(msg.sender);
         //uint256 balanceBeforeSelf = getSelfBalance();
-        selfdestruct(address(0x0));
+        selfdestruct(payable(0x0));
         //uint256 balanceAfter = getBalance(msg.sender);
         //uint256 balanceAfterSelf = getSelfBalance();
         //require(balanceAfter - balanceBefore == balanceBeforeSelf, "balance should be increased by amount");

@@ -68,7 +68,7 @@ contract BalancePrecompiledTest {
         }
 
         // register
-        address fakeAddr = address(block.timestamp);
+        address fakeAddr = address(uint160(block.timestamp));
         balancePrecompiled.registerCaller(fakeAddr);
         require(isBalanceCaller(fakeAddr), "should be balance caller");
     }
@@ -89,13 +89,13 @@ contract BalancePrecompiledTest {
         uint256 currentLength = balancePrecompiled.listCaller().length;
 
         for (uint256 i = currentLength; i < 500; i++) {
-            address fakeAddr = address(block.timestamp + i);
+            address fakeAddr = address(uint160(block.timestamp + i));
             balancePrecompiled.registerCaller(fakeAddr);
             require(isBalanceCaller(fakeAddr), "should be balance caller");
         }
 
         // must throw if register more than 500
-        try balancePrecompiled.registerCaller(address(block.timestamp + 500)) {
+        try balancePrecompiled.registerCaller(address(uint160(block.timestamp + 500))) {
             revert("should revert 1");
         } catch (bytes memory reason) {
         }
@@ -104,8 +104,8 @@ contract BalancePrecompiledTest {
     }
 
     function testAddBalance() public onlyBalanceCaller returns (uint256) {
-        address user = address(block.timestamp);
-        balancePrecompiled.addBalance(user, uint256(-1));
+        address user = address(uint160(block.timestamp));
+        balancePrecompiled.addBalance(user, uint256(int256(-1)));
         return balancePrecompiled.getBalance(user);
         // must revert if add 1
         try balancePrecompiled.addBalance(user, 1) {
@@ -114,7 +114,7 @@ contract BalancePrecompiledTest {
         } catch (bytes memory reason) {
         }
 
-        address user2 = address(block.timestamp + 1);
+        address user2 = address(uint160(block.timestamp + 1));
         for (uint256 i = 0; i < 100; i++) {
             uint256 balance = balancePrecompiled.getBalance(user2);
             balancePrecompiled.addBalance(user2, 1);
@@ -122,14 +122,14 @@ contract BalancePrecompiledTest {
         }
 
         // test overflow
-        try balancePrecompiled.addBalance(user2, uint256(-1)) {
+        try balancePrecompiled.addBalance(user2, uint256(int256(-1))) {
             revert("should revert 3");
         } catch (bytes memory reason) {
         }
     }
 
     function testSubBalance() public onlyBalanceCaller {
-        address user = address(block.timestamp);
+        address user = address(uint160(block.timestamp));
         // clear user balance
         balancePrecompiled.subBalance(user, balancePrecompiled.getBalance(user));
 
@@ -144,7 +144,7 @@ contract BalancePrecompiledTest {
         }
 
         // test overflow
-        try balancePrecompiled.subBalance(user, uint256(-1)) {
+        try balancePrecompiled.subBalance(user, uint256(int256(-1))) {
             revert("should revert 5");
         } catch (bytes memory reason) {
         }
@@ -155,8 +155,8 @@ contract BalancePrecompiledTest {
     }
 
     function testTransferBalance() public onlyBalanceCaller {
-        address A = address(block.timestamp);
-        address B = address(block.timestamp + 1);
+        address A = address(uint160(block.timestamp));
+        address B = address(uint160(block.timestamp + 1));
 
         balancePrecompiled.addBalance(A, 100);
         balancePrecompiled.transfer(A, B, 100);
@@ -168,10 +168,10 @@ contract BalancePrecompiledTest {
 
         // test edge case
         balancePrecompiled.addBalance(A, 1);
-        balancePrecompiled.addBalance(B, uint256(-2));
+        balancePrecompiled.addBalance(B, uint256(int256(-2)));
         balancePrecompiled.transfer(A, B, 1);
         require(balancePrecompiled.getBalance(A) == 0, "balance should be 0");
-        require(balancePrecompiled.getBalance(B) == uint256(-1), "balance should be uint256(-1)");
+        require(balancePrecompiled.getBalance(B) == uint256(int256(-1)), "balance should be uint256(-1)");
     }
 
     function getCallerSize() public view returns (uint256) {
