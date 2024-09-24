@@ -1,5 +1,9 @@
 package org.fisco.bcos.sdk.demo.filter;
 
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import org.fisco.bcos.sdk.jni.common.JniException;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
@@ -16,25 +20,23 @@ import org.fisco.bcos.sdk.v3.model.ConstantConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-
 public class Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(Filter.class);
 
     public static void usage() {
         System.out.println("\tUsage: ");
-        System.out.println("\t\tjava -cp \"conf/:lib/*:apps/*\"  org.fisco.bcos.sdk.demo.filter.Filter groupId type fromBlock toBlock addresses<Optional> topics<Optional>");
+        System.out.println(
+                "\t\tjava -cp \"conf/:lib/*:apps/*\"  org.fisco.bcos.sdk.demo.filter.Filter groupId type fromBlock toBlock addresses<Optional> topics<Optional>");
         System.out.println("\t type:               choices[onlyBlock,onlyTx,onlyLog,All]");
         System.out.println("\t addresses format:   [addr1,addr2,...]");
         System.out.println("\t topics format:      [[topic1,topic2],[topic1,topic2],...]");
         System.out.println("\t\n");
         System.out.println("\tExample:");
-        System.out.println("\t\tjava -cp \"conf/:lib/*:apps/*\"  org.fisco.bcos.sdk.demo.filter.Filter group All latest latest 0x37a44585Bf1e9618FDb4C62c4c96189A07Dd4b48");
-        System.out.println("\t\tjava -cp \"conf/:lib/*:apps/*\"  org.fisco.bcos.sdk.demo.filter.Filter group All latest latest [0x37ce8dAbeeB140FC64247c421820c5887918723c,0xDB0F7d18ef07D709DDDAbA0bD6443863125f9d3d] [[TransferEvent(int256,string,string,uint256),UpdateEvent(int256,string,uint256)],[test1,test2]]");
+        System.out.println(
+                "\t\tjava -cp \"conf/:lib/*:apps/*\"  org.fisco.bcos.sdk.demo.filter.Filter group All latest latest 0x37a44585Bf1e9618FDb4C62c4c96189A07Dd4b48");
+        System.out.println(
+                "\t\tjava -cp \"conf/:lib/*:apps/*\"  org.fisco.bcos.sdk.demo.filter.Filter group All latest latest [0x37ce8dAbeeB140FC64247c421820c5887918723c,0xDB0F7d18ef07D709DDDAbA0bD6443863125f9d3d] [[TransferEvent(int256,string,string,uint256),UpdateEvent(int256,string,uint256)],[test1,test2]]");
         System.exit(0);
     }
 
@@ -93,10 +95,10 @@ public class Filter {
             }
             resultList.add(currentGroup);
         }
-//        if (resultList.size() > 4) {
-//            throw new RuntimeException(
-//                    "invalid topics, topics size must be <= 4");
-//        }
+        //        if (resultList.size() > 4) {
+        //            throw new RuntimeException(
+        //                    "invalid topics, topics size must be <= 4");
+        //        }
         return resultList;
     }
 
@@ -129,9 +131,13 @@ public class Filter {
         System.out.println("runOnlyBlock...");
         Client client = sdk.getClient(args[0]);
         FilterSystem filterSystem = sdk.getFilterSystem(client, 1, 1000);
-        Subscription<String> blockSub = filterSystem.blockHashPublisher().subscribe(block -> {
-            System.out.println("blockHash: " + block);
-        });
+        Subscription<String> blockSub =
+                filterSystem
+                        .blockHashPublisher()
+                        .subscribe(
+                                block -> {
+                                    System.out.println("blockHash: " + block);
+                                });
         System.in.read();
         blockSub.unsubscribe();
         filterSystem.stop();
@@ -143,9 +149,13 @@ public class Filter {
         Client client = sdk.getClient(args[0]);
         FilterSystem filterSystem = sdk.getFilterSystem(client, 1, 1000);
 
-        Subscription<String> txSub = filterSystem.transactionHashPublisher().subscribe(tx -> {
-            System.out.println("txHash: " + tx);
-        });
+        Subscription<String> txSub =
+                filterSystem
+                        .transactionHashPublisher()
+                        .subscribe(
+                                tx -> {
+                                    System.out.println("txHash: " + tx);
+                                });
 
         System.in.read();
         txSub.unsubscribe();
@@ -163,9 +173,13 @@ public class Filter {
             Client client = sdk.getClient(args[0]);
             FilterSystem filterSystem = sdk.getFilterSystem(client, 1, 1000);
             LogFilterRequest ethFilter = getEthFilter(args, client);
-            Subscription<Log> logSub = filterSystem.logPublisher(ethFilter).subscribe(log -> {
-                System.out.println("logs: " + log);
-            });
+            Subscription<Log> logSub =
+                    filterSystem
+                            .logPublisher(ethFilter)
+                            .subscribe(
+                                    log -> {
+                                        System.out.println("logs: " + log);
+                                    });
 
             System.in.read();
             logSub.unsubscribe();
@@ -186,17 +200,29 @@ public class Filter {
             Client client = sdk.getClient(args[0]);
             FilterSystem filterSystem = sdk.getFilterSystem(client, 1, 1000);
             LogFilterRequest ethFilter = getEthFilter(args, client);
-            Subscription<String> blockSub = filterSystem.blockHashPublisher().subscribe(block -> {
-                System.out.println("blockHash: " + block);
-            });
+            Subscription<String> blockSub =
+                    filterSystem
+                            .blockHashPublisher()
+                            .subscribe(
+                                    block -> {
+                                        System.out.println("blockHash: " + block);
+                                    });
 
-            Subscription<String> txSub = filterSystem.transactionHashPublisher().subscribe(tx -> {
-                System.out.println("txHash: " + tx);
-            });
+            Subscription<String> txSub =
+                    filterSystem
+                            .transactionHashPublisher()
+                            .subscribe(
+                                    tx -> {
+                                        System.out.println("txHash: " + tx);
+                                    });
 
-            Subscription<Log> logSub = filterSystem.logPublisher(ethFilter).subscribe(log -> {
-                System.out.println("logs: " + log);
-            });
+            Subscription<Log> logSub =
+                    filterSystem
+                            .logPublisher(ethFilter)
+                            .subscribe(
+                                    log -> {
+                                        System.out.println("logs: " + log);
+                                    });
 
             System.in.read();
             blockSub.unsubscribe();
