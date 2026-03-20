@@ -135,13 +135,12 @@ public class DMCTransferRing {
                                                         client,
                                                         client.getCryptoSuite().getCryptoKeyPair());
                                         String address = contract.getContractAddress();
-
                                         try {
                                             shardingService.linkShard(
                                                     "dmctest" + address.substring(0, 4), address);
                                         } catch (ContractException e) {
+                                            e.printStackTrace();
                                         }
-
                                         String sender =
                                                 contract.addBalance(BigInteger.valueOf(initBalance))
                                                         .getFrom();
@@ -150,9 +149,10 @@ public class DMCTransferRing {
                                                 .setAccountAddress(sender);
                                         contracts[index] = contract;
                                         contractsAddr[index] = contract.getContractAddress();
-                                        contractLatch.countDown();
                                     } catch (ContractException e) {
                                         e.printStackTrace();
+                                    } finally {
+                                        contractLatch.countDown();
                                     }
                                 }
                             });
@@ -357,9 +357,10 @@ public class DMCTransferRing {
                                     try {
                                         BigInteger balance = contracts[finalJ].balance();
                                         total.addAndGet(balance.intValue());
-                                        checkLatch.countDown();
                                     } catch (ContractException e) {
-                                        throw new RuntimeException(e);
+                                        e.printStackTrace();
+                                    } finally {
+                                        checkLatch.countDown();
                                     }
                                 }
                             });

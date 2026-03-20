@@ -136,6 +136,7 @@ public class DMCTransferMyself {
                                             shardingService.linkShard(
                                                     "dmctest" + address.substring(0, 4), address);
                                         } catch (ContractException e) {
+                                            e.printStackTrace();
                                         }
                                         String sender =
                                                 contract.addBalance(BigInteger.valueOf(initBalance))
@@ -144,9 +145,10 @@ public class DMCTransferMyself {
                                                 .getAccountConfig()
                                                 .setAccountAddress(sender);
                                         contracts[index] = contract;
-                                        contractLatch.countDown();
                                     } catch (ContractException e) {
                                         e.printStackTrace();
+                                    } finally {
+                                        contractLatch.countDown();
                                     }
                                 }
                             });
@@ -262,9 +264,10 @@ public class DMCTransferMyself {
                                     try {
                                         BigInteger balance = contracts[finalJ].balance();
                                         total.addAndGet(balance.intValue());
-                                        checkLatch.countDown();
                                     } catch (ContractException e) {
-                                        throw new RuntimeException(e);
+                                        e.printStackTrace();
+                                    } finally {
+                                        checkLatch.countDown();
                                     }
                                 }
                             });

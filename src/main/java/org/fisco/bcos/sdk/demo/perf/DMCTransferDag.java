@@ -142,10 +142,12 @@ public class DMCTransferDag {
                                             shardingService.linkShard(
                                                     "dmctest" + address.substring(0, 4), address);
                                         } catch (ContractException e) {
+                                            e.printStackTrace();
                                         }
-                                        contractLatch.countDown();
                                     } catch (ContractException e) {
                                         e.printStackTrace();
+                                    } finally {
+                                        contractLatch.countDown();
                                     }
                                 }
                             });
@@ -266,9 +268,10 @@ public class DMCTransferDag {
                                     try {
                                         BigInteger balance = contracts[finalJ].balance();
                                         total.addAndGet(balance.intValue());
-                                        checkLatch.countDown();
                                     } catch (ContractException e) {
-                                        throw new RuntimeException(e);
+                                        e.printStackTrace();
+                                    } finally {
+                                        checkLatch.countDown();
                                     }
                                 }
                             });

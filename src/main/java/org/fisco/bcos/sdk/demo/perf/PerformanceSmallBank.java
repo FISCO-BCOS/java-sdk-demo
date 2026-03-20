@@ -178,29 +178,24 @@ public class PerformanceSmallBank {
                     threadPoolService
                             .getThreadPool()
                             .execute(
-                                    new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            long now = System.currentTimeMillis();
-                                            smallBank.updateBalance(
-                                                    user,
-                                                    amount,
-                                                    new TransactionCallback() {
-                                                        public void onResponse(
-                                                                TransactionReceipt receipt) {
-                                                            long cost =
-                                                                    System.currentTimeMillis()
-                                                                            - now;
-                                                            collector.onMessage(receipt, cost);
-                                                            receivedBar.step();
-                                                            transactionLatch.countDown();
-                                                            totalCost.addAndGet(
-                                                                    System.currentTimeMillis()
-                                                                            - now);
-                                                        }
-                                                    });
-                                            sendedBar.step();
-                                        }
+                                    () -> {
+                                        long now = System.currentTimeMillis();
+                                        smallBank.updateBalance(
+                                                user,
+                                                amount,
+                                                new TransactionCallback() {
+                                                    public void onResponse(
+                                                            TransactionReceipt receipt) {
+                                                        long cost =
+                                                                System.currentTimeMillis() - now;
+                                                        collector.onMessage(receipt, cost);
+                                                        receivedBar.step();
+                                                        transactionLatch.countDown();
+                                                        totalCost.addAndGet(
+                                                                System.currentTimeMillis() - now);
+                                                    }
+                                                });
+                                        sendedBar.step();
                                     });
                     dagUserInfo.addUser(dtu);
                 }
@@ -321,8 +316,7 @@ public class PerformanceSmallBank {
                     FileWriter fileWriter = new FileWriter(accountFile.getName(), true);
                     BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 
-                    List<DagTransferUser> allUser = dagUserInfo.getUserList();
-                    for (int i = 0; i < txtotal; ) {
+                    for (int i = 0; i < txtotal; i++) {
                         try {
                             DagTransferUser from = dagUserInfo.getFrom(i);
                             DagTransferUser to = dagUserInfo.getTo(i);

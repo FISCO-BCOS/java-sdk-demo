@@ -144,9 +144,10 @@ public class PerformanceTransferDMC {
 
                                         accounts[index] = account;
                                         summary.put(index, new AtomicLong(initBalance));
-                                        userLatch.countDown();
                                     } catch (ContractException e) {
                                         e.printStackTrace();
+                                    } finally {
+                                        userLatch.countDown();
                                     }
                                 }
                             });
@@ -302,10 +303,10 @@ public class PerformanceTransferDMC {
                                                                 + " not equal to expected: "
                                                                 + expectBalance);
                                             }
-
-                                            checkLatch.countDown();
                                         } catch (ContractException e) {
                                             e.printStackTrace();
+                                        } finally {
+                                            checkLatch.countDown();
                                         }
                                     }
                                 });

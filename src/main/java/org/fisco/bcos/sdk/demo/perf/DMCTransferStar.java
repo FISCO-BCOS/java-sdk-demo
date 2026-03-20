@@ -140,6 +140,7 @@ public class DMCTransferStar {
                                             shardingService.linkShard(
                                                     "dmctest" + address.substring(0, 4), address);
                                         } catch (ContractException e) {
+                                            e.printStackTrace();
                                         }
                                         String sender =
                                                 contract.addBalance(BigInteger.valueOf(initBalance))
@@ -149,9 +150,10 @@ public class DMCTransferStar {
                                                 .setAccountAddress(sender);
                                         contracts[index] = contract;
                                         contractsAddr[index] = contract.getContractAddress();
-                                        contractLatch.countDown();
                                     } catch (ContractException e) {
                                         e.printStackTrace();
+                                    } finally {
+                                        contractLatch.countDown();
                                     }
                                 }
                             });
@@ -276,9 +278,10 @@ public class DMCTransferStar {
                                     try {
                                         BigInteger balance = contracts[finalJ].balance();
                                         total.addAndGet(balance.intValue());
-                                        checkLatch.countDown();
                                     } catch (ContractException e) {
-                                        throw new RuntimeException(e);
+                                        e.printStackTrace();
+                                    } finally {
+                                        checkLatch.countDown();
                                     }
                                 }
                             });
