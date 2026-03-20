@@ -118,6 +118,7 @@ public class DMCTransferRing {
         String[] contractsAddr = new String[nodeNum];
 
         System.out.println("Create contract and generate call relationship...");
+        AtomicInteger deployFailedCount = new AtomicInteger(0);
         CountDownLatch contractLatch = new CountDownLatch(nodeNum);
         for (int i = 0; i < nodeNum; ++i) {
             final int index = i;
@@ -135,13 +136,12 @@ public class DMCTransferRing {
                                                         client,
                                                         client.getCryptoSuite().getCryptoKeyPair());
                                         String address = contract.getContractAddress();
-
                                         try {
                                             shardingService.linkShard(
                                                     "dmctest" + address.substring(0, 4), address);
                                         } catch (ContractException e) {
+                                            e.printStackTrace();
                                         }
-
                                         String sender =
                                                 contract.addBalance(BigInteger.valueOf(initBalance))
                                                         .getFrom();
@@ -150,14 +150,29 @@ public class DMCTransferRing {
                                                 .setAccountAddress(sender);
                                         contracts[index] = contract;
                                         contractsAddr[index] = contract.getContractAddress();
-                                        contractLatch.countDown();
                                     } catch (ContractException e) {
+                                        System.out.println(
+                                                "Deploy contract["
+                                                        + index
+                                                        + "] failed: "
+                                                        + e.getMessage());
                                         e.printStackTrace();
+                                        deployFailedCount.incrementAndGet();
+                                    } finally {
+                                        contractLatch.countDown();
                                     }
                                 }
                             });
         }
         contractLatch.await();
+        if (deployFailedCount.get() > 0) {
+            System.out.println(
+                    "ERROR: "
+                            + deployFailedCount.get()
+                            + " contract(s) failed to deploy. Aborting test to avoid NPE and misleading results.");
+            System.exit(1);
+            return;
+        }
 
         String userAddress = sdk.getConfig().getAccountConfig().getAccountAddress();
         CountDownLatch callRelationship = new CountDownLatch(nodeNum);
@@ -357,9 +372,10 @@ public class DMCTransferRing {
                                     try {
                                         BigInteger balance = contracts[finalJ].balance();
                                         total.addAndGet(balance.intValue());
-                                        checkLatch.countDown();
                                     } catch (ContractException e) {
-                                        throw new RuntimeException(e);
+                                        e.printStackTrace();
+                                    } finally {
+                                        checkLatch.countDown();
                                     }
                                 }
                             });

@@ -113,6 +113,7 @@ public class DMCTransferDag {
         String[] contractsAddr = new String[startNodeNum + 5];
 
         System.out.println("Create contract and generate call relationship...");
+        AtomicInteger deployFailedCount = new AtomicInteger(0);
         CountDownLatch contractLatch = new CountDownLatch(startNodeNum + 5);
         for (int i = 0; i < (startNodeNum + 5); ++i) {
             final int index = i;
@@ -142,15 +143,31 @@ public class DMCTransferDag {
                                             shardingService.linkShard(
                                                     "dmctest" + address.substring(0, 4), address);
                                         } catch (ContractException e) {
+                                            e.printStackTrace();
                                         }
-                                        contractLatch.countDown();
                                     } catch (ContractException e) {
+                                        System.out.println(
+                                                "Deploy contract["
+                                                        + index
+                                                        + "] failed: "
+                                                        + e.getMessage());
                                         e.printStackTrace();
+                                        deployFailedCount.incrementAndGet();
+                                    } finally {
+                                        contractLatch.countDown();
                                     }
                                 }
                             });
         }
         contractLatch.await();
+        if (deployFailedCount.get() > 0) {
+            System.out.println(
+                    "ERROR: "
+                            + deployFailedCount.get()
+                            + " contract(s) failed to deploy. Aborting test to avoid NPE and misleading results.");
+            System.exit(1);
+            return;
+        }
         System.out.println("Create " + (startNodeNum + 5) + " contracts finished!");
 
         String userAddress = sdk.getConfig().getAccountConfig().getAccountAddress();
@@ -266,9 +283,10 @@ public class DMCTransferDag {
                                     try {
                                         BigInteger balance = contracts[finalJ].balance();
                                         total.addAndGet(balance.intValue());
-                                        checkLatch.countDown();
                                     } catch (ContractException e) {
-                                        throw new RuntimeException(e);
+                                        e.printStackTrace();
+                                    } finally {
+                                        checkLatch.countDown();
                                     }
                                 }
                             });
