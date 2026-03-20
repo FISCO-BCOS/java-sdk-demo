@@ -115,6 +115,7 @@ public class DMCTransferMyself {
         random.setSeed(System.currentTimeMillis());
 
         System.out.println("Create contract and generate call relationship...");
+        AtomicInteger deployFailedCount = new AtomicInteger(0);
         CountDownLatch contractLatch = new CountDownLatch(contractsNum);
         for (int i = 0; i < contractsNum; ++i) {
             final int index = i;
@@ -146,7 +147,13 @@ public class DMCTransferMyself {
                                                 .setAccountAddress(sender);
                                         contracts[index] = contract;
                                     } catch (ContractException e) {
+                                        System.out.println(
+                                                "Deploy contract["
+                                                        + index
+                                                        + "] failed: "
+                                                        + e.getMessage());
                                         e.printStackTrace();
+                                        deployFailedCount.incrementAndGet();
                                     } finally {
                                         contractLatch.countDown();
                                     }
@@ -154,6 +161,14 @@ public class DMCTransferMyself {
                             });
         }
         contractLatch.await();
+        if (deployFailedCount.get() > 0) {
+            System.out.println(
+                    "ERROR: "
+                            + deployFailedCount.get()
+                            + " contract(s) failed to deploy. Aborting test to avoid NPE and misleading results.");
+            System.exit(1);
+            return;
+        }
         System.out.println("Deploy " + contractsNum + " contract Finished!");
 
         String userAddress = sdk.getConfig().getAccountConfig().getAccountAddress();
